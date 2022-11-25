@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "paper-sorts"
+version = "0.1.0"
+description = ""
+authors = ["HubReb"]
+readme = "README.md"
+packages = [{include = "paper_sorts"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pylint = "^2.15.6"
+psycopg = {extras = ["binary"], version = "^3.1.4"}
+pybtex = "^0.24.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
