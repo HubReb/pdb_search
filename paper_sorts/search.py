@@ -112,22 +112,23 @@ def search_by_author(config_parameters: dict, logger: logging.Logger, author: st
             sql.SQL("select authors_id.id, authors_id.author, paper_id, title, bibtext_id, contents from authors_id INNER JOIN authors_papers on "
                     "authors_papers.author_id=authors_id.id INNER JOIN papers on paper_id=papers.id where author=%s;"), (author,)
         )
-        resutls = cur.fetchall()
-        if not resutls:
+        results = cur.fetchall()
+        if not results:
             print("author not found")
             logger.info("author not found")
             return []
-        if len(resutls) > 1:
+        if len(results) > 1:
             print("Following papers found: ")
-            for i, paper in enumerate(resutls):
+            for i, paper in enumerate(results):
                 print(f"{i + 1}: title: {paper[3]}")
             chosen_paper = -1
-            while chosen_paper < 0 or chosen_paper >= len(resutls):
+            while chosen_paper < 0 or chosen_paper >= len(results):
                 chosen_paper = cast(input("Choose paper to extract: ")) - 1
-                if chosen_paper < 0 or chosen_paper >= len(resutls):
+                if chosen_paper < 0 or chosen_paper >= len(results):
                     print("Please choose a valid number.")
+            chosen_paper = results[chosen_paper]
         else:
-            chosen_paper = resutls[0]
+            chosen_paper = results[0]
         cur.execute(
             sql.SQL(
                 "select authors_id.author, paper_id from authors_id INNER JOIN "
@@ -141,7 +142,7 @@ def search_by_author(config_parameters: dict, logger: logging.Logger, author: st
         author_pretty = author_pretty[:-5]
         if con:
             con.close()
-        return [author_pretty] + list(resutls[0][2:])
+        return [author_pretty] + list(chosen_paper[2:])
 
     except psycopg.DatabaseError as database_error:
         logger.exception(database_error)
