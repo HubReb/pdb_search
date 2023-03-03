@@ -12,7 +12,6 @@ class ConfigReader(ConfigParser):
          :param filename: file containing the db_connector specifications
          :param section: which section to take
          :param key_file: file containing the kye to decrypt the config
-         :param logger: Logger that logs exception, warning, ...
 
         :return: db_config (dict): configuration parameters of db_connector
         """
