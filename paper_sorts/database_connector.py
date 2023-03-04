@@ -19,10 +19,10 @@ def cast(user_input: str) -> int:
 class DatabaseConnector:
     def __init__(
         self,
-        config_parameters,
-        logging_level=logging.DEBUG,
-        logger_name="database_logger",
-        log_file="db_connector.log",
+        config_parameters: dict,
+        logging_level: int =logging.DEBUG,
+        logger_name: str ="database_logger",
+        log_file: str ="db_connector.log",
     ):
         self.config_parameters = config_parameters
         # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
@@ -52,7 +52,7 @@ class DatabaseConnector:
         cur = con.cursor()
         return con, cur
 
-    def add_data_from_dict(self, data_dict):
+    def add_data_from_dict(self, data_dict: dict):
         self.create_tables()
         sql_instruction = (
             "INSERT INTO {} (title, contents, bibtex_id) VALUES (%s, %s, %s)"
@@ -244,7 +244,7 @@ class DatabaseConnector:
                 con.close()
             return None
 
-    def search_for_bibtex_entry_by_paper_title(self, paper):
+    def search_for_bibtex_entry_by_paper_title(self, paper: List) -> List[str]:
         con = None
         try:
             con, curs = self.get_connection_and_cursor()
@@ -271,7 +271,7 @@ class DatabaseConnector:
             return []
 
     @staticmethod
-    def __iterate_through_papers(papers):
+    def __iterate_through_papers(papers: List[List[str]]) -> List[List[str]]:
         id_bib = papers[0][3]
         down_papers = []
         authors = ""

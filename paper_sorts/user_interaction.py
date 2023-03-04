@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
+from typing import List
 
 from paper_sorts.database_connector import DatabaseConnector
 
@@ -8,9 +9,9 @@ from paper_sorts.database_connector import DatabaseConnector
 class UserInteraction:
     def __init__(
         self,
-        logger_name="user_interaction_logger",
-        logging_level=logging.DEBUG,
-        log_file="interaction.log",
+        logger_name: str ="user_interaction_logger",
+        logging_level: int =logging.DEBUG,
+        log_file: str ="interaction.log",
     ):
         # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
         # create logger
@@ -35,7 +36,7 @@ class UserInteraction:
         self.logger = logger
 
     @staticmethod
-    def pretty_print_results(bibtex_data, paper_data):
+    def pretty_print_results(bibtex_data: List, paper_data: List):
         print(f"title: {paper_data[2]}\nauthors: {paper_data[0]}")
         print(f"summary: {paper_data[4]}\nbib entry: {bibtex_data[1]}")
 
@@ -84,7 +85,7 @@ class UserInteraction:
                 print("Author was not found in db_connector.")
 
     @staticmethod
-    def __get_user_choice(results):
+    def __get_user_choice(results: List) -> List:
         print("Following papers found: ")
         for i, paper in enumerate(results):
             print(f"{i + 1}: title: {paper[3]}")
