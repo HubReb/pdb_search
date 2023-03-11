@@ -6,6 +6,7 @@ import logging
 from psycopg import sql, connect, DatabaseError
 from psycopg2.extensions import cursor, connection
 
+from paper_sorts.helpers import iterate_through_papers
 
 def cast(user_input: str) -> int:
     """Check if user input is valid and cast to Integer if so"""
@@ -27,8 +28,8 @@ class DatabaseConnector:
         self.config_parameters = config_parameters
         # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
         # create logger
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(logging_level)
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(logging_level)
 
         # create console handler and set level to debug
         ch = logging.FileHandler(filename=log_file)
@@ -43,9 +44,7 @@ class DatabaseConnector:
         ch.setFormatter(formatter)
 
         # add ch to logger
-        logger.addHandler(ch)
-
-        self.logger = logger
+        self.logger.addHandler(ch)
 
     def get_connection_and_cursor(self) -> [connection, cursor]:
         con = connect(**self.config_parameters)
@@ -73,6 +72,7 @@ class DatabaseConnector:
                     (bibtex_key,),
                 )
                 if cur.fetchone()[0]:
+                    self.logger.info("bibtex key %s already in database - skipping" % bibtex_key)
                     continue
                 cur.execute(
                     sql.SQL("insert into bib values (%s, %s);"), (bibtex_key, bibtex)
@@ -83,7 +83,9 @@ class DatabaseConnector:
                 )
                 for author in authors:
                     self.__add_single_author(author, cur)
+                    self.logger.info("added author %s and paper %s to database" % (author, title))
                 con.commit()
+
         except DatabaseError as database_error:
             self.logger.exception(database_error)
             if con:
@@ -124,6 +126,7 @@ class DatabaseConnector:
                 ).format(sql.Identifier("papers"))
             )
             con.commit()
+            self.logger.info("created all tables")
 
         except DatabaseError as database_error:
             self.logger.exception(database_error)
@@ -201,7 +204,7 @@ class DatabaseConnector:
                 raise KeyError("Paper not found!")
             down_papers = []
             if len(set(p[2] for p in papers)) > 1:
-                down_papers = self.__iterate_through_papers(papers)
+                down_papers = iterate_through_papers(papers)
             else:
                 authors = ""
                 for paper in papers:
@@ -269,20 +272,6 @@ class DatabaseConnector:
                 con.rollback()
                 con.close()
             return []
-
-    @staticmethod
-    def __iterate_through_papers(papers: List[List[str]]) -> List[List[str]]:
-        id_bib = papers[0][3]
-        down_papers = []
-        authors = ""
-        for i, paper in enumerate(papers):
-            paper = list(paper)  # papers element are tuples
-            if id_bib != paper[3]:
-                down_papers.append([authors[:-5]] + list(papers[i - 1])[1:])
-                id_bib = paper[3]
-            else:
-                authors += f"{paper[0]} and "
-        return down_papers
 
     def add_entry_to_db(
         self,

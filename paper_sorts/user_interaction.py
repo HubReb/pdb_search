@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 import logging
-from typing import List
 
 from paper_sorts.database_connector import DatabaseConnector
-
+from paper_sorts.helpers import get_user_choice, pretty_print_results, cast
 
 class UserInteraction:
     def __init__(
@@ -35,10 +34,6 @@ class UserInteraction:
 
         self.logger = logger
 
-    @staticmethod
-    def pretty_print_results(bibtex_data: List, paper_data: List):
-        print(f"title: {paper_data[2]}\nauthors: {paper_data[0]}")
-        print(f"summary: {paper_data[4]}\nbib entry: {bibtex_data[1]}")
 
     def search(self, db_connector: DatabaseConnector):
         user_input = cast(
@@ -60,13 +55,14 @@ class UserInteraction:
                     print("There was a db_connector error, shutting down.")
                     return
                 if len(papers) > 1:
-                    chosen_paper = self.__get_user_choice(papers)
+                    chosen_paper = get_user_choice(papers)
                 else:
                     chosen_paper = papers[0]
                 bibtex_data = db_connector.search_for_bibtex_entry_by_id(chosen_paper)
-                self.pretty_print_results(bibtex_data, chosen_paper)
+                pretty_print_results(bibtex_data, chosen_paper)
             except KeyError:
                 print("Paper was not found in db_connector.")
+                self.logger.error("shutdown")
 
         else:
             try:
@@ -75,35 +71,16 @@ class UserInteraction:
                 if not papers:
                     print("There was a db_connector error, shutting down.")
                     return
-                chosen_paper = self.__get_user_choice(papers)
+                chosen_paper = get_user_choice(papers)
                 paper = db_connector.search_for_bibtex_entry_by_paper_title(
                     chosen_paper
                 )
                 bibtex_data = db_connector.search_for_bibtex_entry_by_id(paper)
-                self.pretty_print_results(bibtex_data, paper)
+                pretty_print_results(bibtex_data, paper)
             except KeyError:
                 print("Author was not found in db_connector.")
+                self.logger.error("shutdown")
 
-    @staticmethod
-    def __get_user_choice(results: List) -> List:
-        print("Following papers found: ")
-        for i, paper in enumerate(results):
-            print(f"{i + 1}: title: {paper[3]}")
-        chosen_paper = -1
-        while chosen_paper < 0 or chosen_paper >= len(results):
-            chosen_paper = cast(input("Choose paper to extract: ")) - 1
-            if chosen_paper < 0 or chosen_paper >= len(results):
-                print("Please choose a valid number.")
-        return results[chosen_paper]
-
-
-def cast(user_input: str) -> int:
-    """Check if user input is valid and cast to Integer if so"""
-    try:
-        cast_to_int = int(user_input)
-    except ValueError:
-        return -1
-    return cast_to_int
 
 
 if __name__ == "__main__":
