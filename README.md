@@ -18,7 +18,7 @@ any problems in your setup, consult the logs.
 
 The repo contains all information required to install the package with poetry. 
 Install poetry and run
-```commandline
+```bash
 poetry install
 ```
 
@@ -55,10 +55,10 @@ Please choose a method:
 ### Search by title
 
 Enter the title name and if a paper of that name exists in the database the relevant information will be presented to you.
-Note that if several papers with that specific title are present in the database you will be presented with the list of
+Note that if several papers with that specific title are present in the database, you will be presented with the list of
 the respective authors and asked to choose one author (group).
 
-If no paper is found, you are informed of it.
+If no paper is found, you will be informed of it.
 
 ### Search by author
 
@@ -68,7 +68,7 @@ The name should have the format ```${last name}, ${first name}```.
 
 ## Add an entry
 
-The program takes you through the steps to add an entry to the database step by step. Note that you will be asked
+The program takes you through the steps to add an entry to the database step by step. Note that you are asked
 whether you want to provide a file to read the bib entry from or enter the date by hand.
 
 ```
