@@ -62,4 +62,4 @@ dbname=your_dbname
 user=your_dbuser
 password=your_dbuser_password
 ```
-It is recommend to use an encrypted version of this file.
+It is recommended to use an encrypted version of this file.
