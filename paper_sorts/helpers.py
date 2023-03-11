@@ -131,7 +131,7 @@ def get_user_choice(results: List) -> List:
 
 def get_user_input(prompt: str) -> str:
     user_answer = input(prompt)
-    while user_answer == "\n":
+    while user_answer == "":
         user_answer = input(prompt)
     return user_answer
 
