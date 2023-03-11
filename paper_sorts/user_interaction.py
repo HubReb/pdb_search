@@ -3,7 +3,12 @@
 import logging
 
 from paper_sorts.database_connector import DatabaseConnector
-from paper_sorts.helpers import get_user_choice, pretty_print_results, cast
+from paper_sorts.helpers import (
+    get_user_choice,
+    pretty_print_results,
+    cast,
+    get_user_input
+)
 
 class UserInteraction:
     def __init__(
@@ -77,6 +82,28 @@ class UserInteraction:
             except KeyError:
                 print("Author was not found in db_connector.")
                 self.logger.error("shutdown")
+
+    def add(self, db_connector: DatabaseConnector) -> bool:
+        author = get_user_input("Please enter the necessary information\nAuthor(s), please provide a , separated list: ")
+        paper_title = get_user_input("Paper title: ")
+        bibtex_key = get_user_input("bibtex key: ")
+        bibtex_information = get_user_input("bib entry: ")
+        content = get_user_input("summary of the paper: ")
+        authors = author.split(", ")
+        successful = db_connector.add_entry_to_db(
+            bibtex_information,
+            authors,
+            bibtex_key,
+            paper_title,
+            content
+        )
+        authors = ", ".join(authors)
+        if successful:
+            self.logger.info("added entry %s: %s to database" % (authors, paper_title))
+            return True
+        else:
+            self.logger.info("failed to add entry %s: %s to database - please study logs" % (authors, paper_title))
+            return False
 
 
 

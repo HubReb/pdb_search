@@ -280,7 +280,7 @@ class DatabaseConnector:
         bibtex_ident: str,
         title: str,
         content: str,
-    ) -> None:
+    ) -> bool:
         """
         Add new entry to db_connector table.
 
@@ -314,15 +314,60 @@ class DatabaseConnector:
             for author in author_names:
                 self.insert_single_author(author, curs, paper_id)
             con.commit()
+            con.close()
+            return True
 
         except DatabaseError as database_error:
             self.logger.error(database_error)
             if con:
                 con.rollback()
-
-        finally:
-            if con:
                 con.close()
+            return False
+
+    def delete_entry_from_database(
+        self,
+        new_bibtex_entry: str,
+        author_names: list,
+        bibtex_ident: str,
+        title: str,
+        content: str
+    ):
+        con = None
+        try:
+            con, curs = self.get_connection_and_cursor()
+            curs.execute(sql.SQL("select id from papers where title=%s"), (title,))
+            paper_id = curs.fetchone()[0]
+            for author in author_names:
+                curs.execute(sql.SQL("select * from authors_id where author=%s;"), (author,))
+                author_id = curs.fetchone()
+                curs.execute(
+                    sql.SQL(
+                        "delete from authors_papers where (author_id=%s and  paper_id=%s);"
+                    ),
+                    (author_id[0], paper_id),
+                )
+                self.logger.info("marking author %s and paper %s for deletion" % (author_id[0], title))
+            sql_instruction = (
+                "delete from papers where (title=%s and contents=%s and bibtex_id=%s)"
+            )
+            curs.execute(sql.SQL(sql_instruction), [title, content, bibtex_ident])
+            self.logger.info("marking bibtex id %s for deletion in papers" % bibtex_ident)
+            curs.execute(
+                sql.SQL("delete from bib where (bibtex_id=%s and bibtex=%s);"),
+                (bibtex_ident, new_bibtex_entry),
+            )
+            self.logger.info("marking bibtex id %s for deletion" % bibtex_ident)
+            con.commit()
+            self.logger.info("successfully deleted data")
+            con.close()
+            return True
+
+        except DatabaseError as database_error:
+            self.logger.error(database_error)
+            if con:
+                con.rollback()
+                con.close()
+            return False
 
     def sanity_checks(self, bibtex_ident, curs):
         curs.execute(sql.SQL("select relname from pg_class where relname = 'papers';"))

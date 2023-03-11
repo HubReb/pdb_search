@@ -129,6 +129,12 @@ def get_user_choice(results: List) -> List:
     return results[chosen_paper]
 
 
+def get_user_input(prompt: str) -> str:
+    user_answer = input(prompt)
+    while user_answer == "\n":
+        user_answer = input(prompt)
+    return user_answer
+
 def pretty_print_results(bibtex_data: List, paper_data: List):
     print(f"title: {paper_data[2]}\nauthors: {paper_data[0]}")
     print(f"summary: {paper_data[4]}\nbib entry: {bibtex_data[1]}")
