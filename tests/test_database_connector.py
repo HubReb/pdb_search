@@ -38,6 +38,38 @@ class DataBaseTest(unittest.TestCase):
         )
         self.assertRaises(KeyError, database.search_by_title, "blub")
 
+    def test_adding_and_removing(self):
+        config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
+        database = DatabaseConnector(
+            config_reader.db_config,
+            logging.DEBUG,
+            "database_tester_logger",
+            log_file="db_connector_test.log",
+        )
+        self.assertTrue(
+            database.add_entry_to_db(
+                "test",
+                ["list"],
+                "x",
+                "This is a test",
+                "This is a test",
+            )
+        )
+        self.assertRaises(ValueError, database.add_entry_to_db,
+                "test",
+                ["list"],
+                "x",
+                "This is a test",
+                "This is a test",
+            )
+        database.delete_entry_from_database(
+            "test",
+            ["list"],
+            "x",
+            "This is a test",
+            "This is a test",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
