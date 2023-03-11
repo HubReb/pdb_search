@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-from pylatexenc.latex2text import LatexNodes2Text
-from pybtex.database import parse_file
-
 from collections import defaultdict
 from typing import List
 
+from pylatexenc.latex2text import LatexNodes2Text
+from pybtex.database import parse_file
 
 def get_data(filename: str = None) -> dict:
     """

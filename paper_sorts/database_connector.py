@@ -8,6 +8,7 @@ from psycopg2.extensions import cursor, connection
 
 from paper_sorts.helpers import iterate_through_papers
 
+
 def cast(user_input: str) -> int:
     """Check if user input is valid and cast to Integer if so"""
     try:
@@ -21,9 +22,9 @@ class DatabaseConnector:
     def __init__(
         self,
         config_parameters: dict,
-        logging_level: int =logging.DEBUG,
-        logger_name: str ="database_logger",
-        log_file: str ="db_connector.log",
+        logging_level: int = logging.DEBUG,
+        logger_name: str = "database_logger",
+        log_file: str = "db_connector.log",
     ):
         self.config_parameters = config_parameters
         # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
@@ -72,7 +73,9 @@ class DatabaseConnector:
                     (bibtex_key,),
                 )
                 if cur.fetchone()[0]:
-                    self.logger.info("bibtex key %s already in database - skipping" % bibtex_key)
+                    self.logger.info(
+                        "bibtex key %s already in database - skipping",  bibtex_key
+                    )
                     continue
                 cur.execute(
                     sql.SQL("insert into bib values (%s, %s);"), (bibtex_key, bibtex)
@@ -83,7 +86,9 @@ class DatabaseConnector:
                 )
                 for author in authors:
                     self.__add_single_author(author, cur)
-                    self.logger.info("added author %s and paper %s to database" % (author, title))
+                    self.logger.info(
+                        f"added author {author} and paper {title} to database"
+                    )
                 con.commit()
 
         except DatabaseError as database_error:
@@ -163,7 +168,7 @@ class DatabaseConnector:
                 (author_id, paper_id),
             )
 
-    def search_for_bibtex_entry_by_id(self, paper) -> List[str] | None :
+    def search_for_bibtex_entry_by_id(self, paper) -> List[str] | None:
         con = None
         try:
             if paper:
@@ -181,7 +186,6 @@ class DatabaseConnector:
                 con.rollback()
                 con.close()
             return None
-
 
     def search_by_title(self, title) -> List[List[str]] | None:
         con = None
@@ -330,33 +334,47 @@ class DatabaseConnector:
         author_names: list,
         bibtex_ident: str,
         title: str,
-        content: str
-    ):
+        content: str,
+    ) -> bool:
         con = None
         try:
             con, curs = self.get_connection_and_cursor()
             curs.execute(sql.SQL("select id from papers where title=%s"), (title,))
-            paper_id = curs.fetchone()[0]
+            try:
+                paper_id = curs.fetchone()[0]
+            except TypeError as exc:
+                con.close()
+                self.logger.error("paper %s does not exist in database", title)
+                raise ValueError(
+                    f"Paper {title} does not exist in database Check logs."
+                ) from exc
+
             for author in author_names:
-                curs.execute(sql.SQL("select * from authors_id where author=%s;"), (author,))
+                curs.execute(
+                    sql.SQL("select * from authors_id where author=%s;"), (author,)
+                )
                 author_id = curs.fetchone()
                 curs.execute(
                     sql.SQL(
-                        "delete from authors_papers where (author_id=%s and  paper_id=%s);"
+                        "delete from authors_papers where (author_id=%s and paper_id=%s);"
                     ),
-                    (author_id[0], paper_id),
+                    (author_id[0], paper_id)
                 )
-                self.logger.info("marking author %s and paper %s for deletion" % (author_id[0], title))
+                self.logger.info(
+                    f"marking author {author_id[0]} and paper {title} for deletion"
+                )
             sql_instruction = (
                 "delete from papers where (title=%s and contents=%s and bibtex_id=%s)"
             )
             curs.execute(sql.SQL(sql_instruction), [title, content, bibtex_ident])
-            self.logger.info("marking bibtex id %s for deletion in papers" % bibtex_ident)
+            self.logger.info(
+                "marking bibtex id %s for deletion in papers", bibtex_ident
+            )
             curs.execute(
                 sql.SQL("delete from bib where (bibtex_id=%s and bibtex=%s);"),
                 (bibtex_ident, new_bibtex_entry),
             )
-            self.logger.info("marking bibtex id %s for deletion" % bibtex_ident)
+            self.logger.info("marking bibtex id %s for deletion", bibtex_ident)
             con.commit()
             self.logger.info("successfully deleted data")
             con.close()

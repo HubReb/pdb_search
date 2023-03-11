@@ -99,11 +99,10 @@ class UserInteraction:
         )
         authors = ", ".join(authors)
         if successful:
-            self.logger.info("added entry %s: %s to database" % (authors, paper_title))
+            self.logger.info("added entry %s to database", f"{authors}: {paper_title}")
             return True
-        else:
-            self.logger.info("failed to add entry %s: %s to database - please study logs" % (authors, paper_title))
-            return False
+        self.logger.info("failed to add entry %s to database - please study logs", f"{authors}: {paper_title}")
+        return False
 
 
 
