@@ -74,7 +74,7 @@ class DatabaseConnector:
                 )
                 if cur.fetchone()[0]:
                     self.logger.info(
-                        "bibtex key %s already in database - skipping",  bibtex_key
+                        "bibtex key %s already in database - skipping", bibtex_key
                     )
                     continue
                 cur.execute(
@@ -358,7 +358,7 @@ class DatabaseConnector:
                     sql.SQL(
                         "delete from authors_papers where (author_id=%s and paper_id=%s);"
                     ),
-                    (author_id[0], paper_id)
+                    (author_id[0], paper_id),
                 )
                 self.logger.info(
                     f"marking author {author_id[0]} and paper {title} for deletion"

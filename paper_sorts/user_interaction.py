@@ -7,15 +7,16 @@ from paper_sorts.helpers import (
     get_user_choice,
     pretty_print_results,
     cast,
-    get_user_input
+    get_user_input,
 )
+
 
 class UserInteraction:
     def __init__(
         self,
-        logger_name: str ="user_interaction_logger",
-        logging_level: int =logging.DEBUG,
-        log_file: str ="interaction.log",
+        logger_name: str = "user_interaction_logger",
+        logging_level: int = logging.DEBUG,
+        log_file: str = "interaction.log",
     ):
         # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
         # create logger
@@ -35,7 +36,6 @@ class UserInteraction:
         # add ch to logger
         logger.addHandler(ch)
         self.logger = logger
-
 
     def search(self, db_connector: DatabaseConnector):
         user_input = cast(
@@ -84,26 +84,26 @@ class UserInteraction:
                 self.logger.error("shutdown")
 
     def add(self, db_connector: DatabaseConnector) -> bool:
-        author = get_user_input("Please enter the necessary information\nAuthor(s), please provide a , separated list: ")
+        author = get_user_input(
+            "Please enter the necessary information\nAuthor(s), please provide a , separated list: "
+        )
         paper_title = get_user_input("Paper title: ")
         bibtex_key = get_user_input("bibtex key: ")
         bibtex_information = get_user_input("bib entry: ")
         content = get_user_input("summary of the paper: ")
         authors = author.split(", ")
         successful = db_connector.add_entry_to_db(
-            bibtex_information,
-            authors,
-            bibtex_key,
-            paper_title,
-            content
+            bibtex_information, authors, bibtex_key, paper_title, content
         )
         authors = ", ".join(authors)
         if successful:
             self.logger.info("added entry %s to database", f"{authors}: {paper_title}")
             return True
-        self.logger.info("failed to add entry %s to database - please study logs", f"{authors}: {paper_title}")
+        self.logger.info(
+            "failed to add entry %s to database - please study logs",
+            f"{authors}: {paper_title}",
+        )
         return False
-
 
 
 if __name__ == "__main__":

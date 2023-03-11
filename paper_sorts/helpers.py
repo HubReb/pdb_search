@@ -6,6 +6,7 @@ from typing import List
 from pylatexenc.latex2text import LatexNodes2Text
 from pybtex.database import parse_file
 
+
 def get_data(filename: str = None) -> dict:
     """
     Read latex data and construct dictionary of form
@@ -133,6 +134,7 @@ def get_user_input(prompt: str) -> str:
     while user_answer == "\n":
         user_answer = input(prompt)
     return user_answer
+
 
 def pretty_print_results(bibtex_data: List, paper_data: List):
     print(f"title: {paper_data[2]}\nauthors: {paper_data[0]}")
