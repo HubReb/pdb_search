@@ -41,13 +41,13 @@ class UserInteraction:
     def search(self, db_connector: DatabaseConnector):
         user_input = cast(
             input(
-                "Search interface\nPlease choose a method:\n1) search by author\n2) search by paper title\n"
+                "Search interface\nPlease choose a method:\n1) Search by author\n2) Search by paper title\n"
             )
         )
         while user_input < 1 or user_input > 2:
             user_input = cast(
                 input(
-                    "Please choose a valid option:\n1) search by author\n2)search by paper title\n"
+                    "Please choose a valid option:\n1) Search by author\n2) Search by paper title\n"
                 )
             )
         if user_input == 2:
@@ -90,7 +90,13 @@ class UserInteraction:
         )
         paper_title = get_user_input("Paper title: ")
         bibtex_key = get_user_input("bibtex key: ")
-        bibtex_information = get_user_input("bib entry: ")
+        bibtex_form = get_user_input("Do you want to enter the bibtex entry via a separate file?\n1) Yes\n2) No\nYour choice: ")
+        if cast(bibtex_form) == 1:
+            bibtex_information_file= get_user_input("Enter filename: ")
+            with open(bibtex_information_file) as f:
+                bibtex_information = f.read()
+        else:
+            bibtex_information = get_user_input("bib entry: ")
         content = get_user_input("summary of the paper: ")
         authors = author.split(", ")
         successful = db_connector.add_entry_to_db(
@@ -108,9 +114,9 @@ class UserInteraction:
 
     def interact(
         self,
-        config_file: str = "../../database.crypt",
-        config_section: str = "postgresql",
-        key: str = "../../key",
+        config_file: str,
+        config_section: str,
+        key: str,
     ):
         print("Welcome! Connecting to the database, one moment...")
         config_reader = ConfigReader(config_file, config_section, key)
@@ -122,7 +128,7 @@ class UserInteraction:
         )
         print("Connected to the database.")
         operation = get_user_input(
-            "What do you want to do?\n1) Search the database\n2) Add an entry\n 3) (Q)uit\n"
+            "What do you want to do?\n1) Search the database\n2) Add an entry\n3) (Q)uit\nYour choice: "
         )
         while operation != "q" or cast(operation) == 3:
             match operation:
@@ -136,10 +142,34 @@ class UserInteraction:
                 case _:
                     print("Your input was invalid")
             operation = get_user_input(
-                "What do you want to do?\n1) Search the database\n2) Add an entry\n 3) (Q)uit\n"
+                "What do you want to do?\n1) Search the database\n2) Add an entry\n3) (Q)uit\n"
             )
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Define parameters for database connection",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="../../database.crypt",
+        help="configuration file of the used db_connector",
+    )
+    parser.add_argument(
+        "--section",
+        type=str,
+        default="postgresql",
+        help="section of the config file to use",
+    )
+    parser.add_argument(
+        "-k", "--key", type=str, default="../../key", help="decryption key file"
+    )
+
+    args = parser.parse_args()
     user = UserInteraction()
-    user.interact()
+    user.interact(config_file=args.config, config_section=args.section, key=args.key)
