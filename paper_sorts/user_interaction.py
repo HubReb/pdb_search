@@ -25,13 +25,10 @@ class UserInteraction:
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-
         # add formatter to ch
         ch.setFormatter(formatter)
-
         # add ch to logger
         logger.addHandler(ch)
-
         self.logger = logger
 
 
