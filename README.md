@@ -1,4 +1,4 @@
-# Off-line Paper Database searcher 
+# Off-line Paper Database searcher - original version
 
 A small, bare-bones application to add publication metadata to a postgresql database for later querying in case no online connection
 is available to enable querying one of the freely available online resources, e.g. traveling by train.
