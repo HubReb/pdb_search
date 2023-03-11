@@ -3,6 +3,7 @@
 import logging
 
 from paper_sorts.database_connector import DatabaseConnector
+from paper_sorts.config_reader import ConfigReader
 from paper_sorts.helpers import (
     get_user_choice,
     pretty_print_results,
@@ -105,56 +106,40 @@ class UserInteraction:
         )
         return False
 
+    def interact(
+        self,
+        config_file: str = "../../database.crypt",
+        config_section: str = "postgresql",
+        key: str = "../../key",
+    ):
+        print("Welcome! Connecting to the database, one moment...")
+        config_reader = ConfigReader(config_file, config_section, key)
+        database_connector = DatabaseConnector(
+            config_reader.db_config,
+            logging.DEBUG,
+            "database_tester_logger",
+            log_file="db_connector_test.log",
+        )
+        print("Connected to the database.")
+        operation = get_user_input(
+            "What do you want to do?\n1) Search the database\n2) Add an entry\n 3) (Q)uit\n"
+        )
+        while operation != "q" or cast(operation) == 3:
+            match operation:
+                case "1":
+                    self.search(database_connector)
+                case "2":
+                    self.add(database_connector)
+                case "3" | "q":
+                    print("Closing connection...")
+                    break
+                case _:
+                    print("Your input was invalid")
+            operation = get_user_input(
+                "What do you want to do?\n1) Search the database\n2) Add an entry\n 3) (Q)uit\n"
+            )
+
 
 if __name__ == "__main__":
-    import argparse
-    from paper_sorts.config_reader import ConfigReader
-
-    parser = argparse.ArgumentParser(
-        description="transform latex list into postgresql DB",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        default="../../database.crypt",
-        help="configuration file of the used db_connector",
-    )
-    parser.add_argument(
-        "--section",
-        type=str,
-        default="postgresql",
-        help="section of the config file to use",
-    )
-    parser.add_argument(
-        "-k", "--key", type=str, default="../../key", help="decryption key file"
-    )
-    parser.add_argument(
-        "-l",
-        "--literature_file",
-        type=str,
-        default="../../literature_overview.tex",
-        help="latex file",
-    )
-    parser.add_argument(
-        "-b", "--bib-file", type=str, default="../../bib.bib", help="bib-file"
-    )
-    parser.add_argument(
-        "-s",
-        "--summary",
-        type=str,
-        default="This is a test entry",
-        help="one sentence summary of the paper",
-    )
-    args = parser.parse_args()
-    config_params = ConfigReader(args.config, args.section, args.key)
-    config_reader = ConfigReader(args.config, args.section, args.key)
-    database = DatabaseConnector(
-        config_params.db_config,
-        logging.DEBUG,
-        "database_logger",
-        log_file="db_connector.log",
-    )
     user = UserInteraction()
-    user.search(database)
+    user.interact()
