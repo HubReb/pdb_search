@@ -46,6 +46,15 @@ class DataBaseTest(unittest.TestCase):
             "database_tester_logger",
             log_file="db_connector_test.log",
         )
+        self.assertRaises(
+            ValueError,
+            database.delete_entry_from_database,
+            "test",
+            ["list"],
+            "x",
+            "This is a test",
+            "This is a test",
+        )
         self.assertTrue(
             database.add_entry_to_db(
                 "test",
@@ -55,13 +64,15 @@ class DataBaseTest(unittest.TestCase):
                 "This is a test",
             )
         )
-        self.assertRaises(ValueError, database.add_entry_to_db,
-                "test",
-                ["list"],
-                "x",
-                "This is a test",
-                "This is a test",
-            )
+        self.assertRaises(
+            ValueError,
+            database.add_entry_to_db,
+            "test",
+            ["list"],
+            "x",
+            "This is a test",
+            "This is a test",
+        )
         database.delete_entry_from_database(
             "test",
             ["list"],
