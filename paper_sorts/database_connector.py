@@ -3,19 +3,10 @@
 from typing import List
 import logging
 
-from psycopg import sql, connect, DatabaseError
-from psycopg2.extensions import cursor, connection
+from psycopg import DatabaseError
 
 from paper_sorts.helpers import iterate_through_papers
-
-
-def cast(user_input: str) -> int:
-    """Check if user input is valid and cast to Integer if so"""
-    try:
-        cast_to_int = int(user_input)
-    except ValueError:
-        return -1
-    return cast_to_int
+from paper_sorts.psycopg_db import PsycopgDB
 
 
 class DatabaseConnector:
@@ -46,20 +37,11 @@ class DatabaseConnector:
 
         # add ch to logger
         self.logger.addHandler(ch)
-
-    def get_connection_and_cursor(self) -> [connection, cursor]:
-        con = connect(**self.config_parameters)
-        cur = con.cursor()
-        return con, cur
+        self.databaseHandler = PsycopgDB(self.config_parameters)
 
     def add_data_from_dict(self, data_dict: dict):
         self.create_tables()
-        sql_instruction = (
-            "INSERT INTO {} (title, contents, bibtex_id) VALUES (%s, %s, %s)"
-        )
-        con = None
         try:
-            con, cur = self.get_connection_and_cursor()
             for title, values in data_dict.items():
                 bibtex_key = values["bibtex_id"]
                 if not bibtex_key:
@@ -68,214 +50,135 @@ class DatabaseConnector:
                 authors = values["author"]
                 content = values["contents"]
                 bibtex = values["bibtex"]
-                cur.execute(
-                    sql.SQL("select exists(select * from papers where bibtex_id=%s);"),
+                self.databaseHandler.store_in_db(
+                    "select exists(select * from papers where bibtex_id=%s);",
                     (bibtex_key,),
                 )
-                if cur.fetchone()[0]:
+                database_entries = self.databaseHandler.fetch_from_db(
+                    "select exists(select * from papers where bibtex_id=%s);",
+                    (bibtex_key,),
+                )
+                if database_entries[0]:
                     self.logger.info(
                         "bibtex key %s already in database - skipping", bibtex_key
                     )
                     continue
-                cur.execute(
-                    sql.SQL("insert into bib values (%s, %s);"), (bibtex_key, bibtex)
+                self.databaseHandler.store_in_db(
+                    "insert into bib values (%s, %s);", (bibtex_key, bibtex)
                 )
-                cur.execute(
-                    sql.SQL(sql_instruction).format(sql.Identifier("papers")),
-                    [title, content, bibtex_key],
+                self.databaseHandler.store_in_db(
+                    "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)",
+                    (title, content, bibtex_key),
                 )
                 for author in authors:
-                    self.__add_single_author(author, cur)
+                    self.__add_single_author(author)
                     self.logger.info(
                         f"added author {author} and paper {title} to database"
                     )
-                con.commit()
 
         except DatabaseError as database_error:
             self.logger.exception(database_error)
-            if con:
-                con.rollback()
-
-        finally:
-            if con:
-                con.close()
 
     def create_tables(self):
-        con = None
         try:
-            con, cur = self.get_connection_and_cursor()
-            con.commit()
-            cur.execute(
-                sql.SQL(
-                    "CREATE  TABLE IF NOT EXISTS authors_papers (id SERIAL PRIMARY KEY, author_id INT, "
-                    "paper_id INT) ; "
-                )
+            self.databaseHandler.store_in_db(
+                "CREATE  TABLE IF NOT EXISTS authors_papers (id SERIAL PRIMARY KEY, author_id INT, "
+                "paper_id INT) ; "
             )
-            cur.execute(
-                sql.SQL(
-                    "CREATE  TABLE IF NOT EXISTS  authors_id (id SERIAL PRIMARY KEY, author TEXT) ; "
-                )
+            self.databaseHandler.store_in_db(
+                "CREATE  TABLE IF NOT EXISTS  authors_id (id SERIAL PRIMARY KEY, author TEXT) ; "
             )
             # if our bibtex identifier is not unique, the entire db_connector is useless
-            cur.execute(
-                sql.SQL(
-                    "CREATE  TABLE IF NOT EXISTS  bib (bibtex_id text primary key, bibtex text) ;"
-                ).format(sql.Identifier("bib"))
+            self.databaseHandler.store_in_db(
+                "CREATE  TABLE IF NOT EXISTS  bib (bibtex_id text primary key, bibtex text) ;"
             )
-            con.commit()
-            cur.execute(
-                sql.SQL(
-                    "CREATE  TABLE IF NOT EXISTS   papers (id SERIAL PRIMARY KEY, title TEXT, contents TEXT, "
-                    "bibtex_id TEXT, "
-                    "constraint fk_bibtex_id foreign key(bibtex_id) references bib(bibtex_id));"
-                ).format(sql.Identifier("papers"))
+            self.databaseHandler.store_in_db(
+                "CREATE  TABLE IF NOT EXISTS   papers (id SERIAL PRIMARY KEY, title TEXT, contents TEXT, "
+                "bibtex_id TEXT, "
+                "constraint fk_bibtex_id foreign key(bibtex_id) references bib(bibtex_id));"
             )
-            con.commit()
             self.logger.info("created all tables")
 
-        except DatabaseError as database_error:
-            self.logger.exception(database_error)
-            if con:
-                con.rollback()
+        except DatabaseError as exc:
+            self.logger.exception(exc)
 
-        finally:
-            if con:
-                con.close()
-
-    @staticmethod
-    def __add_single_author(author: str, cur: cursor):
-        cur.execute(sql.SQL("select max(id) from papers;"))
-        paper_id = cur.fetchone()[0]
-        cur.execute(sql.SQL("select * from authors_id where author=%s;"), (author,))
-        author_id = cur.fetchone()
+    def __add_single_author(self, author: str):
+        paper_id = self.databaseHandler.fetch_from_db("select max(id) from papers;")[0]
+        author_id = self.databaseHandler.fetch_from_db(
+            "select * from authors_id where author=%s;", (author,)
+        )
         if author_id:
-            cur.execute(
-                sql.SQL(
-                    "insert into authors_papers (author_id, paper_id) values (%s, %s);"
-                ),
+            self.databaseHandler.store_in_db(
+                "insert into authors_papers (author_id, paper_id) values (%s, %s);",
                 (author_id[0], paper_id),
             )
         else:
-            cur.execute(
-                sql.SQL("insert into authors_id (author) values (%s);"), (author,)
+            self.databaseHandler.store_in_db(
+                "insert into authors_id (author) values (%s);", (author,)
             )
-            cur.execute(sql.SQL("select max(id) from authors_id;"))
-            author_id = cur.fetchone()[0]
-            cur.execute(
-                sql.SQL(
-                    "insert into authors_papers (author_id, paper_id) values (%s, %s);"
-                ),
+            author_id = self.databaseHandler.fetch_from_db(
+                "select max(id) from authors_id;"
+            )[0]
+            self.databaseHandler.store_in_db(
+                "insert into authors_papers (author_id, paper_id) values (%s, %s);",
                 (author_id, paper_id),
             )
 
-    def search_for_bibtex_entry_by_id(self, paper) -> List[str] | None:
-        con = None
-        try:
-            if paper:
-                con, curs = self.get_connection_and_cursor()
-                curs.execute(
-                    sql.SQL("select * from bib where bibtex_id=%s;"), (paper[3],)
-                )
-                bibtex_data = curs.fetchone()
-                con.close()
-                return bibtex_data
-            raise KeyError("Bibtex entry was not found!")
-        except DatabaseError as database_error:
-            self.logger.exception(database_error)
-            if con:
-                con.rollback()
-                con.close()
-            return None
-
-    def search_by_title(self, title) -> List[List[str]] | None:
-        con = None
-        try:
-            con, curs = self.get_connection_and_cursor()
-            curs.execute(
-                sql.SQL(
-                    "select  authors_id.author, papers.id, papers.title, papers.bibtex_id, papers.contents from papers INNER JOIN "
-                    "authors_papers papers_authors on papers_authors.paper_id=papers.id "
-                    "INNER JOIN authors_id on papers_authors.author_id = authors_id.id where papers.title=%s"
-                ),
-                (title,),
+    def search_for_bibtex_entry_by_id(self, paper: List) -> List[str] | None:
+        if paper:
+            return self.databaseHandler.fetch_from_db(
+                "select * from bib where bibtex_id=%s;", (paper[3],)
             )
-            papers = curs.fetchall()
-            if not papers:
-                self.logger.error(
-                    "Paper with title %s not found in table papers, abort!", title
-                )
-                con.close()
-                raise KeyError("Paper not found!")
-            down_papers = []
-            if len(set(p[2] for p in papers)) > 1:
-                down_papers = iterate_through_papers(papers)
-            else:
-                authors = ""
-                for paper in papers:
-                    authors += f"{paper[0]} and "
-                down_papers.append([authors[:-5]] + list(papers[0][1:]))
-                con.close()
-            return down_papers
+        raise KeyError("Bibtex entry was not found!")
 
-        except DatabaseError as database_error:
-            self.logger.exception(database_error)
-            if con:
-                con.rollback()
-                con.close()
-            return None
+    def search_by_title(self, title: str) -> List[List[str]] | None:
+        papers = self.databaseHandler.fetch_from_db(
+            "select  authors_id.author, papers.id, papers.title, papers.bibtex_id, papers.contents from papers INNER JOIN "
+            "authors_papers papers_authors on papers_authors.paper_id=papers.id "
+            "INNER JOIN authors_id on papers_authors.author_id = authors_id.id where papers.title=%s",
+            (title,),
+        )
+        if not papers:
+            self.logger.info(
+                "Paper with title %s not found in table papers, abort!", title
+            )
+            raise KeyError("Paper not found!")
+        down_papers = []
+        if len(set(p[2] for p in papers)) > 1:
+            down_papers = iterate_through_papers(papers)
+        else:
+            authors = ""
+            for paper in papers:
+                authors += f"{paper[0]} and "
+            down_papers.append([authors[:-5]] + list(papers[0][1:]))
+        return down_papers
 
     def search_by_author(self, author: str) -> List[str] | None:
         """Search authors_papers table by author, then search papers table"""
-        con = None
-        try:
-            con, curs = self.get_connection_and_cursor()
-
-            curs.execute(
-                sql.SQL(
-                    "select authors_id.id, authors_id.author, paper_id, title, bibtex_id, contents from authors_id INNER JOIN authors_papers on "
-                    "authors_papers.author_id=authors_id.id INNER JOIN papers on paper_id=papers.id where author=%s;"
-                ),
-                (author,),
-            )
-            results = curs.fetchall()
-            if not results:
-                self.logger.error("author not found")
-                con.close()
-                raise KeyError("Author not found!")
-            con.close()
-            return results
-        except DatabaseError as database_error:
-            self.logger.exception(database_error)
-            if con:
-                con.rollback()
-                con.close()
-            return None
+        results = self.databaseHandler.fetch_from_db(
+            "select authors_id.id, authors_id.author, paper_id, title, bibtex_id, contents from authors_id INNER JOIN authors_papers on "
+            "authors_papers.author_id=authors_id.id INNER JOIN papers on paper_id=papers.id where author=%s;",
+            (author,),
+        )
+        if not results:
+            self.logger.info("author not found")
+            raise KeyError("Author not found!")
+        return results
 
     def search_for_bibtex_entry_by_paper_title(self, paper: List) -> List[str]:
-        con = None
-        try:
-            con, curs = self.get_connection_and_cursor()
-            curs.execute(
-                sql.SQL(
-                    "select authors_id.author, paper_id from authors_id INNER JOIN "
-                    "authors_papers on authors_id.id = authors_papers.author_id where paper_id = %s"
-                ),
-                (paper[2],),
-            )
+        author_names = self.databaseHandler.fetch_from_db(
+            "select authors_id.author, paper_id from authors_id INNER JOIN "
+            "authors_papers on authors_id.id = authors_papers.author_id where paper_id = %s",
+            (paper[2],),
+        )
+        if author_names:
             author_pretty = " and ".join(
-                [author_name[0] for author_name in curs.fetchall()]
+                [author_name[0] for author_name in author_names]
             )
             author_pretty = author_pretty[:-5]
-            if con:
-                con.close()
             return [author_pretty] + list(paper[2:])
-
-        except DatabaseError as database_error:
-            self.logger.exception(database_error)
-            if con:
-                con.rollback()
-                con.close()
-            return []
+        self.logger.info("entry not found in database")
+        return []
 
     def add_entry_to_db(
         self,
@@ -288,44 +191,39 @@ class DatabaseConnector:
         """
         Add new entry to db_connector table.
 
-        :param new_bibtex_entry: complete bibtex entry a string
+        :param new_bibtex_entry: complete bibtex entry as a string
         :param author_names: name of the authors in a list, one element for each author
         :param bibtex_ident: bibtex identifier of the publication, must be unique
         :param title: title of the publication
         :param content: one sentence summarizing the content of the publication
         :return: -
         """
-        con = None
         try:
-            con, curs = self.get_connection_and_cursor()
             try:
-                self.sanity_checks(bibtex_ident, curs)
+                self.sanity_checks(bibtex_ident)
             except ValueError as exc:
-                con.close()
                 raise ValueError(
                     "Could not add entry to db_connector. Check logs."
                 ) from exc
-            curs.execute(
-                sql.SQL("insert into bib values (%s, %s);"),
+            self.databaseHandler.store_in_db(
+                "insert into bib values (%s, %s);",
                 (bibtex_ident, new_bibtex_entry),
             )
             sql_instruction = (
                 "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)"
             )
-            curs.execute(sql.SQL(sql_instruction), [title, content, bibtex_ident])
-            curs.execute(sql.SQL("select id from papers where title=%s"), (title,))
-            paper_id = curs.fetchone()[0]
+            self.databaseHandler.store_in_db(
+                sql_instruction, (title, content, bibtex_ident)
+            )
+            paper_id = self.databaseHandler.fetch_from_db(
+                "select id from papers where title=%s", (title,)
+            )[0][0]
             for author in author_names:
-                self.insert_single_author(author, curs, paper_id)
-            con.commit()
-            con.close()
+                self.insert_single_author(author, paper_id)
             return True
 
         except DatabaseError as database_error:
             self.logger.error(database_error)
-            if con:
-                con.rollback()
-                con.close()
             return False
 
     def delete_entry_from_database(
@@ -336,94 +234,71 @@ class DatabaseConnector:
         title: str,
         content: str,
     ) -> bool:
-        con = None
         try:
-            con, curs = self.get_connection_and_cursor()
-            curs.execute(sql.SQL("select id from papers where title=%s"), (title,))
-            try:
-                paper_id = curs.fetchone()[0]
-            except TypeError as exc:
-                con.close()
-                self.logger.error("paper %s does not exist in database", title)
-                raise ValueError(
-                    f"Paper {title} does not exist in database Check logs."
-                ) from exc
+            paper_id = self.databaseHandler.fetch_from_db(
+                "select id from papers where title=%s", (title,)
+            )[0][0]
+        except IndexError:
+            self.logger.error("paper %s does not exist in database", title)
+            raise ValueError(f"Paper {title} does not exist in database Check logs.")
 
-            for author in author_names:
-                curs.execute(
-                    sql.SQL("select * from authors_id where author=%s;"), (author,)
-                )
-                author_id = curs.fetchone()
-                curs.execute(
-                    sql.SQL(
-                        "delete from authors_papers where (author_id=%s and paper_id=%s);"
-                    ),
-                    (author_id[0], paper_id),
-                )
-                self.logger.info(
-                    f"marking author {author_id[0]} and paper {title} for deletion"
-                )
-            sql_instruction = (
-                "delete from papers where (title=%s and contents=%s and bibtex_id=%s)"
+        for author in author_names:
+            author_id = self.databaseHandler.fetch_from_db(
+                "select * from authors_id where author=%s;", (author,)
+            )[0]
+            self.databaseHandler.delete_from_db(
+                "delete from authors_papers where (author_id=%s and paper_id=%s);",
+                (author_id[0], paper_id),
             )
-            curs.execute(sql.SQL(sql_instruction), [title, content, bibtex_ident])
             self.logger.info(
-                "marking bibtex id %s for deletion in papers", bibtex_ident
+                f"marking author {author_id[1]} and paper {title} for deletion"
             )
-            curs.execute(
-                sql.SQL("delete from bib where (bibtex_id=%s and bibtex=%s);"),
-                (bibtex_ident, new_bibtex_entry),
-            )
-            self.logger.info("marking bibtex id %s for deletion", bibtex_ident)
-            con.commit()
-            self.logger.info("successfully deleted data")
-            con.close()
-            return True
+        self.databaseHandler.delete_from_db(
+            "delete from papers where (title=%s and contents=%s and bibtex_id=%s)",
+            (title, content, bibtex_ident),
+        )
+        self.logger.info("marking bibtex id %s for deletion in papers", bibtex_ident)
+        self.databaseHandler.delete_from_db(
+            "delete from bib where (bibtex_id=%s and bibtex=%s);",
+            (bibtex_ident, new_bibtex_entry),
+        )
+        self.logger.info("marking bibtex id %s for deletion", bibtex_ident)
+        self.logger.info("successfully deleted data")
+        return True
 
-        except DatabaseError as database_error:
-            self.logger.error(database_error)
-            if con:
-                con.rollback()
-                con.close()
-            return False
-
-    def sanity_checks(self, bibtex_ident, curs):
-        curs.execute(sql.SQL("select relname from pg_class where relname = 'papers';"))
-        if not curs.fetchone():
+    def sanity_checks(self, bibtex_ident):
+        if not self.databaseHandler.fetch_from_db(
+            "select relname from pg_class where relname = 'papers';"
+        ):
             self.logger.error("Table papers not found in db_connector, abort!")
             raise ValueError("Table papers not found!")
 
-        curs.execute(
-            sql.SQL(
-                f"select exists(select * from papers where bibtex_id='{bibtex_ident}');"
-            )
-        )
-        if curs.fetchone()[0]:
+        if self.databaseHandler.fetch_from_db(
+            f"select exists(select * from papers where bibtex_id='{bibtex_ident}');"
+        )[0][0]:
             self.logger.error("Entry %s already exists in table papers", bibtex_ident)
             raise ValueError("Entry already exists")
 
-    def insert_single_author(self, author, curs, paper_id):
-        curs.execute(sql.SQL("select * from authors_id where author=%s;"), (author,))
-        author_id = curs.fetchone()
+    def insert_single_author(self, author, paper_id):
+        author_id = self.databaseHandler.fetch_from_db(
+            "select * from authors_id where author=%s;", (author,)
+        )[0]
         if author_id:
-            curs.execute(
-                sql.SQL(
-                    "insert into authors_papers (author_id, paper_id) values (%s, %s);"
-                ),
+            self.databaseHandler.store_in_db(
+                "insert into authors_papers (author_id, paper_id) values (%s, %s);",
                 (author_id[0], paper_id),
             )
             self.logger.info("added author %s to table authors_papers", author)
         else:
-            curs.execute(
-                sql.SQL("insert into authors_id (author) values (%s);"), (author,)
+            self.databaseHandler.store_in_db(
+                "insert into authors_id (author) values (%s);", (author,)
             )
             self.logger.info("added author %s to table authors_id", author)
-            curs.execute(sql.SQL("select id from authors_id where author=author;"))
-            author_id = curs.fetchone()[0]
-            curs.execute(
-                sql.SQL(
-                    "insert into authors_papers (author_id, paper_id) values (%s, %s);"
-                ),
+            author_id = self.databaseHandler.fetch_from_db(
+                "select id from authors_id where author=author;"
+            )[0]
+            self.databaseHandler.store_in_db(
+                "insert into authors_papers (author_id, paper_id) values (%s, %s);",
                 (author_id, paper_id),
             )
             self.logger.info("added author %s to table authors_papers", author)
