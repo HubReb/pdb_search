@@ -97,4 +97,5 @@ class PsycopgDB:
         except DatabaseError as database_error:
             self.logger.exception(database_error)
             if con:
+                con.rollback()
                 con.close()
