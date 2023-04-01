@@ -19,7 +19,7 @@ class DatabaseConnector:
     ):
         """
         Initialize DatabaseConnector object to interact with the database for adding, removing, deleting information and
-        searching the database..
+        searching the database.
 
         :param config_parameters: dictionary containing the configuration that defines the database interaction
         :param logging_level: specifies the level of the logger
@@ -165,7 +165,7 @@ class DatabaseConnector:
 
     def search_by_title(self, title: str) -> List[Optional[List[str]]]:
         """
-        Search the database for the entire paper information record via the paper_information's title
+        Search the database for the entire paper information record via the title of the paper
         :param title: title of the paper to search for
         :return: all paper's meta information whose title matches the parameter title
         :raises KeyError: if no paper with the specified title could be found
@@ -399,8 +399,8 @@ class DatabaseConnector:
         Update an already existent entry in the database in the table specified by the table parameter.
 
         :param update_column: column of the table to be updated
-        :param update_value: new value to set the entry in update_column in table to
-        :param table: table to update
+        :param update_value: new value to set the entry in update_column in the specified table to
+        :param table: table that will  be updated
         :param identifier: unique author_identification of the row to update - may be paper_id, author_id or bibtex_id
         :raises ValueError: if the update_column is not found in table
         :raises ValueError: if the table authors_papers is attempted to be accessed
