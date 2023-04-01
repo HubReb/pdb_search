@@ -90,7 +90,7 @@ class DatabaseConnector:
             )
             # if our bibtex identifier is not unique, the entire db_connector is useless
             self.database_handler.store_in_db(
-                "CREATE  TABLE IF NOT EXISTS  bib (bibtex_id text primary key, bibtex text) ;"
+                "CREATE  TABLE IF NOT EXISTS  bib (bibtex_id text primary key, bibtex text unique (bibtex));"
             )
             self.database_handler.store_in_db(
                 "CREATE  TABLE IF NOT EXISTS   papers (id SERIAL PRIMARY KEY, title TEXT, contents TEXT, "
@@ -133,9 +133,10 @@ class DatabaseConnector:
 
     def search_by_title(self, title: str) -> List[List[str]] | None:
         papers = self.database_handler.fetch_from_db(
-            "select  authors_id.author, papers.id, papers.title, papers.bibtex_id, papers.contents from papers INNER JOIN "
-            "authors_papers papers_authors on papers_authors.paper_id=papers.id "
-            "INNER JOIN authors_id on papers_authors.author_id = authors_id.id where papers.title=%s",
+            "select  authors_id.author, papers.id, papers.title, papers.bibtex_id, papers.contents from "
+            "papers INNER JOIN "
+            "authors_papers on authors_papers.paper_id=papers.id "
+            "INNER JOIN authors_id on authors_papers.author_id = authors_id.id where papers.title=%s",
             (title,),
         )
         if not papers:
@@ -144,6 +145,7 @@ class DatabaseConnector:
             )
             raise KeyError("Paper not found!")
         down_papers = []
+
         if len(set(p[2] for p in papers)) > 1:
             down_papers = iterate_through_papers(papers)
         else:
@@ -228,7 +230,7 @@ class DatabaseConnector:
 
     def delete_entry_from_database(
         self,
-        new_bibtex_entry: str,
+        bibtex_entry: str,
         author_names: list,
         bibtex_ident: str,
         title: str,
@@ -247,14 +249,28 @@ class DatabaseConnector:
         for author in author_names:
             author_id = self.database_handler.fetch_from_db(
                 "select * from authors_id where author=%s;", (author,)
-            )[0]
-            self.database_handler.delete_from_db(
-                "delete from authors_papers where (author_id=%s and paper_id=%s);",
-                (author_id[0], paper_id),
             )
-            self.logger.info(
-                f"marking author {author_id[1]} and paper {title} for deletion"
-            )
+            if author_id:
+                author_id = author_id[0]
+                self.database_handler.delete_from_db(
+                    "delete from authors_papers where (author_id=%s and paper_id=%s);",
+                    (author_id[0], paper_id),
+                )
+                self.logger.info(
+                    f"marking author '{author_id[1]}' and paper '{title}' for deletion"
+                )
+                authors = self.database_handler.fetch_from_db(
+                    "select * from authors_papers where author_id=%s",
+                    (author_id[0],)
+                )
+                if not authors:
+                    self.database_handler.delete_from_db(
+                        "delete from authors_id where id=%s;",
+                        (author_id[0], ),
+                    )
+                    self.logger.info(
+                        f"marking author '{author_id[1]}' for deletion in authors_id"
+                    )
         self.database_handler.delete_from_db(
             "delete from papers where (title=%s and contents=%s and bibtex_id=%s)",
             (title, content, bibtex_ident),
@@ -262,7 +278,7 @@ class DatabaseConnector:
         self.logger.info("marking bibtex id %s for deletion in papers", bibtex_ident)
         self.database_handler.delete_from_db(
             "delete from bib where (bibtex_id=%s and bibtex=%s);",
-            (bibtex_ident, new_bibtex_entry),
+            (bibtex_ident, bibtex_entry),
         )
         self.logger.info("marking bibtex id %s for deletion", bibtex_ident)
         self.logger.info("successfully deleted data")
@@ -284,8 +300,9 @@ class DatabaseConnector:
     def insert_single_author(self, author, paper_id):
         author_id = self.database_handler.fetch_from_db(
             "select * from authors_id where author=%s;", (author,)
-        )[0]
+        )
         if author_id:
+            author_id = author_id[0]
             self.database_handler.store_in_db(
                 "insert into authors_papers (author_id, paper_id) values (%s, %s);",
                 (author_id[0], paper_id),
@@ -297,10 +314,112 @@ class DatabaseConnector:
             )
             self.logger.info("added author %s to table authors_id", author)
             author_id = self.database_handler.fetch_from_db(
-                "select id from authors_id where author=author;"
-            )[0]
+                "select id from authors_id where author=%s;",
+                (author, )
+            )[0][0]
             self.database_handler.store_in_db(
                 "insert into authors_papers (author_id, paper_id) values (%s, %s);",
                 (author_id, paper_id),
             )
             self.logger.info("added author %s to table authors_papers", author)
+
+    def update_entry(self, update_column, update_value, table: str, identifier: str):
+        if "_id" in update_column:
+            raise ValueError("IDs are unique and must not be changed!")
+        match table:
+            case "papers":
+                match update_column:
+                    case "contents":
+                        query = "update papers set contents=%s where id=%s;"
+                    case "title":
+                        query = "update papers set title=%s where id=%s;"
+                    case _:
+                        raise ValueError("Column %s is not present in table papers", update_column)
+                self.database_handler.update_db_entry(query, identifier, update_value)
+                self.logger.info("updated column %s wth %s" % (update_column, update_value))
+            case "authors_papers":
+                self.logger.error("Tried to access table authors_papers!")
+                raise ValueError("Table authors_papers has no column %s that is changeable!", update_column)
+            case "authors_id":
+                match update_column:
+                    case "author":
+                        # check if new author already exists
+                        author_id = self.database_handler.fetch_from_db(
+                            "select id from authors_id where author=%s;", (update_value,)
+                        )
+                        old_author_id = self.database_handler.fetch_from_db(
+                            "select id from authors_id where author=%s;", (identifier,)
+                        )[0][0]
+                        if author_id:
+                            self.logger.info("found author %s in table authors_id" % update_value)
+                            author_id = author_id[0]
+                            # new author already exists, we need to update several tables to ensure data validity
+                            self.database_handler.update_db_entry(
+                                "update authors_papers set author_id=%s where author_id=%s",
+                                author_id[0],
+                                old_author_id
+                            )
+                            self.logger.info("updated author_id %s to  %s in table authors_id" % (old_author_id, author_id[0]))
+                            # delete possible duplicate we may have after update
+                            self.database_handler.delete_from_db(
+                                "delete from authors_papers a "
+                                "using authors_papers b "
+                                "where b.author_id = a.author_id and b.id = a.id and a.id != b.id"
+                                "; "
+                            )
+                            self.logger.info("deleted possible duplicates in authors_papers")
+                        else:
+                            self.logger.info("did not find author %s in table authors_id" % update_value)
+                            # if author doesn't exist, first create him
+                            self.database_handler.store_in_db(
+                                "insert into authors_id (author) values (%s);", (update_value,)
+                            )
+                            self.logger.info("created author %s in table authors_id" % update_value)
+                            author_id = self.database_handler.fetch_from_db(
+                                "select max(id) from authors_id;"
+                            )[0]
+                            self.database_handler.update_db_entry(
+                                "update authors_papers set author_id=%s where author_id=%s",
+                                old_author_id,
+                                author_id[0]
+                            )
+                            self.logger.info(
+                                "updated author_id %s to  %s in table authors_id" % (old_author_id, author_id[0]))
+                        self.database_handler.delete_from_db(
+                            "delete from authors_id where id=%s", (old_author_id, )
+                        )
+                        self.logger.info(
+                            "deleted author_id %s from table authors_id" % old_author_id)
+                        authors = self.database_handler.fetch_from_db(
+                            "select * from authors_papers where author_id=%s",
+                            (author_id[0],)
+                        )
+                        if not authors:
+                            self.database_handler.delete_from_db(
+                                "delete from authors_id where id=%s;",
+                                (author_id[0],),
+                            )
+                            self.logger.info(
+                                f"marking author '{author_id[0]}' for deletion in authors_id"
+                            )
+                    case _:
+                        raise ValueError("Column %s is not present in table authors_id", update_column)
+            case "bib":
+                match update_column:
+                    case "bibtex":
+                        bibtex_p = self.database_handler.fetch_from_db(
+                            "select bibtex_id from bib where bibtex=%s;", (update_value,)
+                        )
+                        if bibtex_p:
+                            # we already have this entry then - hurts unique constraint
+                            raise ValueError("bibtex is unique - value already exists!")
+                        else:
+                            self.database_handler.update_db_entry(
+                                "update bib set bibtex=%s where bibtex_id=%s",
+                                identifier,
+                                update_value
+                            )
+                            self.logger.info("updated  bibtex entry for bibtex_id %s to %s" % (identifier, update_value))
+                    case _:
+                        raise ValueError("Column %s is not present in table bibtex", update_column)
+

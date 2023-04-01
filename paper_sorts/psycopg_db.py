@@ -99,3 +99,17 @@ class PsycopgDB:
             if con:
                 con.rollback()
                 con.close()
+
+    def update_db_entry(self, query: str, identifier: str, update_value: str) -> None:
+        con = None
+        try:
+            con, cur = self.get_connection_and_cursor()
+            cur.execute(sql.SQL(query),  (update_value, identifier))
+            con.commit()
+            con.close()
+        except DatabaseError as database_error:
+            self.logger.exception(database_error)
+            if con:
+                con.rollback()
+                con.close()
+        pass
