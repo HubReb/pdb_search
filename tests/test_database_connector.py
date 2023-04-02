@@ -49,7 +49,7 @@ class DataBaseTest(unittest.TestCase):
 
         self.assertRaises(
             ValueError,
-            database.delete_entry_from_database,
+            database.delete_paper_entry_from_database,
             "test",
             ["list"],
             "x",
@@ -75,7 +75,7 @@ class DataBaseTest(unittest.TestCase):
             "This is a test",
         )
         self.assertTrue(
-            database.delete_entry_from_database(
+            database.delete_paper_entry_from_database(
                 "test",
                 ["list"],
                 "x",
@@ -127,7 +127,7 @@ class DataBaseTest(unittest.TestCase):
             )[0][0],
             "updated contents"
         )
-        database.delete_entry_from_database(
+        database.delete_paper_entry_from_database(
             "test",
             ["list"],
             "x",
@@ -168,6 +168,7 @@ class DataBaseTest(unittest.TestCase):
             "database_tester_logger",
             log_file="db_connector_test.log",
         )
+
         database.add_entry_to_db(
             "test",
             ["list"],
@@ -175,6 +176,7 @@ class DataBaseTest(unittest.TestCase):
             "This is a test",
             "This is a test",
         )
+
         author_id = database.database_handler.fetch_from_db(
                 "select id from authors_id where author='list'",
         )[0][0]
@@ -200,7 +202,7 @@ class DataBaseTest(unittest.TestCase):
             papers
         )
         self.assertTrue(
-            database.delete_entry_from_database(
+            database.delete_paper_entry_from_database(
                 "test",
                 ["changed_authors"],
                 "x",
@@ -229,7 +231,7 @@ class DataBaseTest(unittest.TestCase):
             "list"
         )
         self.assertTrue(
-            database.delete_entry_from_database(
+            database.delete_paper_entry_from_database(
                 "test",
                 ["new list"],
                 "x",
@@ -238,7 +240,7 @@ class DataBaseTest(unittest.TestCase):
             )
         )
         self.assertTrue(
-            database.delete_entry_from_database(
+            database.delete_paper_entry_from_database(
                 "another test",
                 ["new list"],
                 "u",
@@ -291,7 +293,7 @@ class DataBaseTest(unittest.TestCase):
             "x"
         )
         self.assertTrue(
-            database.delete_entry_from_database(
+            database.delete_paper_entry_from_database(
                 "y",
                 ["new list"],
                 "x",

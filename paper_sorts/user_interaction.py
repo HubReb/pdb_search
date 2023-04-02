@@ -41,18 +41,18 @@ class UserInteraction:
     def search(self, db_connector: DatabaseConnector):
         user_input = cast(
             input(
-                "Search interface\nPlease choose a method:\n1) Search by author\n2) Search by paper title\n"
+                "Search interface\nPlease choose a method:\n1) Search by author\n2) Search by paper_information title\n"
             )
         )
         while user_input < 1 or user_input > 2:
             user_input = cast(
                 input(
-                    "Please choose a valid option:\n1) Search by author\n2) Search by paper title\n"
+                    "Please choose a valid option:\n1) Search by author\n2) Search by paper_information title\n"
                 )
             )
         if user_input == 2:
             try:
-                paper_title = input("Please enter the paper title: ")
+                paper_title = input("Please enter the paper_information title: ")
                 papers = db_connector.search_by_title(paper_title.strip())
                 if not papers:
                     print("There was a db_connector error, shutting down.")
@@ -75,7 +75,7 @@ class UserInteraction:
                     print("There was a db_connector error, shutting down.")
                     return
                 chosen_paper = get_user_choice(papers)
-                paper = db_connector.search_for_bibtex_entry_by_paper_title(
+                paper = db_connector.search_for_entry_by_specified_paper_information(
                     chosen_paper
                 )
                 bibtex_data = db_connector.search_for_bibtex_entry_by_id(paper)
@@ -97,7 +97,7 @@ class UserInteraction:
                 bibtex_information = f.read()
         else:
             bibtex_information = get_user_input("bib entry: ")
-        content = get_user_input("summary of the paper: ")
+        content = get_user_input("summary of the paper_information: ")
         authors = author.split(", ")
         successful = db_connector.add_entry_to_db(
             bibtex_information, authors, bibtex_key, paper_title, content
