@@ -3,7 +3,7 @@
 from typing import Tuple, List
 import logging
 
-from psycopg import sql, connect, DatabaseError
+from psycopg2 import sql, connect, DatabaseError
 from psycopg2.extensions import cursor, connection
 
 
@@ -99,9 +99,9 @@ class PsycopgDB:
                 cur.execute(sql.SQL(query))
             else:
                 cur.execute(sql.SQL(query), format_arguments)
-
+            fetched_information = cur.fetchall()
             con.close()
-            return cur.fetchall()
+            return fetched_information
 
         except DatabaseError as database_error:
             self.logger.exception(database_error)
