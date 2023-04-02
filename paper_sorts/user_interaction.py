@@ -19,6 +19,13 @@ class UserInteraction:
         logging_level: int = logging.DEBUG,
         log_file: str = "interaction.log",
     ):
+        """
+        Interaction with the user on the command line interface.
+
+        :param logger_name: name of the logger
+        :param logging_level: specifies level to log at
+        :param log_file: name of the file to write logs to
+        """
         # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
         # create logger
         logger = logging.getLogger(logger_name)
@@ -39,6 +46,11 @@ class UserInteraction:
         self.logger = logger
 
     def search(self, db_connector: DatabaseConnector):
+        """
+        Search the database for paper information and interact with user at points of uncertainty.
+
+        :param db_connector: object to interact with the database with
+        """
         user_input = cast(
             input(
                 "Search interface\nPlease choose a method:\n1) Search by author\n2) Search by paper_information title\n"
@@ -85,6 +97,13 @@ class UserInteraction:
                 self.logger.error("shutdown")
 
     def add(self, db_connector: DatabaseConnector) -> bool:
+        """
+        Add a new paper to the database and ask user for all required information either via interaction or by providing
+        a file in which the information is stored (only for bibtex information).
+        .
+        :param db_connector: object to interact with the database with
+        :return: boolean indicating whether the paper was successfully added to the database
+        """
         author = get_user_input(
             "Please enter the necessary information\nAuthor(s), please provide a , separated list: "
         )
@@ -118,6 +137,13 @@ class UserInteraction:
         config_section: str,
         key: str,
     ):
+        """
+        Start dialog with the user and have the user select what to do with the database.
+
+        :param config_file: name of the file that specifies how to connect to the database
+        :param config_section: which section of the file to read the configuration from
+        :param key: if the configuration file is encrypted, file that contains the key to decrypt it
+        """
         print("Welcome! Connecting to the database, one moment...")
         config_reader = ConfigReader(config_file, config_section, key)
         database_connector = DatabaseConnector(
