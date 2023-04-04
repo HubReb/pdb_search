@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 
+""""
+Helper functions for other modules that are used in various places or have no connection to the specific class they are
+used in.
+"""
+
 from collections import defaultdict
-from typing import List
+from typing import List, Tuple
+import logging
 
 from pylatexenc.latex2text import LatexNodes2Text
 from pybtex.database import parse_file
@@ -10,10 +16,12 @@ from pybtex.database import parse_file
 def get_data(filename: str = None) -> dict:
     """
     Read latex data and construct dictionary of form
-    {title : {contents: content in one sentence}, {bibtex: {bibtex identifier}}
+    {title : {contents: content in one sentence}, {bibtex: {bibtex author_identification}}
 
     :param filename: name of latex file
+    :type filename: str
     :return: dictionary of above form
+    :rtype: dict
     """
     if not filename:
         filename = input("Enter filename: ")
@@ -48,19 +56,50 @@ def get_data(filename: str = None) -> dict:
             title, bibtex = None, None
     return papers_dict
 
+def create_logger(log_file: str, logger_name: str, logging_level: int):
+    """
+    Create a logger to log infos and errors, mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
+
+    :param log_file: name of the file to write logs to
+    :type log_file: str
+    :param logger_name: name of the logger to create
+    :type logger_name: str
+    :param logging_level: sets level for logging, must correspond to logging's levels, e. g. logging.DEBUG
+    :type logging_level: int
+    :return: the new logger
+    :rtype: logging.Logger
+    """
+    # create logger
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging_level)
+    # create console handler and set level to debug
+    ch = logging.FileHandler(filename=log_file)
+    ch.setLevel(logging_level)
+    # create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    # add formatter to ch
+    ch.setFormatter(formatter)
+    # add ch to logger
+    logger.addHandler(ch)
+    return logger
 
 def get_bibtex_information(papers_dict: dict, bib_somy: str) -> dict:
     """
     Read bib information from file, replace bibtex key with bibtex information and add authors.
 
     :param papers_dict: dictionary of the form
-        {title: {bibtex: bibtex identifier}, {contents: content description}}
+        {title: {bibtex: bibtex author_identification}, {contents: content description}}
+    :type papers_dict: dict
     :param bib_somy: file that contains the bibtex information
+    :type bib_somy: str
     :return: dictionary of the form
         {
-            title: {bibtex: bibtex identifier}, {contents: description},
+            title: {bibtex: bibtex author_identification}, {contents: description},
             {author: list of individual author names}
         }
+    :rtype: dict
     """
     bib_graph = parse_file(bib_somy, bib_format="bibtex")
     for i in bib_graph.entries:
@@ -77,12 +116,14 @@ def get_bibtex_information(papers_dict: dict, bib_somy: str) -> dict:
     return papers_dict
 
 
-def get_single_bibtex_information(bibsomy: str) -> tuple[str, List[str], str, str]:
+def get_single_bibtex_information(bibsomy: str) -> Tuple[str, List[str], str, str]:
     """
-    Read bib information from file
+    Read bib information from file.
 
     :param bibsomy: file that contains the bibtex information
-    :return: bibtex entry (str), authors (list), bibtex identifier (str)
+    :type bibsomy: str
+    :return: bibtex entry (str), authors (list), bibtex author_identification (str)
+    :rtype: Tuple[str, List[str], str, str]
     """
     bib_graph = parse_file(bibsomy, bib_format="bibtex")
     assert len(bib_graph.entries.keys()) == 1
@@ -104,6 +145,13 @@ def get_single_bibtex_information(bibsomy: str) -> tuple[str, List[str], str, st
 
 
 def iterate_through_papers(papers: List[List[str]]) -> List[List[str]]:
+    """
+    Convert information on authors for paper(s) given by papers parameter into an easier to read format.
+
+    :param papers: List of meta information on the paper's
+    :type papers: List[List[str]]
+    :return: List of meta information on the papers with the authors' names in an easier to read format
+    """
     id_bib = papers[0][3]
     down_papers = []
     authors = ""
@@ -118,18 +166,26 @@ def iterate_through_papers(papers: List[List[str]]) -> List[List[str]]:
 
 
 def get_user_choice(results: List) -> List:
+    """Ask user for his choice on what to do."""
     print("Following papers found: ")
     for i, paper in enumerate(results):
         print(f"{i + 1}: title: {paper[3]}")
     chosen_paper = -1
     while chosen_paper < 0 or chosen_paper >= len(results):
-        chosen_paper = cast(input("Choose paper to extract: ")) - 1
+        chosen_paper = cast(input("Choose paper_information to extract: ")) - 1
         if chosen_paper < 0 or chosen_paper >= len(results):
             print("Please choose a valid number.")
     return results[chosen_paper]
 
 
 def get_user_input(prompt: str) -> str:
+    """Wrapper around the input function to use situation specific prompts and handle the user only hitting enter.
+
+    :param prompt: instruction for the user on what to enter
+    :type prompt: str
+    :return: the user's answer
+    :rtype: str
+    """
     user_answer = input(prompt)
     while user_answer == "":
         user_answer = input(prompt)
@@ -137,12 +193,13 @@ def get_user_input(prompt: str) -> str:
 
 
 def pretty_print_results(bibtex_data: List, paper_data: List):
+    """Print the information on the paper in an easy to read format."""
     print(f"title: {paper_data[2]}\nauthors: {paper_data[0]}")
     print(f"summary: {paper_data[4]}\nbib entry: {bibtex_data[1]}")
 
 
 def cast(user_input: str) -> int:
-    """Check if user input is valid and cast to Integer if so"""
+    """Check if user input is valid and cast to Integer if so."""
     try:
         cast_to_int = int(user_input)
     except ValueError:

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Contains the UserInteraction class, which handles all interaction with the user on the cli, and starts the application.
+"""
+
 import logging
 
 from paper_sorts.database_connector import DatabaseConnector
@@ -9,10 +13,21 @@ from paper_sorts.helpers import (
     pretty_print_results,
     cast,
     get_user_input,
+    create_logger
 )
 
 
 class UserInteraction:
+    """
+    This class handles all interaction with the user.
+
+    This class is all the user interacts with. It contains methods for the user to add, search, TODO: update
+    and delete data from the database by interacting with an object of the :class: `paper_sorts.DatabaseConnector` to
+    to transform them into a format to execute them, perform them and this class presents the user with the results.
+    It also provides the user with easy to understand failure messages if the user's chosen actions could not be
+    performed on the database.
+    """
+
     def __init__(
         self,
         logger_name: str = "user_interaction_logger",
@@ -23,33 +38,20 @@ class UserInteraction:
         Interaction with the user on the command line interface.
 
         :param logger_name: name of the logger
+        :type logger_name: str
         :param logging_level: specifies level to log at
+        :type logging_level: int
         :param log_file: name of the file to write logs to
+        :type log_file: str
         """
-        # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
-        # create logger
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(logging_level)
-
-        # create console handler and set level to debug
-        ch = logging.FileHandler(filename=log_file)
-        ch.setLevel(logging_level)
-
-        # create formatter
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        # add formatter to ch
-        ch.setFormatter(formatter)
-        # add ch to logger
-        logger.addHandler(ch)
-        self.logger = logger
+        self.logger = create_logger(log_file, logger_name, logging_level)
 
     def search(self, db_connector: DatabaseConnector):
         """
         Search the database for paper information and interact with user at points of uncertainty.
 
         :param db_connector: object to interact with the database with
+        :type db_connector: DatabaseConnector
         """
         user_input = cast(
             input(
@@ -100,9 +102,11 @@ class UserInteraction:
         """
         Add a new paper to the database and ask user for all required information either via interaction or by providing
         a file in which the information is stored (only for bibtex information).
-        .
+
         :param db_connector: object to interact with the database with
-        :return: boolean indicating whether the paper was successfully added to the database
+        :type db_connector: DatabaseConnector
+        :return: indicates whether the paper was successfully added to the database
+        :rtype: bool
         """
         author = get_user_input(
             "Please enter the necessary information\nAuthor(s), please provide a , separated list: "
@@ -141,8 +145,11 @@ class UserInteraction:
         Start dialog with the user and have the user select what to do with the database.
 
         :param config_file: name of the file that specifies how to connect to the database
+        :type config_file: str
         :param config_section: which section of the file to read the configuration from
+        :type config_section: str
         :param key: if the configuration file is encrypted, file that contains the key to decrypt it
+        :type key: str
         """
         print("Welcome! Connecting to the database, one moment...")
         config_reader = ConfigReader(config_file, config_section, key)

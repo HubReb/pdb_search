@@ -1,3 +1,9 @@
+#! /usr/bin/env python3
+
+"""
+Tests functionality of :class: `paper_sorts.DatabaseConnector`.
+"""
+
 import unittest
 import logging
 
@@ -6,7 +12,11 @@ from paper_sorts.config_reader import ConfigReader
 
 
 class DataBaseTest(unittest.TestCase):
+    """
+    Tests adding, searching, updating and deleting functionality, but does not offer a significant amount of code coverage.
+    """
     def test_search_by_author(self):
+        """ Test if a entry know to be in the database can be found if searched for by author name."""
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -23,6 +33,7 @@ class DataBaseTest(unittest.TestCase):
         self.assertRaises(KeyError, database.search_by_author, "no author")
 
     def test_search_by_title(self):
+        """ Test if a entry know to be in the database can be found if searched for by publication title."""
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -39,6 +50,7 @@ class DataBaseTest(unittest.TestCase):
         self.assertRaises(KeyError, database.search_by_title, "no title")
 
     def test_adding_and_removing(self):
+        """Test whether an entry can be added and removed from the database safely. """
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -85,6 +97,7 @@ class DataBaseTest(unittest.TestCase):
         )
 
     def test_update_title(self):
+        """Test whether the summary of an entry in the database can be updated safely. """
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -144,6 +157,7 @@ class DataBaseTest(unittest.TestCase):
         )
 
     def test_update_authors_papers(self):
+        """ Test whether the author-paper relation of an entry cannot be changed."""
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -161,6 +175,7 @@ class DataBaseTest(unittest.TestCase):
         )
 
     def test_update_authors(self):
+        """ Test whether the authorship of a paper can be changed as expected.."""
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -258,6 +273,7 @@ class DataBaseTest(unittest.TestCase):
         )
 
     def test_update_bib(self):
+        """ Test whether the content of one bibliography entry can be changed. """
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,

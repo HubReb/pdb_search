@@ -1,15 +1,31 @@
 #!/usr/bin/env python3
 
+"""
+This contains the class DatabaseConnector whicn provides the interface for the interaction with the database and  all
+actions such as adding, deleting, updating and searching.
+"""
+
 from typing import List, Optional
 import logging
 
 from psycopg import DatabaseError
 
-from paper_sorts.helpers import iterate_through_papers
+from paper_sorts.helpers import iterate_through_papers, create_logger
 from paper_sorts.psycopg_db import PsycopgDB
 
 
 class DatabaseConnector:
+    """
+    This class presents the interaction with the paper's database and offers safe methods for changing the data.
+
+    The higher-level interaction with the database is given via this class. It provides safe methods for adding a single
+    or several entries to the database, for searching the database for a publication via its title or its author(s), for
+    updating specific information, such as the summary of a publication or its bibsonomy, and for deleting a publication
+    from the database, while preventing unnecessary duplication in the database.
+    The actual instruction are handled by the attribute `database_handler` of the  :class: `paper_sort.psycopg_db.py, which
+    takes care of the actual interaction with database via an external dependency.
+    """
+
     def __init__(
         self,
         config_parameters: dict,
@@ -22,30 +38,16 @@ class DatabaseConnector:
         searching the database.
 
         :param config_parameters: dictionary containing the configuration that defines the database interaction
-        :param logging_level: specifies the level of the logger
-        :param logger_name: name of the logger to use
-        :param log_file: name of the file the logging information is written to
+        :type config_parameters: dict
+        :param logging_level: specifies the level of the logger, defaults to logging.DEBUG
+        :type logging_level: str
+        :param logger_name: name of the logger to use, defaults to `database_logger`
+        :type logger_name: str
+        :param log_file: name of the file the logging information is written to, defaults to `db_connector.log`
+        :type log_file: str
         """
         self.config_parameters = config_parameters
-        # mostly taken from https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
-        # create logger
-        self.logger = logging.getLogger(logger_name)
-        self.logger.setLevel(logging_level)
-
-        # create console handler and set level to debug
-        ch = logging.FileHandler(filename=log_file)
-        ch.setLevel(logging_level)
-
-        # create formatter
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-
-        # add formatter to ch
-        ch.setFormatter(formatter)
-
-        # add ch to logger
-        self.logger.addHandler(ch)
+        self.logger = create_logger(log_file, logger_name, logging_level)
         self.database_handler = PsycopgDB(self.config_parameters)
 
     def add_data_from_dict(self, data_dict: dict) -> None:
@@ -57,6 +59,7 @@ class DatabaseConnector:
                     bibtex_id - unique identifier to cite paper by
                     author - list of the authors of the paper
                     contents - summary of the paper's contents
+        :type data_dict: dict
         :raises DatabaseError: if error occurred in the performing the database actions - check logs
         """
         self.create_tables()
@@ -129,6 +132,7 @@ class DatabaseConnector:
         Add one author to authors_papers and add the author to authors_id if he is not already listed.
 
         :param author: name of the author
+        :type author: str
         """
         paper_id = self.database_handler.fetch_from_db("select max(id) from papers;")[0]
         author_id = self.database_handler.fetch_from_db(
@@ -151,10 +155,12 @@ class DatabaseConnector:
                 (author_id, paper_id),
             )
 
-    def search_for_bibtex_entry_by_id(self, paper: List) -> List[str]:
+    def search_for_bibtex_entry_by_id(self, paper: List[str]) -> List[str]:
         """
-        Search the bib table for the entry specified by the unique bibtex_id that must be present in paper
+        Search the bib table for the entry specified by the unique bibtex_id that must be present in paper.
+
         :param paper: list of meta information for one paper
+        :type paper: List[str]
         :return: bib information for the paper
         """
         if paper:
@@ -165,9 +171,12 @@ class DatabaseConnector:
 
     def search_by_title(self, title: str) -> List[Optional[List[str]]]:
         """
-        Search the database for the entire paper information record via the title of the paper
+        Search the database for the entire paper information record via the title of the paper.
+
         :param title: title of the paper to search for
+        :type title: str
         :return: all paper's meta information whose title matches the parameter title
+        :rtype: List[Optional[List[str]]]
         :raises KeyError: if no paper with the specified title could be found
         """
         papers = self.database_handler.fetch_from_db(
@@ -194,7 +203,13 @@ class DatabaseConnector:
         return down_papers
 
     def search_by_author(self, author: str) -> List[str]:
-        """Search authors_papers table by author, then search papers table"""
+        """Search authors_papers table by author, then search papers table.
+
+        :param author: name of the author to search for
+        :type author: str
+        :return: information on all paper's the author has worked on that are present in the database
+        :rtype: List[str]
+        """
         results = self.database_handler.fetch_from_db(
             "select authors_id.id, authors_id.author, paper_id, title, bibtex_id, contents from authors_id INNER JOIN authors_papers on "
             "authors_papers.author_id=authors_id.id INNER JOIN papers on paper_id=papers.id where author=%s;",
@@ -207,9 +222,12 @@ class DatabaseConnector:
 
     def search_for_entry_by_specified_paper_information(self, paper_information: List) -> List[Optional[str]]:
         """
-        Search the database for the authors of the paper whose meta information is specified in paper_information
+        Search the database for the authors of the paper whose meta information is specified in paper_information.
+
         :param paper_information: meta information of the paper taken from the database and selected by user
-        :return: List of the author names and the information provided in paper_information
+        :type paper_information: List
+        :return: names of the author(s) and the information provided in paper_information
+        :rtype: List[Optional[str]]
         """
         author_names = self.database_handler.fetch_from_db(
             "select authors_id.author, paper_id from authors_id INNER JOIN "
@@ -234,15 +252,24 @@ class DatabaseConnector:
         content: str,
     ) -> bool:
         """
-        Add new entry to db_connector table.
+        Add new entry to db_connector database.
 
-        :param new_bibtex_entry: complete bibtex entry as a string
+        Add a new paper to the database, add a new author to paper entry in the authors_papers table, add the bibtex
+        information to the bib table  and - if the author is not yet present in the database - add a new entry for the
+        author in the authors_id table.
+
+        :param new_bibtex_entry: complete bibtex entry
+        :type new_bibtex_entry: str
         :param author_names: name of the authors in a list, one element for each author
+        :type author_names: List[str]
         :param bibtex_ident: bibtex author_identification of the publication, must be unique
+        :type bibtex_ident: str
         :param title: title of the publication
+        :type title: str
         :param content: one sentence summarizing the content of the publication
-        :return: -
-
+        :type content: str
+        :return: boolean indicating whether the entry was added and all subsequent actions were performed was successful
+        :rtype: bool
         :raises DatabaseError: if the tasks could not be performed in the database - either config or query problem
         :raises ValueError: if the sanity checks (papers table exists, bibtex_ident does not exist yet) for the bibtex_ident failed
         """
@@ -267,7 +294,7 @@ class DatabaseConnector:
                 "select id from papers where title=%s", (title,)
             )[0][0]
             for author in author_names:
-                self.insert_single_author(author, paper_id)
+                self.__insert_single_author(author, paper_id)
             return True
 
         except DatabaseError as database_error:
@@ -286,11 +313,17 @@ class DatabaseConnector:
         Delete a paper_information and all associated information from the database.
 
         :param bibtex_entry: bibtex entry to be deleted
+        :type bibtex_entry: str
         :param author_names: names of the authors of the paper_information to be deleted
+        :type author_names: str
         :param bibtex_ident: author_identification of the bibtex entry - usually the one used to cite the paper_information in latex
+        :type bibtex_ident: str
         :param title: title of the paper_information to be removed from the database
+        :type title: str
         :param content: summary of the paper_information
+        :type content: str
         :return: Boolean indicating whether deletion of the paper_information was successful
+        :rtype: bool
         :raises IndexError: if the paper_information's title was not found in the database
         """
         try:
@@ -346,6 +379,7 @@ class DatabaseConnector:
         Check whether the paper_information table exists and if the bibtex_id exists in the paper_information table.
 
         :param bibtex_ident: unique author_identification of the bibtex entry - usually the one used to cite the paper_information
+        :type bibtex_ident: str
         :raises ValueError: the papers table does not exist in the database
         :raises ValueError: bibtex_identifier already exists in the database - the unique constraint would be hurt
         """
@@ -361,13 +395,15 @@ class DatabaseConnector:
             self.logger.error("Entry %s already exists in table papers", bibtex_ident)
             raise ValueError("Entry already exists")
 
-    def insert_single_author(self, author: str, paper_id: str)  -> None:
+    def __insert_single_author(self, author: str, paper_id: str)  -> None:
         """
-        Insert an author with the paper_information he's (co-) written into the authors_papers database and creates an entry for the
-        author in the authors_id table if the author does not have an entry yet.
+        Insert an author with the paper_information he's (co-) written into the authors_papers database and creates an
+        entry for the author in the authors_id table if the author does not have an entry yet.
 
         :param author: name of the author
+        :type author: str
         :param paper_id: unique author_identification of the paper_information
+        :type paper_id: str
         """
         author_id = self.database_handler.fetch_from_db(
             "select * from authors_id where author=%s;", (author,)
@@ -399,9 +435,13 @@ class DatabaseConnector:
         Update an already existent entry in the database in the table specified by the table parameter.
 
         :param update_column: column of the table to be updated
+        :type update_column: str
         :param update_value: new value to set the entry in update_column in the specified table to
+        :type update_value: str
         :param table: table that will  be updated
+        :type table: str
         :param identifier: unique author_identification of the row to update - may be paper_id, author_id or bibtex_id
+        :type identifier: str
         :raises ValueError: if the update_column is not found in table
         :raises ValueError: if the table authors_papers is attempted to be accessed
         """
@@ -424,22 +464,24 @@ class DatabaseConnector:
             case "authors_id":
                 match update_column:
                     case "author":
-                        self.update_author(identifier, update_value)
+                        self.__update_author(identifier, update_value)
                     case _:
                         raise ValueError("Column %s is not present in table authors_id", update_column)
             case "bib":
                 match update_column:
                     case "bibtex":
-                        self.update_bibtex_information(identifier, update_value)
+                        self.__update_bibtex_information(identifier, update_value)
                     case _:
                         raise ValueError("Column %s is not present in table bibtex", update_column)
 
-    def update_bibtex_information(self, identifier: str, new_bibtex_information: str) -> None:
+    def __update_bibtex_information(self, identifier: str, new_bibtex_information: str) -> None:
         """
         Update the bibtex entry in the bib table.
         
-        :param identifier:  unique bibtex_id 
+        :param identifier: unique bibtex_id
+        :type identifier: str
         :param new_bibtex_information: new bibtex information (summary, author, publication,...)
+        :type new_bibtex_information: str
         :raises ValueError: if the bibtex information provided by new_bibtex_information already exists in table bib
         """
         bibtex_p = self.database_handler.fetch_from_db(
@@ -456,13 +498,20 @@ class DatabaseConnector:
             )
             self.logger.info("updated  bibtex entry for bibtex_id %s to %s" % (identifier, new_bibtex_information))
 
-    def update_author(self, author_identification: str, new_author_name: str) -> None:
+    def __update_author(self, author_identification: str, new_author_name: str) -> None:
         """
-        Update the name of an author in authors_id and changes authors_papers if the author's name already existst in 
-        authors_id.
+        Update the name of an author in authors_id and changes authors_papers if required.
+
+        This updates the name of the author by first checking whether the new_author_name argument refers to an author already
+        present in the database and, if so, simply change the author_id in authors_papers and check the database for
+        duplicate entries if the author was already listed as an author for the paper(s) of the old author. If not, a new
+        entry for the new author in authors_id is created, then the author_id in authors_papers is changed accordingly.
+        If the old author has no other publication in the database, the author is deleted from it.
         
-        :param author_identification: authors_id to uniquely identify the author whose name is to be changed 
+        :param author_identification: authors_id to uniquely identify the author whose name is to be changed
+        :type author_identification: str
         :param new_author_name: new name of the author specified by identifier
+        :type new_author_name: str
         """
         # check if new author already exists
         author_id = self.database_handler.fetch_from_db(
