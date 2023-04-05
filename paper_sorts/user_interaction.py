@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Contains the UserInteraction class, which handles all interaction with the user on the cli, and starts the application.
+Contains the UserInteraction class, which handles all cli-interaction with the user,
+and starts the application.
 """
 
 import logging
@@ -21,11 +22,12 @@ class UserInteraction:
     """
     This class handles all interaction with the user.
 
-    This class is all the user interacts with. It contains methods for the user to add, search, TODO: update
-    and delete data from the database by interacting with an object of the :class: `paper_sorts.DatabaseConnector` to
-    to transform them into a format to execute them, perform them and this class presents the user with the results.
-    It also provides the user with easy to understand failure messages if the user's chosen actions could not be
-    performed on the database.
+    This class is all the user interacts with. It contains methods for the user to add, search,
+    TODO: update and delete data from the database by interacting with an object of the
+    :class: `paper_sorts.DatabaseConnector` to transform them into a format to execute them and
+    toexecute them and this class presents the user with the results.
+    It also provides the user with easy to understand failure messages if the user's chosen
+    actions could not be performed on the database.
     """
 
     def __init__(
@@ -55,13 +57,17 @@ class UserInteraction:
         """
         user_input = cast(
             input(
-                "Search interface\nPlease choose a method:\n1) Search by author\n2) Search by paper_information title\n"
+                "Search interface\nPlease choose a method:\n"
+                "1) Search by author\n"
+               " 2) Search by paper_information title\n"
             )
         )
         while user_input < 1 or user_input > 2:
             user_input = cast(
                 input(
-                    "Please choose a valid option:\n1) Search by author\n2) Search by paper_information title\n"
+                    "Please choose a valid option:\n"
+                    "1) Search by author\n"
+                    "2) Search by paper_information title\n"
                 )
             )
         if user_input == 2:
@@ -100,8 +106,11 @@ class UserInteraction:
 
     def add(self, db_connector: DatabaseConnector) -> bool:
         """
-        Add a new paper to the database and ask user for all required information either via interaction or by providing
-        a file in which the information is stored (only for bibtex information).
+        Add a new paper to the database and ask user for all required information.
+
+        Add a new paper to the database and ask the user to enter the information step
+        by step. Bibtex information may by provided via a file in which the information
+        is stored.
 
         :param db_connector: object to interact with the database with
         :type db_connector: DatabaseConnector
@@ -113,7 +122,11 @@ class UserInteraction:
         )
         paper_title = get_user_input("Paper title: ")
         bibtex_key = get_user_input("bibtex key: ")
-        bibtex_form = get_user_input("Do you want to enter the bibtex entry via a separate file?\n1) Yes\n2) No\nYour choice: ")
+        bibtex_form = get_user_input(
+                "Do you want to enter the bibtex entry via a separate file?\n"
+                "1) Yes\n"
+                "2) No\n"
+                "Your choice: ")
         if cast(bibtex_form) == 1:
             bibtex_information_file= get_user_input("Enter filename: ")
             with open(bibtex_information_file) as f:
@@ -161,7 +174,11 @@ class UserInteraction:
         )
         print("Connected to the database.")
         operation = get_user_input(
-            "What do you want to do?\n1) Search the database\n2) Add an entry\n3) (Q)uit\nYour choice: "
+            "What do you want to do?\n"
+            "1) Search the database\n"
+            "2) Add an entry\n"
+            "3) (Q)uit\n"
+            "Your choice: "
         )
         while operation != "q" or cast(operation) == 3:
             match operation:

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 """
-This contains the class PsycopgDB, which  enables the interaction with postgreSQL database via psycopg2.
+This contains the class PsycopgDB, which enables the interaction with postgreSQL database.
 
-The entire interaction with the postgreSQL database occurs in this module. All calls to the external package
-psycopg2 are in this module. If either the database is changed from postgreSQL or the package for interacting with the
-database is changed from psycopg2 to something else, only this module will have to be changed.
+The entire interaction with the postgreSQL database occurs in this module. All calls to the external
+package psycopg2 are in this module. If either the database is changed from postgreSQL or the
+package for interacting with the database is changed from psycopg2 to something else, only this
+module will have to be changed.
 """
 
 from typing import Tuple, List
@@ -16,14 +17,15 @@ from psycopg2.extensions import cursor, connection
 
 from paper_sorts.helpers import create_logger
 
+
 class PsycopgDB:
     """
     Class to handle interaction with the postgresql database via the python package psycopg2.
 
-    This class sole purpose is to function as an additional layer between the :class: `paper_sorts.DatabaseConnector`
-    and the database and thus avoid sprinkling calls to psycopg2 throughout the entire code. If the psycopg2 dependency
-    is ever changed or the APIs changes - such as from psycopg to psycopg2 in several cases -, all code to be adapted
-    is located in this class.
+    This class functions as an additional layer between the :class: `paper_sorts.DatabaseConnector`
+    and the database and thus avoids sprinkling calls to psycopg2 throughout the entire code.
+    If the psycopg2 dependency is ever changed or the APIs changes - such as from psycopg to
+    psycopg2 in several cases -, all code to be adapted is located in this class.
     """
 
     def __init__(
@@ -36,19 +38,18 @@ class PsycopgDB:
         """
         Initialize PsycopgDB object from config and initialize logger.
 
-        :param config_parameters: dictionary containing the configuration that defines the database interaction
+        :param config_parameters: contains the configuration that defines the database interaction
         :type config_parameters: dict
         :param logging_level: specifies the level of the logger, defaults to logging.DEBUG
         :type logging_level: int
         :param logger_name: name of the logger to use, defaults to psycopg_logger
         :type logger_name: str
-        :param log_file: name of the file the logging information is written to, defaults to psycopg_logger.log
+        :param log_file: name of the file the logs are written into, defaults to psycopg_logger.log
         :type log_file: str
         """
 
         self.config_parameters = config_parameters
         self.logger = create_logger(log_file, logger_name, logging_level)
-
 
     def create_connection_and_cursor(self) -> [connection, cursor]:
         """
@@ -91,7 +92,7 @@ class PsycopgDB:
 
     def fetch_from_db(
         self, query: str, format_arguments: Tuple[str, ...] = None
-    ) -> List:
+    ) -> List | None:
         """
         Search the database for information.
 
@@ -160,7 +161,7 @@ class PsycopgDB:
         con = None
         try:
             con, cur = self.create_connection_and_cursor()
-            cur.execute(sql.SQL(query),  (update_value, identifier))
+            cur.execute(sql.SQL(query), (update_value, identifier))
             con.commit()
             con.close()
         except DatabaseError as database_error:
