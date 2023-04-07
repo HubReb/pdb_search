@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Contains the UserInteraction class, which handles all cli-interaction with the user,
-and starts the application.
-"""
+""" Contains the UserInteraction class, which handles all cli-interaction with the user. """
 
 import logging
 
@@ -194,32 +191,3 @@ class UserInteraction:
             operation = get_user_input(
                 "What do you want to do?\n1) Search the database\n2) Add an entry\n3) (Q)uit\n"
             )
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Define parameters for database connection",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        default="../../database.crypt",
-        help="configuration file of the used db_connector",
-    )
-    parser.add_argument(
-        "--section",
-        type=str,
-        default="postgresql",
-        help="section of the config file to use",
-    )
-    parser.add_argument(
-        "-k", "--key", type=str, default="../../key", help="decryption key file"
-    )
-
-    args = parser.parse_args()
-    user = UserInteraction()
-    user.interact(config_file=args.config, config_section=args.section, key=args.key)
