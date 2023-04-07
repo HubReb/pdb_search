@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" Contains the UserInteraction class, which handles all cli-interaction with the user. """
+""" Contains the UserInteraction class, which handles all cli-interactions with the user. """
 
 import logging
 
@@ -145,7 +145,7 @@ class UserInteraction:
 
     def interact(
         self,
-        database_connector
+        database_connector: DatabaseConnector
     ):
         """
         Start dialog with the user and have the user select what to do with the database.
