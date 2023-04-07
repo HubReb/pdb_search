@@ -2,9 +2,12 @@
 
 """ This is the module in which the application can be started. """
 
+import logging
 import argparse
 
 from paper_sorts.user_interaction import UserInteraction
+from paper_sorts.database_connector import DatabaseConnector
+from paper_sorts.config_reader import ConfigReader
 
 def run():
     """Start application with either default arguments or cli arguments, if given."""
@@ -31,7 +34,16 @@ def run():
 
     args = parser.parse_args()
     user = UserInteraction()
-    user.interact(config_file=args.config, config_section=args.section, key=args.key)
+    print("Welcome! Connecting to the database, one moment...")
+    config_reader = ConfigReader(args.config, args.section, args.key)
+    database_connector = DatabaseConnector(
+        config_reader.db_config,
+        logging.DEBUG,
+        "database_tester_logger",
+        log_file="db_connector_test.log",
+    )
+    print("Connected to the database.")
+    user.interact(database_connector)
 
 
 if __name__ == "__main__":

@@ -4,8 +4,6 @@
 
 import logging
 
-from paper_sorts.database_connector import DatabaseConnector
-from paper_sorts.config_reader import ConfigReader
 from paper_sorts.helpers import (
     get_user_choice,
     pretty_print_results,
@@ -13,7 +11,7 @@ from paper_sorts.helpers import (
     get_user_input,
     create_logger
 )
-
+from paper_sorts.database_connector import DatabaseConnector
 
 class UserInteraction:
     """
@@ -147,29 +145,14 @@ class UserInteraction:
 
     def interact(
         self,
-        config_file: str,
-        config_section: str,
-        key: str,
+        database_connector
     ):
         """
         Start dialog with the user and have the user select what to do with the database.
 
-        :param config_file: name of the file that specifies how to connect to the database
-        :type config_file: str
-        :param config_section: which section of the file to read the configuration from
-        :type config_section: str
-        :param key: if the configuration file is encrypted, file that contains the key to decrypt it
-        :type key: str
+        :param database_connector: high-level connector to the database to handle DB interactions
+        :type database_connector: DatabaseConnector
         """
-        print("Welcome! Connecting to the database, one moment...")
-        config_reader = ConfigReader(config_file, config_section, key)
-        database_connector = DatabaseConnector(
-            config_reader.db_config,
-            logging.DEBUG,
-            "database_tester_logger",
-            log_file="db_connector_test.log",
-        )
-        print("Connected to the database.")
         operation = get_user_input(
             "What do you want to do?\n"
             "1) Search the database\n"
