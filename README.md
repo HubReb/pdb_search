@@ -69,7 +69,7 @@ The name should have the format ```${last name}, ${first name}```.
 ## Add an entry
 
 The program takes you through the steps to add an entry to the database step by step. Note that you are asked
-whether you want to provide a file to read the bib entry from or enter the date by hand.
+whether you want to provide a file to read the bib entry from or enter the data by hand.
 
 ```
 Please enter the necessary information
