@@ -27,7 +27,7 @@ poetry install
 Start the interaction with the following command:
 
 ```bash
-python user_intection.py -c ${config} --section ${section_of_the_config_to_access} \
+python run.py -c ${config} --section ${section_of_the_config_to_access} \
 -k ${file_to_key_if_your_database_is_encrypted} 
 ```
 
