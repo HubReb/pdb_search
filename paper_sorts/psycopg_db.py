@@ -68,7 +68,7 @@ class PsycopgDB:
         :type query: str
         :param format_arguments: arguments to augment the query
         :type format_arguments: Tuple[str, ...]
-        :raises DatabaseError: if interaction with the database failed due to an incorrect query
+        :raises ValueError: if interaction with the database failed due to an incorrect query
         """
         con = None
         try:
@@ -84,7 +84,7 @@ class PsycopgDB:
             if con:
                 con.rollback()
                 con.close()
-            raise DatabaseError from database_error
+            raise ValueError("Your query led to a database error!")
 
         finally:
             if con:
@@ -100,7 +100,7 @@ class PsycopgDB:
         :type query: str
         :param format_arguments: arguments for the query
         :type format_arguments: Tuple[str, ...]
-        :raises DatabaseError: if interaction with the database failed due to an incorrect query
+        :raises ValueError: if interaction with the database failed due to an incorrect query
         :return: results extracted from the database
         :rtype: list
         """
@@ -119,6 +119,7 @@ class PsycopgDB:
             self.logger.exception(database_error)
             if con:
                 con.close()
+            raise ValueError("Your query led to a database error!")
 
     def delete_from_db(
         self, query: str, format_arguments: Tuple[str, ...] = None
@@ -128,7 +129,7 @@ class PsycopgDB:
 
         :param query: specification what to delete
         :type query: str
-        :raises DatabaseError: if interaction with the database failed due to an incorrect query
+        :raises ValueError: if interaction with the database failed due to an incorrect query
         :param format_arguments: string arguments to augment the query
         :type format_arguments: Tuple[str, ...]
         """
@@ -147,6 +148,7 @@ class PsycopgDB:
             if con:
                 con.rollback()
                 con.close()
+            raise ValueError("Your query led to a database error!")
 
     def update_db_entry(self, query: str, identifier: str, update_value: str) -> None:
         """
@@ -157,6 +159,7 @@ class PsycopgDB:
         :type identifier: str
         :param update_value: new value to set in the table
         :type update_value: str
+        :raises ValueError: if query could not be parsed correctly and thus led to a DatabaseError
         """
         con = None
         try:
@@ -169,3 +172,4 @@ class PsycopgDB:
             if con:
                 con.rollback()
                 con.close()
+            raise ValueError("Your query led to a database error!")

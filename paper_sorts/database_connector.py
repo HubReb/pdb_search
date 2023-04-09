@@ -8,8 +8,6 @@ with the database and all actions such as adding, deleting, updating and searchi
 from typing import List, Optional
 import logging
 
-from psycopg import DatabaseError
-
 from paper_sorts.helpers import iterate_through_papers, create_logger
 from paper_sorts.psycopg_db import PsycopgDB
 
@@ -61,7 +59,7 @@ class DatabaseConnector:
                     author - list of the authors of the paper
                     contents - summary of the paper's contents
         :type data_dict: dict
-        :raises DatabaseError: if error occurred in the performing the database actions - check logs
+        :raises RunTimeError: if error occurred in  performing the database actions - check logs
         """
         self.create_tables()
         try:
@@ -101,12 +99,15 @@ class DatabaseConnector:
                         title
                     )
 
-        except DatabaseError as database_error:
-            self.logger.exception(database_error)
+        except ValueError as value_error:
+            self.logger.exception(value_error)
+            raise RuntimeError("Failed to create tables and populate them - ending application!")
 
     def create_tables(self) -> None:
         """
         Create the database tables used in this application.
+
+        :raises RunTimeError: if the tables could not be created
         """
         try:
             self.database_handler.store_in_db(
@@ -129,8 +130,9 @@ class DatabaseConnector:
             )
             self.logger.info("created all tables")
 
-        except DatabaseError as exc:
+        except ValueError as exc:
             self.logger.exception(exc)
+            raise RuntimeError("Failed to create tables - ending application!")
 
     def __add_single_author(self, author: str) -> None:
         """
@@ -278,8 +280,8 @@ class DatabaseConnector:
         :type content: str
         :return: indicates if the entry was added and all subsequent actions were done successfully
         :rtype: bool
-        :raises DatabaseError: if the tasks could not be performed in the database (see logs)
         :raises ValueError: if the sanity checks for the bibtex_ident failed
+        :raises ValueError: if the handling of the database failed, ends application to prevent further damage
         """
         try:
             try:
@@ -305,9 +307,9 @@ class DatabaseConnector:
                 self.__insert_single_author(author, paper_id)
             return True
 
-        except DatabaseError as database_error:
-            self.logger.error(database_error)
-            return False
+        except ValueError as value_error:
+            self.logger.error(value_error)
+            raise ValueError("Errors occurred in handling of the database - could not add author. End application!")
 
     def delete_paper_entry_from_database(
         self,
@@ -332,7 +334,7 @@ class DatabaseConnector:
         :type content: str
         :return: Boolean indicating whether deletion of the paper_information was successful
         :rtype: bool
-        :raises IndexError: if the paper_information's title was not found in the database
+        :raises ValueError: if the paper_information's title was not found in the database
         """
         try:
             paper_id = self.database_handler.fetch_from_db(
