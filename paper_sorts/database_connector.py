@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This contains the :class: `DatabaseConnector` whicn provides the interface for the interaction
+This contains the :class: `DatabaseConnector` which provides the interface for the interaction
 with the database and all actions such as adding, deleting, updating and searching.
 """
 
@@ -136,7 +136,7 @@ class DatabaseConnector:
 
     def __add_single_author(self, author: str) -> None:
         """
-        Add a author to authors_papers and add the author to authors_id if he is not already listed.
+        Add an author to authors_papers and add the author to authors_id if he is not already listed.
 
         :param author: name of the author
         :type author: str
@@ -347,31 +347,32 @@ class DatabaseConnector:
             ) from exc
 
         for author in author_names:
-            author_id = self.database_handler.fetch_from_db(
+            author_id_list = self.database_handler.fetch_from_db(
                 "select * from authors_id where author=%s;", (author,)
             )
-            if author_id:
-                author_id = author_id[0]
+            if author_id_list:
+                author_id = author_id_list[0][0]
+                author_name = author_id_list[0][1]
                 self.database_handler.delete_from_db(
                     "delete from authors_papers where (author_id=%s and paper_id=%s);",
-                    (author_id[0], paper_id),
+                    (author_id, paper_id),
                 )
                 self.logger.info(
                     "marking author '%s' and paper_information '%s' for deletion",
-                    author_id[1],
+                    author_name,
                     title
                 )
                 authors = self.database_handler.fetch_from_db(
-                    "select * from authors_papers where author_id=%s", (author_id[0],)
+                    "select * from authors_papers where author_id=%s", (author_id,)
                 )
                 if not authors:
                     self.database_handler.delete_from_db(
                         "delete from authors_id where id=%s;",
-                        (author_id[0],),
+                        (author_id,),
                     )
                     self.logger.info(
                         "marking author '%s' for deletion in authors_id",
-                        author_id[1]
+                        author_name
                     )
         self.database_handler.delete_from_db(
             "delete from papers where (title=%s and contents=%s and bibtex_id=%s)",
@@ -420,14 +421,14 @@ class DatabaseConnector:
         :param paper_id: unique author_identification of the paper_information
         :type paper_id: str
         """
-        author_id = self.database_handler.fetch_from_db(
+        author_meta_data_list= self.database_handler.fetch_from_db(
             "select * from authors_id where author=%s;", (author,)
         )
-        if author_id:
-            author_id = author_id[0]
+        if author_meta_data_list:
+            author_id = author_meta_data_list[0][0]
             self.database_handler.store_in_db(
                 "insert into authors_papers (author_id, paper_id) values (%s, %s);",
-                (author_id[0], paper_id),
+                (author_id, paper_id),
             )
             self.logger.info("added author %s to table authors_papers", author)
         else:
@@ -547,25 +548,25 @@ class DatabaseConnector:
         :type new_author_name: str
         """
         # check if new author already exists
-        author_id = self.database_handler.fetch_from_db(
+        author_meta_information = self.database_handler.fetch_from_db(
             "select id from authors_id where author=%s;", (new_author_name,)
         )
         old_author_id = self.database_handler.fetch_from_db(
             "select id from authors_id where author=%s;", (author_identification,)
         )[0][0]
-        if author_id:
+        if author_meta_information:
             self.logger.info("found author %s in table authors_id", new_author_name)
-            author_id = author_id[0]
+            author_id = author_meta_information[0][0]
             # new author already exists, we need to update several tables to ensure data validity
             self.database_handler.update_db_entry(
                 "update authors_papers set author_id=%s where author_id=%s",
-                author_id[0],
+                author_id,
                 old_author_id,
             )
             self.logger.info(
                 "updated author_id %s to  %s in table authors_id",
                 old_author_id,
-                author_id[0]
+                author_id
             )
             # delete possible duplicate we may have after update
             self.database_handler.delete_from_db(
@@ -586,29 +587,29 @@ class DatabaseConnector:
             self.logger.info("created author %s in table authors_id", new_author_name)
             author_id = self.database_handler.fetch_from_db(
                 "select max(id) from authors_id;"
-            )[0]
+            )[0][0]
             self.database_handler.update_db_entry(
                 "update authors_papers set author_id=%s where author_id=%s",
                 old_author_id,
-                author_id[0],
+                author_id,
             )
             self.logger.info(
                 "updated author_id %s to  %s in table authors_id",
                 old_author_id,
-                author_id[0]
+                author_id
             )
         self.database_handler.delete_from_db(
             "delete from authors_id where id=%s", (old_author_id,)
         )
         self.logger.info("deleted author_id %s from table authors_id", old_author_id)
         authors = self.database_handler.fetch_from_db(
-            "select * from authors_papers where author_id=%s", (author_id[0],)
+            "select * from authors_papers where author_id=%s", (author_id,)
         )
         if not authors:
             self.database_handler.delete_from_db(
                 "delete from authors_id where id=%s;",
-                (author_id[0],),
+                (author_id,),
             )
             self.logger.info(
-                "marking author '%s' for deletion in authors_id", author_id[0]
+                "marking author '%s' for deletion in authors_id", author_id
             )

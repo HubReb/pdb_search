@@ -53,7 +53,7 @@ class PsycopgDB:
 
     def create_connection_and_cursor(self) -> [connection, cursor]:
         """
-        Initialize connection to postgresql database and create cursor.
+        Initialize connection to postgresql database and create cursor - the connection musct be closed by the caller!
         :return: connection to database and the cursor
         """
         con = connect(**self.config_parameters)

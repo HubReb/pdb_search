@@ -40,11 +40,11 @@ def get_data(filename: str = None) -> dict:
             title = title.strip()
             for latex_line in data.split("\n"):
                 if title in latex_line:
-                    line_split = latex_line.split(r"\cite{")
-                    if "\\item" in line_split[0]:
-                        bibtex = line_split[1]
+                    line_split_at_citation = latex_line.split(r"\cite{")
+                    if "\\item" in line_split_at_citation[0]:
+                        bibtex = line_split_at_citation[1]
                     else:
-                        bibtex = line_split[0]
+                        bibtex = line_split_at_citation[0]
                     bibtex = bibtex.split("}")[0]
                     break
             description = None
@@ -104,15 +104,16 @@ def get_bibtex_information(papers_dict: dict, bib_somy: str) -> dict:
     bib_graph = parse_file(bib_somy, bib_format="bibtex")
     for i in bib_graph.entries:
         for entry in papers_dict.keys():
-            if papers_dict[entry]["bibtex_id"] == i:
-                authors_list = []
-                for author in bib_graph.entries[i].persons["author"]:
-                    authors_list.append(
-                        f"{author.last_names[0]}, {author.first_names[0]}"
-                    )
-                papers_dict[entry]["bibtex"] = bib_graph.entries[i].to_string("bibtex")
-                papers_dict[entry]["author"] = authors_list
-                break
+            if not papers_dict[entry]["bibtex_id"] == i:
+                continue
+            authors_list = []
+            for author in bib_graph.entries[i].persons["author"]:
+                authors_list.append(
+                    f"{author.last_names[0]}, {author.first_names[0]}"
+                )
+            papers_dict[entry]["bibtex"] = bib_graph.entries[i].to_string("bibtex")
+            papers_dict[entry]["author"] = authors_list
+            break
     return papers_dict
 
 
@@ -148,7 +149,7 @@ def iterate_through_papers(papers: List[List[str]]) -> List[List[str]]:
     """
     Convert information on authors for paper(s) given by papers parameter into an easier to read format.
 
-    :param papers: List of meta information on the paper's
+    :param papers: List of meta information on the papers, format follows table scheme
     :type papers: List[List[str]]
     :return: List of meta information on the papers with the authors' names in an easier to read format
     """
