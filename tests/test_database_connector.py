@@ -155,6 +155,14 @@ class DataBaseTest(unittest.TestCase):
             "papers",
             "This is a test",
         )
+        self.assertRaises(
+           ValueError,
+           database.update_entry,
+            "test",
+            "should not work",
+            "non-table",
+            "This is a test",
+        )
 
     def test_update_authors_papers(self):
         """ Test whether the author-paper relation of an entry cannot be changed."""
