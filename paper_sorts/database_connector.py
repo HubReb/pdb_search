@@ -500,6 +500,8 @@ class DatabaseConnector:
                         raise ValueError(
                             f"Column {update_column} is not present in table bibtex"
                         )
+            case _:
+                raise ValueError(f"Updating table {table} is not supported.")
 
     def __update_bibtex_information(
         self, identifier: str, new_bibtex_information: str
