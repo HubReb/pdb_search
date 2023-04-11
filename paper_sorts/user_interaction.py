@@ -18,7 +18,7 @@ class UserInteraction:
     This class handles all interaction with the user.
 
     This class is all the user interacts with. It contains methods for the user to add, search,
-    TODO: update and delete data from the database by interacting with an object of the
+    update and delete data from the database by interacting with an object of the
     :class: `paper_sorts.DatabaseConnector` to transform them into a format to execute them and
     toexecute them and this class presents the user with the results.
     It also provides the user with easy to understand failure messages if the user's chosen
@@ -157,7 +157,8 @@ class UserInteraction:
             "What do you want to do?\n"
             "1) Search the database\n"
             "2) Add an entry\n"
-            "3) (Q)uit\n"
+            "3) Update an entry\n"
+            "4) (Q)uit\n"
             "Your choice: "
         )
         while operation != "q" or cast(operation) == 3:
@@ -166,11 +167,85 @@ class UserInteraction:
                     self.search(database_connector)
                 case "2":
                     self.add(database_connector)
-                case "3" | "q":
+                case "3":
+                    self.update(database_connector)
+                case "4" | "q":
                     print("Closing connection...")
                     break
                 case _:
                     print("Your input was invalid")
             operation = get_user_input(
-                "What do you want to do?\n1) Search the database\n2) Add an entry\n3) (Q)uit\n"
+                "What do you want to do?\n1) Search the database\n2) Add an entry\n3) Update an entry\n4) (Q)uit\n"
+                "Your choice: "
             )
+
+    def update(
+            self,
+            database_connector: DatabaseConnector
+    ):
+        """Update paper information already in the database if it is either author, bib or paper summary.
+
+        :param database_connector: provides connection to database interface
+        :type database_connector: DatabaseConnector
+        """
+        table_to_be_updated = get_user_input(
+            "What table do you want to update?\n1) papers\n2) bib\n3) authors\n4) abort\nYour choice: "
+        ).lower()
+        match table_to_be_updated:
+            case "papers" |  "1" :
+                column_to_be_updated = get_user_input(
+                    "Which information do you want to update?\n1) title\n2) contents\n3) abort\nYour choice: "
+                ).lower()
+                match column_to_be_updated:
+                    case "1" | "title":
+                        column_to_be_updated = "title"
+                    case "2" | "contents":
+                        column_to_be_updated = "contents"
+                    case "3" | "abort":
+                        print("Stopping update process...")
+                        return
+                    case _:
+                        print(f"Column '{column_to_be_updated}' cannot be updated in this manner.")
+                        return
+            case "bib" | "2":
+                print("Only the bibtex can be updated - the bibtex identifier cannot be changed.")
+                column_to_be_updated = "bibtex"
+            case "authors" | "3":
+                print("Only an author name can be updated.")
+                column_to_be_updated = "author"
+            case "4" | "abort":
+                print("Stopping update process...")
+                return
+            case _:
+                print(f"Table '{table_to_be_updated}' cannot be updated in this manner.")
+                return
+        identifier_of_the_entry_to_update = get_user_input(
+            "Which entry do you want to update?\nPlease enter the respective id: ")
+        value_to_set = get_user_input("Enter the new information: ")
+        proceed_with_change = get_user_input(f"Please verify: "
+                                            f"You wish to change the entry '{identifier_of_the_entry_to_update}'"
+                                            f" of the column '{column_to_be_updated}' in the table "
+                                            f"'{table_to_be_updated}' to '{value_to_set}.\n Proceed?\n1) (Y)es\n2) (N)o\n"
+                                             f"Your choice: "
+                                            ).lower()
+        match proceed_with_change:
+            case "1" | "y" | "yes":
+                verification_given = True
+            case "2" | "n" | "no":
+                verification_given = False
+            case _:
+                print("Could not parse your reply. Stopping update process...")
+                return
+        if not verification_given:
+            print("Stopping update process...")
+            return
+        try:
+            database_connector.update_entry(
+                column_to_be_updated,
+                value_to_set,
+                table_to_be_updated,
+                identifier_of_the_entry_to_update
+            )
+        except ValueError as error:
+            self.logger.error(error)
+            print("Could not update entry - please check logs.")
