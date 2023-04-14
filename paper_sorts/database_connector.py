@@ -68,13 +68,7 @@ class DatabaseConnector:
                 if not bibtex_key:
                     self.logger.error("bibtex entry %s not found", bibtex_key)
                     continue
-                authors = values["author"]
-                content = values["contents"]
                 bibtex = values["bibtex"]
-                self.database_handler.store_in_db(
-                    "select exists(select * from papers where bibtex_id=%s);",
-                    (bibtex_key,),
-                )
                 database_entries = self.database_handler.fetch_from_db(
                     "select exists(select * from papers where bibtex_id=%s);",
                     (bibtex_key,),
@@ -84,24 +78,47 @@ class DatabaseConnector:
                         "bibtex key %s already in database - skipping", bibtex_key
                     )
                     continue
-                self.database_handler.store_in_db(
-                    "insert into bib values (%s, %s);", (bibtex_key, bibtex)
-                )
-                self.database_handler.store_in_db(
-                    "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)",
-                    (title, content, bibtex_key),
-                )
-                for author in authors:
-                    self.__add_single_author(author)
-                    self.logger.info(
-                        "added author %s and paper_information %s to database",
-                        author,
-                        title
-                    )
+                authors = values["author"]
+                content = values["contents"]
+                self.__add_paper_to_db(authors, bibtex, bibtex_key, content, title)
 
         except ValueError as value_error:
             self.logger.exception(value_error)
             raise RuntimeError("Failed to create tables and populate them - ending application!")
+
+    def __add_paper_to_db(self, authors: List[str], bibtex: str, bibtex_key: str, content: str, title: str) -> None:
+        """
+        Add a new publication to the database.
+
+        :param authors: name of the authors of the publication
+        :type authors: List[str]
+        :param bibtex: bib entry of the publication
+        :type bibtex: str
+        :param bibtex_key: unique identifier of the publication
+        :type bibtex_key: str
+        :param content: short summary of the publication
+        :type content: str
+        :param title: title of the publication
+        :type title: str
+        """
+        self.database_handler.store_in_db(
+            "select exists(select * from papers where bibtex_id=%s);",
+            (bibtex_key,),
+        )
+        self.database_handler.store_in_db(
+            "insert into bib values (%s, %s);", (bibtex_key, bibtex)
+        )
+        self.database_handler.store_in_db(
+            "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)",
+            (title, content, bibtex_key),
+        )
+        for author in authors:
+            self.__add_single_author(author)
+            self.logger.info(
+                "added author %s and paper_information %s to database",
+                author,
+                title
+            )
 
     def create_tables(self) -> None:
         """
@@ -421,7 +438,7 @@ class DatabaseConnector:
         :param paper_id: unique author_identification of the paper_information
         :type paper_id: str
         """
-        author_meta_data_list= self.database_handler.fetch_from_db(
+        author_meta_data_list = self.database_handler.fetch_from_db(
             "select * from authors_id where author=%s;", (author,)
         )
         if author_meta_data_list:
@@ -466,42 +483,84 @@ class DatabaseConnector:
             raise ValueError("IDs are unique and must not be changed!")
         match table:
             case "papers":
-                match update_column:
-                    case "contents":
-                        query = "update papers set contents=%s where id=%s;"
-                    case "title":
-                        query = "update papers set title=%s where id=%s;"
-                    case _:
-                        raise ValueError(
-                            f"Column {update_column} is not present in table papers"
-                        )
-                self.database_handler.update_db_entry(query, identifier, update_value)
-                self.logger.info(
-                    "updated column %s wth %s", update_column, update_value
-                )
+                self.__update_papers_table(identifier, update_column, update_value)
             case "authors_papers":
                 self.logger.error("Tried to access table authors_papers!")
                 raise ValueError(
                     f"Table authors_papers has no column {update_column} that is changeable!"
                 )
             case "authors_id":
-                match update_column:
-                    case "author":
-                        self.__update_author(identifier, update_value)
-                    case _:
-                        raise ValueError(
-                            f"Column {update_column} is not present in table authors_id"
-                        )
+                self.__update_authors_id_column(identifier, update_column, update_value)
             case "bib":
-                match update_column:
-                    case "bibtex":
-                        self.__update_bibtex_information(identifier, update_value)
-                    case _:
-                        raise ValueError(
-                            f"Column {update_column} is not present in table bibtex"
-                        )
+                self.__update_bib_table(identifier, update_column, update_value)
             case _:
                 raise ValueError(f"Updating table {table} is not supported.")
+
+    def __update_bib_table(self, identifier: str, update_column: str, update_value: str) -> None:
+        """
+        Verify update_column is the only editable column and update the entry.
+
+        :param identifier: unique identifier of the entry to update
+        :type identifier: str
+        :param update_column: column of the entry to be updated
+        :type update_column: str
+        :param update_value: value to set the column of the entry to
+        :type update_value: str
+        :raises ValueError: if the update_column does not specify the bibtex column
+        """
+        match update_column:
+            case "bibtex":
+                self.__update_bibtex_information(identifier, update_value)
+            case _:
+                raise ValueError(
+                    f"Column {update_column} is not present in table bibtex"
+                )
+
+    def __update_authors_id_column(self, identifier: str, update_column: str, update_value: str) -> None:
+        """
+        Determine which column to update and perform update.
+
+        :param identifier:  identifier of the entry to update
+        :type identifier: str
+        :param update_column: column to update of the chosen entry
+        :type update_column: str
+        :param update_value: new value to set the value of the entry in the column specified in update_column to
+        :type update_value: str
+        :raises ValueError: if the column specified with update_column does not exist in the authors_id table
+        """
+        match update_column:
+            case "author":
+                self.__update_author(identifier, update_value)
+            case _:
+                raise ValueError(
+                    f"Column {update_column} is not present in table authors_id"
+                )
+
+    def __update_papers_table(self, identifier: str, update_column: str, update_value: str) -> None:
+        """
+        Determine which part of the table to update and update it.
+
+        :param identifier: unique identifier of the entry to update
+        :type identifier: str
+        :param update_column: column of the entry to update
+        :type update_column: str
+        :param update_value: value to set the column of the entry to
+        :type update_value: str
+        :raises ValueError: if a non-supported update_column is chosen, either non-existent or not editable
+        """
+        match update_column:
+            case "contents":
+                query = "update papers set contents=%s where id=%s;"
+            case "title":
+                query = "update papers set title=%s where id=%s;"
+            case _:
+                raise ValueError(
+                    f"Column {update_column} is not present in table papers"
+                )
+        self.database_handler.update_db_entry(query, identifier, update_value)
+        self.logger.info(
+            "updated column %s wth %s", update_column, update_value
+        )
 
     def __update_bibtex_information(
         self, identifier: str, new_bibtex_information: str
@@ -557,49 +616,9 @@ class DatabaseConnector:
             "select id from authors_id where author=%s;", (author_identification,)
         )[0][0]
         if author_meta_information:
-            self.logger.info("found author %s in table authors_id", new_author_name)
-            author_id = author_meta_information[0][0]
-            # new author already exists, we need to update several tables to ensure data validity
-            self.database_handler.update_db_entry(
-                "update authors_papers set author_id=%s where author_id=%s",
-                author_id,
-                old_author_id,
-            )
-            self.logger.info(
-                "updated author_id %s to  %s in table authors_id",
-                old_author_id,
-                author_id
-            )
-            # delete possible duplicate we may have after update
-            self.database_handler.delete_from_db(
-                "delete from authors_papers a "
-                "using authors_papers b "
-                "where b.author_id = a.author_id and b.id = a.id and a.id != b.id"
-                "; "
-            )
-            self.logger.info("deleted possible duplicates in authors_papers")
+            author_id = self.__update_known_author(author_meta_information, new_author_name, old_author_id)
         else:
-            self.logger.info(
-                "did not find author %s in table authors_id", new_author_name
-            )
-            # if author doesn't exist, first create him
-            self.database_handler.store_in_db(
-                "insert into authors_id (author) values (%s);", (new_author_name,)
-            )
-            self.logger.info("created author %s in table authors_id", new_author_name)
-            author_id = self.database_handler.fetch_from_db(
-                "select max(id) from authors_id;"
-            )[0][0]
-            self.database_handler.update_db_entry(
-                "update authors_papers set author_id=%s where author_id=%s",
-                old_author_id,
-                author_id,
-            )
-            self.logger.info(
-                "updated author_id %s to  %s in table authors_id",
-                old_author_id,
-                author_id
-            )
+            author_id = self.__update_with_new_author(new_author_name, old_author_id)
         self.database_handler.delete_from_db(
             "delete from authors_id where id=%s", (old_author_id,)
         )
@@ -608,10 +627,90 @@ class DatabaseConnector:
             "select * from authors_papers where author_id=%s", (author_id,)
         )
         if not authors:
-            self.database_handler.delete_from_db(
-                "delete from authors_id where id=%s;",
-                (author_id,),
-            )
-            self.logger.info(
-                "marking author '%s' for deletion in authors_id", author_id
-            )
+            self.__delete_author_with_no_papers(author_id)
+
+    def __delete_author_with_no_papers(self, author_id):
+        """
+        Delete author with no publication from database.
+
+        :param author_id: unique identifier of the author to be deleted
+        :type author_id: str
+        """
+        self.database_handler.delete_from_db(
+            "delete from authors_id where id=%s;",
+            (author_id,),
+        )
+        self.logger.info(
+            "marking author '%s' for deletion in authors_id", author_id
+        )
+
+    def __update_with_new_author(self, new_author_name: str, old_author_id: str) -> str:
+        """
+        Create new author entry and set papers of old author to new author.
+
+        :param new_author_name: name of new author to set papers to
+        :param old_author_id: identifier of the old author to be changed
+        :return: id of new author
+        """
+        self.logger.info(
+            "did not find author %s in table authors_id", new_author_name
+        )
+        # if author doesn't exist, first create him
+        self.database_handler.store_in_db(
+            "insert into authors_id (author) values (%s);", (new_author_name,)
+        )
+        self.logger.info("created author %s in table authors_id", new_author_name)
+        author_id = self.database_handler.fetch_from_db(
+            "select max(id) from authors_id;"
+        )[0][0]
+        self.database_handler.update_db_entry(
+            "update authors_papers set author_id=%s where author_id=%s",
+            old_author_id,
+            author_id,
+        )
+        self.logger.info(
+            "updated author_id %s to  %s in table authors_id",
+            old_author_id,
+            author_id
+        )
+        return author_id
+
+    def __update_known_author(
+            self,
+            author_meta_information: List[List[str]],
+            new_author_name: str,
+            old_author_id: str
+    ) -> str:
+        """
+        Change old author to new author who is already present in the database.
+
+        :param author_meta_information: result of db query for new author
+        :type author_meta_information: List[List[str]]
+        :param new_author_name: name of the new author
+        :type new_author_name: str
+        :param old_author_id: identifier of the old author
+        :type old_author_id: str
+        :return: identifier of new author
+        """
+        self.logger.info("found author %s in table authors_id", new_author_name)
+        author_id = author_meta_information[0][0]
+        # new author already exists, we need to update several tables to ensure data validity
+        self.database_handler.update_db_entry(
+            "update authors_papers set author_id=%s where author_id=%s",
+            author_id,
+            old_author_id,
+        )
+        self.logger.info(
+            "updated author_id %s to  %s in table authors_id",
+            old_author_id,
+            author_id
+        )
+        # delete possible duplicate we may have after update
+        self.database_handler.delete_from_db(
+            "delete from authors_papers a "
+            "using authors_papers b "
+            "where b.author_id = a.author_id and b.id = a.id and a.id != b.id"
+            "; "
+        )
+        self.logger.info("deleted possible duplicates in authors_papers")
+        return author_id
