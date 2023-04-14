@@ -13,10 +13,10 @@ from paper_sorts.config_reader import ConfigReader
 
 class DataBaseTest(unittest.TestCase):
     """
-    Tests adding, searching, updating and deleting functionality, but does not offer a significant amount of code coverage.
+    Tests adding, searching, updating and deleting functionality, but doesn't cover a significant amount of code.
     """
     def test_search_by_author(self):
-        """ Test if a entry know to be in the database can be found if searched for by author name."""
+        """ Test if an entry know to be in the database can be found if searched for by author name."""
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -33,7 +33,7 @@ class DataBaseTest(unittest.TestCase):
         self.assertRaises(KeyError, database.search_by_author, "no author")
 
     def test_search_by_title(self):
-        """ Test if a entry know to be in the database can be found if searched for by publication title."""
+        """ Test if an entry know to be in the database can be found if searched for by publication title."""
         config_reader = ConfigReader("../../database.crypt", "postgresql", "../../key")
         database = DatabaseConnector(
             config_reader.db_config,
@@ -45,7 +45,8 @@ class DataBaseTest(unittest.TestCase):
             database.search_by_title(
                 "Direct speech-to-speech translation with discrete units"
             )[0][0],
-            "Lee, Ann and Chen, Peng-Jen and Wang, Changhan and Gu, Jiatao and Ma, Xutai and Polyak, A. and Adi, Yossi and He, Qing and Tang, Yun and Pino, J. and Hsu, Wei-Ning",
+            "Lee, Ann and Chen, Peng-Jen and Wang, Changhan and Gu, Jiatao and Ma, Xutai and Polyak, A. and Adi, Yossi "
+            "and He, Qing and Tang, Yun and Pino, J. and Hsu, Wei-Ning",
         )
         self.assertRaises(KeyError, database.search_by_title, "no title")
 
@@ -123,7 +124,7 @@ class DataBaseTest(unittest.TestCase):
         )
         self.assertEqual(
             database.search_by_title(
-            "updated title"
+                "updated title"
             )[0][0],
             "list",
         )
@@ -148,16 +149,16 @@ class DataBaseTest(unittest.TestCase):
             "updated contents",
         )
         self.assertRaises(
-           ValueError,
-           database.update_entry,
+            ValueError,
+            database.update_entry,
             "test",
             "should not work",
             "papers",
             "This is a test",
         )
         self.assertRaises(
-           ValueError,
-           database.update_entry,
+            ValueError,
+            database.update_entry,
             "test",
             "should not work",
             "non-table",
@@ -174,8 +175,8 @@ class DataBaseTest(unittest.TestCase):
             log_file="db_connector_test.log",
         )
         self.assertRaises(
-           ValueError,
-           database.update_entry,
+            ValueError,
+            database.update_entry,
             "test",
             "should not work",
             "authors_papers",
@@ -238,7 +239,7 @@ class DataBaseTest(unittest.TestCase):
             ["list"],
             "x",
             "This is a test",
-             "This is a test",
+            "This is a test",
         )
         database.add_entry_to_db(
             "another test",
@@ -304,7 +305,7 @@ class DataBaseTest(unittest.TestCase):
         )
         self.assertEqual(
             database.database_handler.fetch_from_db(
-            "select  bibtex from bib where bibtex_id='x';"
+                "select bibtex from bib where bibtex_id='x';"
             )[0][0],
             "y"
         )
@@ -333,5 +334,7 @@ class DataBaseTest(unittest.TestCase):
             "bib",
             "x"
         )
+
+
 if __name__ == "__main__":
     unittest.main()
