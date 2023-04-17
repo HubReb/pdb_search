@@ -23,9 +23,8 @@ class ConfigReader(ConfigParser):
          :type section: str
          :param key_file: file containing the key to decrypt the config
          :type key_file: str
-
-        :return: db_config (dict): configuration parameters of db_connector
         """
+
         super().__init__()
         with open(filename, "rb") as f:
             config = f.read()
