@@ -13,6 +13,7 @@ from paper_sorts.helpers import (
 )
 from paper_sorts.database_connector import DatabaseConnector
 
+
 class UserInteraction:
     """
     This class handles all interaction with the user.
@@ -26,10 +27,10 @@ class UserInteraction:
     """
 
     def __init__(
-        self,
-        logger_name: str = "user_interaction_logger",
-        logging_level: int = logging.DEBUG,
-        log_file: str = "interaction.log",
+            self,
+            logger_name: str = "user_interaction_logger",
+            logging_level: int = logging.DEBUG,
+            log_file: str = "interaction.log",
     ):
         """
         Interaction with the user on the command line interface.
@@ -54,7 +55,7 @@ class UserInteraction:
             input(
                 "Search interface\nPlease choose a method:\n"
                 "1) Search by author\n"
-               " 2) Search by paper_information title\n"
+                "2) Search by paper_information title\n"
             )
         )
         while user_input < 1 or user_input > 2:
@@ -118,12 +119,12 @@ class UserInteraction:
         paper_title = get_user_input("Paper title: ")
         bibtex_key = get_user_input("bibtex key: ")
         bibtex_form = get_user_input(
-                "Do you want to enter the bibtex entry via a separate file?\n"
-                "1) Yes\n"
-                "2) No\n"
-                "Your choice: ")
+            "Do you want to enter the bibtex entry via a separate file?\n"
+            "1) Yes\n"
+            "2) No\n"
+            "Your choice: ")
         if cast(bibtex_form) == 1:
-            bibtex_information_file= get_user_input("Enter filename: ")
+            bibtex_information_file = get_user_input("Enter filename: ")
             with open(bibtex_information_file) as f:
                 bibtex_information = f.read()
         else:
@@ -144,8 +145,8 @@ class UserInteraction:
         return False
 
     def interact(
-        self,
-        database_connector: DatabaseConnector
+            self,
+            database_connector: DatabaseConnector
     ):
         """
         Start dialog with the user and have the user select what to do with the database.
@@ -192,7 +193,7 @@ class UserInteraction:
             "What table do you want to update?\n1) papers\n2) bib\n3) authors\n4) abort\nYour choice: "
         ).lower()
         match table_to_be_updated:
-            case "papers" |  "1" :
+            case "papers" | "1":
                 column_to_be_updated = get_user_input(
                     "Which information do you want to update?\n1) title\n2) contents\n3) abort\nYour choice: "
                 ).lower()
@@ -223,11 +224,12 @@ class UserInteraction:
             "Which entry do you want to update?\nPlease enter the respective id: ")
         value_to_set = get_user_input("Enter the new information: ")
         proceed_with_change = get_user_input(f"Please verify: "
-                                            f"You wish to change the entry '{identifier_of_the_entry_to_update}'"
-                                            f" of the column '{column_to_be_updated}' in the table "
-                                            f"'{table_to_be_updated}' to '{value_to_set}.\n Proceed?\n1) (Y)es\n2) (N)o\n"
+                                             f"You wish to change the entry '{identifier_of_the_entry_to_update}'"
+                                             f" of the column '{column_to_be_updated}' in the table "
+                                             f"'{table_to_be_updated}' to '{value_to_set}.\n Proceed?\n1) (Y)es\n2) ("
+                                             f"N)o\n"
                                              f"Your choice: "
-                                            ).lower()
+                                             ).lower()
         match proceed_with_change:
             case "1" | "y" | "yes":
                 verification_given = True
