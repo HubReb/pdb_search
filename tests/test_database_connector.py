@@ -64,17 +64,17 @@ class DataBaseTest(unittest.TestCase):
             ValueError,
             database.delete_paper_entry_from_database,
             "test",
-            ["list"],
+            ["list_add_and_remove"],
             "x",
-            "This is a test",
+            "This is a remove test",
             "This is a test",
         )
         self.assertTrue(
             database.add_entry_to_db(
                 "test",
-                ["list"],
+                ["list_add_and_remove"],
                 "x",
-                "This is a test",
+                "This is an add test",
                 "This is a test",
             )
         )
@@ -84,15 +84,15 @@ class DataBaseTest(unittest.TestCase):
             "test",
             ["list"],
             "x",
-            "This is a test",
+            "This is an add test",
             "This is a test",
         )
         self.assertTrue(
             database.delete_paper_entry_from_database(
                 "test",
-                ["list"],
+                ["list_add_and_remove"],
                 "x",
-                "This is a test",
+                "This is an add test",
                 "This is a test",
             )
         )
@@ -108,13 +108,13 @@ class DataBaseTest(unittest.TestCase):
         )
         database.add_entry_to_db(
             "test",
-            ["list"],
+            ["list_update_title"],
             "x",
-            "This is a test",
+            "This is an update title test",
             "This is a test",
         )
         paper_id = database.database_handler.fetch_from_db(
-            "select id from papers where title='This is a test';"
+            "select id from papers where title='This is an update title test';"
         )[0][0]
         database.update_entry(
             "title",
@@ -126,7 +126,7 @@ class DataBaseTest(unittest.TestCase):
             database.search_by_title(
                 "updated title"
             )[0][0],
-            "list",
+            "list_update_title",
         )
         database.update_entry(
             "contents",
@@ -143,7 +143,7 @@ class DataBaseTest(unittest.TestCase):
         )
         database.delete_paper_entry_from_database(
             "test",
-            ["list"],
+            ["list_update_title"],
             "x",
             "updated title",
             "updated contents",
@@ -195,14 +195,14 @@ class DataBaseTest(unittest.TestCase):
 
         database.add_entry_to_db(
             "test",
-            ["list"],
+            ["list_update_authors"],
             "x",
-            "This is a test",
+            "This is an update author test",
             "This is a test",
         )
 
         author_id = database.database_handler.fetch_from_db(
-                "select id from authors_id where author='list'",
+                "select id from authors_id where author='list_update_authors'",
         )[0][0]
         papers = database.database_handler.fetch_from_db(
                 "select paper_id from authors_papers where author_id=%s;",
@@ -212,7 +212,7 @@ class DataBaseTest(unittest.TestCase):
             "author",
             "changed_authors",
             "authors_id",
-            "list"
+            "list_update_authors"
         )
         author_id = database.database_handler.fetch_from_db(
                 "select id from authors_id where author='changed_authors'",
@@ -230,15 +230,15 @@ class DataBaseTest(unittest.TestCase):
                 "test",
                 ["changed_authors"],
                 "x",
-                "This is a test",
+                "This is an update author test",
                 "This is a test",
             )
         )
         database.add_entry_to_db(
             "test",
-            ["list"],
+            ["list_update_authors"],
             "x",
-            "This is a test",
+            "This is a test number 2",
             "This is a test",
         )
         database.add_entry_to_db(
@@ -252,14 +252,14 @@ class DataBaseTest(unittest.TestCase):
             "author",
             "new list",
             "authors_id",
-            "list"
+            "list_update_authors"
         )
         self.assertTrue(
             database.delete_paper_entry_from_database(
                 "test",
                 ["new list"],
                 "x",
-                "This is a test",
+                "This is a test number 2",
                 "This is a test",
             )
         )
@@ -278,7 +278,7 @@ class DataBaseTest(unittest.TestCase):
             "nonexistent column",
             "new list",
             "authors_id",
-            "list"
+            "list_update_authors"
         )
 
     def test_update_bib(self):
@@ -294,7 +294,7 @@ class DataBaseTest(unittest.TestCase):
             "test",
             ["list"],
             "x",
-            "This is a test",
+            "This is a bib test",
             "This is a test",
         )
         database.update_entry(
@@ -322,7 +322,7 @@ class DataBaseTest(unittest.TestCase):
                 "y",
                 ["new list"],
                 "x",
-                "This is a test",
+                "This is a bib test",
                 "This is a test",
             )
         )
