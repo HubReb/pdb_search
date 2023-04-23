@@ -301,31 +301,60 @@ class DatabaseConnector:
         :raises ValueError: if the handling of the database failed, ends application to prevent further damage
         """
         try:
-            try:
-                self.sanity_checks(bibtex_ident)
-            except ValueError as exc:
-                raise ValueError(
-                    "Could not add entry to db_connector. Check logs."
-                ) from exc
+            self.sanity_checks(bibtex_ident)
+        except ValueError as exc:
+            raise ValueError(
+                "Could not add entry to db_connector. Check logs."
+            ) from exc
+        try:
             self.database_handler.store_in_db(
                 "insert into bib values (%s, %s);",
                 (bibtex_ident, new_bibtex_entry),
             )
-            sql_instruction = (
-                "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)"
-            )
+        except ValueError as bibtex_error:
+            self.logger.error(bibtex_error)
+            raise ValueError("Could not add entry to bib table. Check logs")
+        sql_instruction = (
+            "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)"
+        )
+        try:
             self.database_handler.store_in_db(
                 sql_instruction, (title, content, bibtex_ident)
             )
-            paper_id = self.database_handler.fetch_from_db(
-                "select id from papers where title=%s", (title,)
-            )[0][0]
+        except ValueError as paper_table_error:
+            self.logger.error(paper_table_error)
+            # delete paper bib entry to avoid inconsistencies
+            self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s)", (bibtex_ident, ))
+            raise ValueError("Could not add entry to paper table. Check logs")
+        paper_id = self.database_handler.fetch_from_db(
+            "select id from papers where title=%s", (title,)
+        )[0][0]
+        author_number = 0
+        try:
             for author in author_names:
                 self.__insert_single_author(author, paper_id)
+                author_number += 1
             return True
 
         except ValueError as value_error:
             self.logger.error(value_error)
+            # delete paper bib entry to avoid inconsistencies
+            self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident, ))
+            # delete any author-paper connection already made
+            for already_created_author_connection in range(author_number):
+                author_id = self.database_handler.fetch_from_db(
+                    "select author_id from authors_id where author=%s", (author_names[already_created_author_connection],)
+                )[0][0]
+                self.database_handler.delete_from_db(
+                    "delete from authors_papers where (author_id=%s and paper_id=%s);",
+                    (author_id, paper_id),
+                )
+                # check if author does not exist outside of that specific paper
+                authors = self.database_handler.fetch_from_db(
+                    "select * from authors_papers where author_id=%s", (author_id,)
+                )
+                if not authors:
+                    self.__delete_author_with_no_papers(author_id)
             raise ValueError("Errors occurred in handling of the database - could not add author. End application!")
 
     def delete_paper_entry_from_database(
