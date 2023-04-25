@@ -190,7 +190,7 @@ class UserInteraction:
         :type database_connector: DatabaseConnector
         """
         table_to_be_updated = get_user_input(
-            "What table do you want to update?\n1) papers\n2) bib\n3) authors\n4) abort\nYour choice: "
+            "Which information do you want to update?\n1) papers\n2) bib\n3) authors\n4) abort\nYour choice: "
         ).lower()
         match table_to_be_updated:
             case "papers" | "1":
@@ -224,9 +224,9 @@ class UserInteraction:
             "Which entry do you want to update?\nPlease enter the respective id: ")
         value_to_set = get_user_input("Enter the new information: ")
         proceed_with_change = get_user_input(f"Please verify: "
-                                             f"You wish to change the entry '{identifier_of_the_entry_to_update}'"
-                                             f" of the column '{column_to_be_updated}' in the table "
-                                             f"'{table_to_be_updated}' to '{value_to_set}.\n Proceed?\n1) (Y)es\n2) ("
+                                             f"You wish to change '{column_to_be_updated}' of the entry "
+                                             f"'{identifier_of_the_entry_to_update}'"
+                                             f" to '{value_to_set}.\n Proceed?\n1) (Y)es\n2) ("
                                              f"N)o\n"
                                              f"Your choice: "
                                              ).lower()
