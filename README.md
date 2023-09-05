@@ -43,7 +43,8 @@ Connected to the database.
 What do you want to do?
 1) Search the database
 2) Add an entry
-3) (Q)uit
+3) Update an entry
+4) (Q)uit
 ```
 Press 1 to load the search dialog:
 ```
@@ -55,17 +56,21 @@ Please choose a method:
 ### Search by title
 
 Enter the title name and if a paper of that name exists in the database the relevant information will be presented to you.
+
+```
+Please enter the paper_information title:
+```
+If no paper is found, you will be informed of it.
 Note that if several papers with that specific title are present in the database, you will be presented with the list of
 the respective authors and asked to choose one author (group).
-
-If no paper is found, you will be informed of it.
-
 ### Search by author
 
 Enter the author's name. You are then presented with a list of papers that author has (co-)authored and asked
 to select one.
 The name should have the format ```${last name}, ${first name}```.
-
+```
+Please enter the author's name:
+```
 ## Add an entry
 
 The program takes you through the steps to add an entry to the database step by step. Note that you are asked
@@ -79,8 +84,43 @@ Bibtex key: new key
 Do you want to enter the bibtex entry via a separate file?
 1) Yes
 2) No
-Your choice: 
-[...]
+Your choice: 1
+Enter filename: bibfile.bib 
+summary of the paper_information: [...]
+```
+
+## Update an entry
+
+The program walks you through all steps necessary to update a single entry.
+The below interaction shows an example of an update dialog. 
+```
+Which information do you want to update?
+1) paper 
+2) bib
+3) authors
+4) abort
+Your choice: 1
+Which information do you want to update?
+1) title
+2) contents
+3) abort
+Your choice: 1 
+Which entry do you want to update?
+Please enter the respective id: ${paper_id}  
+```
+In order to change an entry you have to know its id in the database. 
+You may use the [search](README.md#search) functionality to access this id.
+```
+Enter the new information: the new title
+```
+You are asked to review and verify the information you have requested to change before 
+any change is applied:
+```
+Please verify: You wish to change the 'title' of 'paper_id' to 'the new title'.
+Proceed?
+1) (Y)es
+2) (N)o
+Your choice: 1
 ```
 
 # Config 
