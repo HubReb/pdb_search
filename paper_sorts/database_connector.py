@@ -62,29 +62,29 @@ class DatabaseConnector:
         :raises RunTimeError: if error occurred in  performing the database actions - check logs
         """
         self.create_tables()
-        try:
-            for title, values in data_dict.items():
-                bibtex_key = values["bibtex_id"]
-                if not bibtex_key:
-                    self.logger.error("bibtex entry %s not found", bibtex_key)
-                    continue
-                bibtex = values["bibtex"]
+        for title, values in data_dict.items():
+            bibtex_key = values["bibtex_id"]
+            if not bibtex_key:
+                self.logger.error("bibtex entry %s not found", bibtex_key)
+                continue
+            bibtex = values["bibtex"]
+            try:
                 database_entries = self.database_handler.fetch_from_db(
                     "select exists(select * from papers where bibtex_id=%s);",
                     (bibtex_key,),
                 )
-                if database_entries[0]:
-                    self.logger.info(
-                        "bibtex key %s already in database - skipping", bibtex_key
-                    )
-                    continue
-                authors = values["author"]
-                content = values["contents"]
-                self.__add_paper_to_db(authors, bibtex, bibtex_key, content, title)
+            except ValueError as value_error:
+                self.logger.exception(value_error)
+                raise RuntimeError("Failed to create tables and populate them - ending application!")
+            if database_entries[0]:
+                self.logger.info(
+                    "bibtex key %s already in database - skipping", bibtex_key
+                )
+                continue
+            authors = values["author"]
+            content = values["contents"]
+            self.__add_paper_to_db(authors, bibtex, bibtex_key, content, title)
 
-        except ValueError as value_error:
-            self.logger.exception(value_error)
-            raise RuntimeError("Failed to create tables and populate them - ending application!")
 
     def __add_paper_to_db(self, authors: List[str], bibtex: str, bibtex_key: str, content: str, title: str) -> None:
         """
@@ -313,7 +313,7 @@ class DatabaseConnector:
             )
         except ValueError as bibtex_error:
             self.logger.error(bibtex_error)
-            raise ValueError("Could not add entry to bib table. Check logs")
+            raise ValueError("Could not add entry to bib table. Check logs") from bibtex_error
         sql_instruction = (
             "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)"
         )
@@ -325,37 +325,40 @@ class DatabaseConnector:
             self.logger.error(paper_table_error)
             # delete paper bib entry to avoid inconsistencies
             self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s)", (bibtex_ident, ))
-            raise ValueError("Could not add entry to paper table. Check logs")
+            raise ValueError("Could not add entry to paper table. Check logs") from paper_table_error
         paper_id = self.database_handler.fetch_from_db(
             "select id from papers where title=%s", (title,)
         )[0][0]
-        author_number = 0
-        try:
-            for author in author_names:
+        for author_number, author in enumerate(author_names):
+            try:
                 self.__insert_single_author(author, paper_id)
-                author_number += 1
-            return True
 
-        except ValueError as value_error:
-            self.logger.error(value_error)
-            # delete paper bib entry to avoid inconsistencies
-            self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident, ))
-            # delete any author-paper connection already made
-            for already_created_author_connection in range(author_number):
-                author_id = self.database_handler.fetch_from_db(
-                    "select author_id from authors_id where author=%s", (author_names[already_created_author_connection],)
-                )[0][0]
-                self.database_handler.delete_from_db(
-                    "delete from authors_papers where (author_id=%s and paper_id=%s);",
-                    (author_id, paper_id),
-                )
-                # check if author does not exist outside of that specific paper
-                authors = self.database_handler.fetch_from_db(
-                    "select * from authors_papers where author_id=%s", (author_id,)
-                )
-                if not authors:
-                    self.__delete_author_with_no_papers(author_id)
-            raise ValueError("Errors occurred in handling of the database - could not add author. End application!")
+            except ValueError as value_error:
+                self.logger.error(value_error)
+                # delete paper bib entry to avoid inconsistencies
+                self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident, ))
+                # delete any author-paper connection already made
+                for already_created_author_connection in range(author_number):
+                    self.rollback_author_addition(author_names[already_created_author_connection], paper_id)
+                raise ValueError("Errors occurred in handling of the database - could not add author. End application!") from value_error
+
+        return True
+
+    def rollback_author_addition(self, author_name, paper_id):
+        """ Delete papers associated with auhor that have recently been added . """
+        author_id = self.database_handler.fetch_from_db(
+                        "select author_id from authors_id where author=%s", (author_name,)
+                    )[0][0]
+        self.database_handler.delete_from_db(
+            "delete from authors_papers where (author_id=%s and paper_id=%s);",
+            (author_id, paper_id),
+        )
+        # check if author does not exist outside of that specific paper
+        authors = self.database_handler.fetch_from_db(
+            "select * from authors_papers where author_id=%s", (author_id,)
+        )
+        if not authors:
+            self.__delete_author_with_no_papers(author_id)
 
     def delete_paper_entry_from_database(
         self,
