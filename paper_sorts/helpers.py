@@ -103,18 +103,25 @@ def get_bibtex_information(papers_dict: dict, bib_somy: str) -> dict:
     """
     bib_graph = parse_file(bib_somy, bib_format="bibtex")
     for i in bib_graph.entries:
-        for entry in papers_dict.keys():
-            if not papers_dict[entry]["bibtex_id"] == i:
-                continue
-            authors_list = []
-            for author in bib_graph.entries[i].persons["author"]:
-                authors_list.append(
-                    f"{author.last_names[0]}, {author.first_names[0]}"
-                )
-            papers_dict[entry]["bibtex"] = bib_graph.entries[i].to_string("bibtex")
-            papers_dict[entry]["author"] = authors_list
+        if get_bibtex_information_in_entry(papers_dict, bib_graph, i):
             break
     return papers_dict
+
+
+def get_bibtex_information_in_entry(papers_dict: dict, bib_graph, bib_graph_entry_key: int):
+    """ Extract information from single entry """
+    for entry in papers_dict.keys():
+        if not papers_dict[entry]["bibtex_id"] == bib_graph_entry_key:
+            continue
+        authors_list = []
+        for author in bib_graph.entries[bib_graph_entry_key].persons["author"]:
+            authors_list.append(
+                f"{author.last_names[0]}, {author.first_names[0]}"
+            )
+        papers_dict[entry]["bibtex"] = bib_graph.entries[bib_graph_entry_key].to_string("bibtex")
+        papers_dict[entry]["author"] = authors_list
+        return True
+    return False
 
 
 def get_single_bibtex_information(bibsomy: str) -> Tuple[str, List[str], str, str]:
@@ -168,14 +175,16 @@ def iterate_through_papers(papers: List[List[str]]) -> List[List[str]]:
 
 def get_user_choice(results: List) -> List:
     """Ask user for his choice on what to do."""
-    print("Following papers found: ")
+    information_print ="Following papers found:\n"
     for i, paper in enumerate(results):
-        print(f"{i + 1}: title: {paper[3]}")
+        information_print += f"{i + 1}: title: {paper[3]}\n"
     chosen_paper = -1
-    while chosen_paper < 0 or chosen_paper >= len(results):
-        chosen_paper = cast(input("Choose paper_information to extract: ")) - 1
-        if chosen_paper < 0 or chosen_paper >= len(results):
-            print("Please choose a valid number.")
+    prompt ="Choose paper_information to extract: "
+    print(information_print)
+    chosen_paper = cast(input(prompt)) - 1
+    valid_options = list(range(0, len(results)))
+    while chosen_paper not in valid_options:
+        chosen_paper = cast(input(prompt)) - 1
     return results[chosen_paper]
 
 

@@ -58,7 +58,7 @@ class UserInteraction:
                 "2) Search by paper_information title\n"
             )
         )
-        while user_input < 1 or user_input > 2:
+        while user_input not in [1, 2]:
             user_input = cast(
                 input(
                     "Please choose a valid option:\n"
@@ -67,38 +67,59 @@ class UserInteraction:
                 )
             )
         if user_input == 2:
-            try:
-                paper_title = input("Please enter the paper_information title: ")
-                papers = db_connector.search_by_title(paper_title.strip())
-                if not papers:
-                    print("There was a db_connector error, shutting down.")
-                    return
-                if len(papers) > 1:
-                    chosen_paper = get_user_choice(papers)
-                else:
-                    chosen_paper = papers[0]
-                bibtex_data = db_connector.search_for_bibtex_entry_by_id(chosen_paper)
-                pretty_print_results(bibtex_data, chosen_paper)
-            except KeyError:
+            if not self.search_by_paper_title(db_connector):
                 print("Paper was not found in db_connector.")
-                self.logger.error("shutdown")
 
         else:
-            try:
-                author_name = input("Please enter the author's name: ")
-                papers = db_connector.search_by_author(author_name.strip())
-                if not papers:
-                    print("There was a db_connector error, shutting down.")
-                    return
-                chosen_paper = get_user_choice(papers)
-                paper = db_connector.search_for_entry_by_specified_paper_information(
-                    chosen_paper
-                )
-                bibtex_data = db_connector.search_for_bibtex_entry_by_id(paper)
-                pretty_print_results(bibtex_data, paper)
-            except KeyError:
+            if not self.search_by_author(db_connector):
                 print("Author was not found in db_connector.")
-                self.logger.error("shutdown")
+
+    def search_by_author(self, db_connector):
+        """ Search db by author name """
+        author_name = input("Please enter the author's name: ")
+        papers = db_connector.search_by_author(author_name.strip())
+        if not papers:
+            return self.log_failed_to_connect()
+        chosen_paper = get_user_choice(papers)
+
+        paper = db_connector.search_for_entry_by_specified_paper_information(
+            chosen_paper
+        )
+        try:
+            bibtex_data = db_connector.search_for_bibtex_entry_by_id(paper)
+        except KeyError:
+            self.log_failed_to_find_information(author_name)
+            return False
+        pretty_print_results(bibtex_data, paper)
+        return True
+
+    def log_failed_to_connect(self):
+        """ Handle connection failure """
+        self.logger.error("Failed to connect to DB, shutting down.")
+        return False
+
+    def log_failed_to_find_information(self, information):
+        """ log failure to find data in db """
+        self.logger.error("%s was not found in DB.", information)
+
+
+    def search_by_paper_title(self, db_connector: DatabaseConnector):
+        """ Search for paper by author name."""
+        paper_title = input("Please enter the paper_information title: ")
+        papers = db_connector.search_by_title(paper_title.strip())
+        if not papers:
+            return self.log_failed_to_connect()
+        if len(papers) > 1:
+            chosen_paper = get_user_choice(papers)
+        else:
+            chosen_paper = papers[0]
+        try:
+            bibtex_data = db_connector.search_for_bibtex_entry_by_id(chosen_paper)
+        except KeyError:
+            self.log_failed_to_find_information(chosen_paper)
+            return False
+        pretty_print_results(bibtex_data, chosen_paper)
+        return True
 
     def add(self, db_connector: DatabaseConnector) -> bool:
         """
@@ -180,6 +201,23 @@ class UserInteraction:
                 "Your choice: "
             )
 
+    def determine_whether_to_update_papers_table(self, column):
+        " Determine whether the paper table column 'column' can be updated by the user"""
+        match column:
+            case "1" | "title":
+                column = "title"
+            case "2" | "contents":
+                column = "contents"
+            case "3" | "abort":
+                print("Stopping update process...")
+                return False
+            case _:
+                print(f"Column '{column}' cannot be updated in this manner.")
+                return False
+        return True
+
+
+
     def update(
             self,
             database_connector: DatabaseConnector
@@ -197,17 +235,12 @@ class UserInteraction:
                 column_to_be_updated = get_user_input(
                     "Which information do you want to update?\n1) title\n2) contents\n3) abort\nYour choice: "
                 ).lower()
-                match column_to_be_updated:
-                    case "1" | "title":
-                        column_to_be_updated = "title"
-                    case "2" | "contents":
-                        column_to_be_updated = "contents"
-                    case "3" | "abort":
-                        print("Stopping update process...")
-                        return
-                    case _:
-                        print(f"Column '{column_to_be_updated}' cannot be updated in this manner.")
-                        return
+                if not self.determine_whether_to_update_papers_table(column_to_be_updated):
+                    return False
+                if column_to_be_updated in ["1", "title"]:
+                    column_to_be_updated = "title"
+                else:
+                    column_to_be_updated = "contents"
             case "bib" | "2":
                 print("Only the bibtex can be updated - the bibtex identifier cannot be changed.")
                 column_to_be_updated = "bibtex"
@@ -216,10 +249,10 @@ class UserInteraction:
                 column_to_be_updated = "author"
             case "4" | "abort":
                 print("Stopping update process...")
-                return
+                return False
             case _:
                 print(f"Table '{table_to_be_updated}' cannot be updated in this manner.")
-                return
+                return False
         identifier_of_the_entry_to_update = get_user_input(
             "Which entry do you want to update?\nPlease enter the respective id: ")
         value_to_set = get_user_input("Enter the new information: ")
@@ -230,17 +263,9 @@ class UserInteraction:
                                              f"N)o\n"
                                              f"Your choice: "
                                              ).lower()
-        match proceed_with_change:
-            case "1" | "y" | "yes":
-                verification_given = True
-            case "2" | "n" | "no":
-                verification_given = False
-            case _:
-                print("Could not parse your reply. Stopping update process...")
-                return
-        if not verification_given:
-            print("Stopping update process...")
-            return
+        if not self.match_proceed_with_change(proceed_with_change):
+            return False
+
         try:
             database_connector.update_entry(
                 column_to_be_updated,
@@ -251,3 +276,17 @@ class UserInteraction:
         except ValueError as error:
             self.logger.error(error)
             print("Could not update entry - please check logs.")
+            return False
+        return True
+
+
+    def match_proceed_with_change(self, proceed_with_change):
+        """ Determine whether change is wanted by the user . """
+        match proceed_with_change:
+            case "1" | "y" | "yes":
+                return True
+            case "2" | "n" | "no":
+                return False
+            case _:
+                self.logger.error("Could not parse user reply. Stopping update process...")
+                return False
