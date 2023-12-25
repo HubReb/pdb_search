@@ -163,6 +163,7 @@ class DatabaseConnector:
 
         :param author: name of the author
         :type author: str
+        :raises ValueError: if connection to db could not be established
         """
         paper_id = self.database_handler.fetch_from_db("select max(id) from papers;")[0]
         author_id = self.database_handler.fetch_from_db(
@@ -192,6 +193,7 @@ class DatabaseConnector:
         :param paper: list of meta information for one paper
         :type paper: List[str]
         :return: bib information for the paper
+        :raises ValueError: if connection to db could not be established
         """
         if paper:
             return self.database_handler.fetch_from_db(
@@ -207,6 +209,7 @@ class DatabaseConnector:
         :type title: str
         :return: all paper's meta information whose title matches the parameter title
         :rtype: List[Optional[List[str]]]
+        :raises ValueError: if connection to db could not be established
         """
         papers = self.database_handler.fetch_from_db(
             "select  authors_id.author, papers.id, papers.title, papers.bibtex_id, papers.contents from "
@@ -239,6 +242,7 @@ class DatabaseConnector:
         :type author: str
         :return: information on all paper's the author has worked on that are in the database
         :rtype: List[str]
+        :raises ValueError: if connection to db could not be established
         """
         try:
             results = self.database_handler.fetch_from_db(
@@ -265,6 +269,7 @@ class DatabaseConnector:
         :type paper_information: List
         :return: names of the author(s) and the information provided in paper_information
         :rtype: List[Optional[str]]
+        :raises ValueError: if connection to db could not be established
         """
         author_names = self.database_handler.fetch_from_db(
             "select authors_id.author, paper_id from authors_id INNER JOIN "
@@ -346,12 +351,12 @@ class DatabaseConnector:
             except ValueError as value_error:
                 self.logger.exception(value_error)
                 # delete paper bib entry to avoid inconsistencies
-                self.rollback_database_additions(bibtex_ident, author_names, author_number)
+                self.rollback_database_additions(bibtex_ident, author_names, author_number, paper_id)
                 raise ValueError("Errors occurred in handling of the database - could not add author. End application!") from value_error
 
         return True
 
-    def rollback_database_additions(self, bibtex_ident, author_names, author_number):
+    def rollback_database_additions(self, bibtex_ident, author_names, author_number, paper_id):
         """ Delete bib entry and any author-paper connections to avoid database inconsistencies. """
         try:
             self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident,))
@@ -606,6 +611,7 @@ class DatabaseConnector:
         :param update_value: value to set the column of the entry to
         :type update_value: str
         :raises ValueError: if a non-supported update_column is chosen, either non-existent or not editable
+        :raises ValueError: if connection to db could not be established
         """
         match update_column:
             case "contents":
@@ -632,6 +638,7 @@ class DatabaseConnector:
         :param new_bibtex_information: new bibtex information (summary, author, publication,...)
         :type new_bibtex_information: str
         :raises ValueError: if the bibtex information provided by new_bibtex_information already
+        :raises ValueError: if connection to db could not be established
         """
         bibtex_p = self.database_handler.fetch_from_db(
             "select bibtex_id from bib where bibtex=%s;", (new_bibtex_information,)
@@ -666,6 +673,7 @@ class DatabaseConnector:
         :type author_identification: str
         :param new_author_name: new name of the author specified by identifier
         :type new_author_name: str
+        :raises ValueError: if connection to db could not be established
         """
         # check if new author already exists
         author_meta_information = self.database_handler.fetch_from_db(
@@ -694,6 +702,7 @@ class DatabaseConnector:
 
         :param author_id: unique identifier of the author to be deleted
         :type author_id: str
+        :raises ValueError: if connection to db could not be established
         """
         self.database_handler.delete_from_db(
             "delete from authors_id where id=%s;",
@@ -710,6 +719,7 @@ class DatabaseConnector:
         :param new_author_name: name of new author to set papers to
         :param old_author_id: identifier of the old author to be changed
         :return: id of new author
+        :raises ValueError: if connection to db could not be established
         """
         self.logger.info(
             "did not find author %s in table authors_id", new_author_name
@@ -750,6 +760,7 @@ class DatabaseConnector:
         :param old_author_id: identifier of the old author
         :type old_author_id: str
         :return: identifier of new author
+        :raises ValueError: if connection to db could not be established
         """
         self.logger.info("found author %s in table authors_id", new_author_name)
         author_id = author_meta_information[0][0]
