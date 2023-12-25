@@ -96,12 +96,6 @@ class DatabaseConnector:
 
         :param authors: name of the authors of the publication
         :type authors: List[str]
-        :param bibtex: bib entry of the publication
-        :type bibtex: str
-        :param bibtex_key: unique identifier of the publication
-        :type bibtex_key: str
-        :param content: short summary of the publication
-        :type content: str
         :param title: title of the publication
         :type title: str
         """
@@ -119,7 +113,18 @@ class DatabaseConnector:
         return True
 
     def store_paper_in_db(self, bibtex_key, bibtex, title, content) -> bool:
-        """ Store paper in db tables. """
+        """
+        Store paper in db tables.
+
+        :param bibtex: bib entry of the publication
+        :type bibtex: str
+        :param bibtex_key: unique identifier of the publication
+        :type bibtex_key: str
+        :param title: title of the publication
+        :type title: str
+        :param content: short summary of the publication
+        :type content: str
+        """
         try:
             self.database_handler.store_in_db(
                 "select exists(select * from papers where bibtex_id=%s);",
@@ -362,35 +367,51 @@ class DatabaseConnector:
             except ValueError as value_error:
                 self.logger.exception(value_error)
                 # delete paper bib entry to avoid inconsistencies
-                self.rollback_database_additions(bibtex_ident, author_names, author_number, paper_id)
-                raise ValueError("Errors occurred in handling of the database - could not add author. End application!") from value_error
+                self.rollback_database_addition(bibtex_ident, author_names, author_number, paper_id)
+                raise ValueError(
+                    "Errors occurred in handling of the database - could not add author. End application!") \
+                    from value_error
         return True
 
-    def rollback_database_additions(self, bibtex_ident, author_names, author_number, paper_id):
+    def rollback_database_addition(
+            self,
+            bibtex_ident: str,
+            author_names: List[str],
+            author_number: int,
+            paper_id: str
+    ) -> bool:
         """ Delete bib entry and any author-paper connections to avoid database inconsistencies. """
         try:
             self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident,))
             # delete any author-paper connection already made
             for already_created_author_connection in range(author_number):
-                self.rollback_author_addition(author_names[already_created_author_connection], paper_id)
+                if not self.rollback_author_addition(author_names[already_created_author_connection], paper_id):
+                    return False
         except ValueError as value_error:
             self.logger.exception(value_error)
+            return False
+        return True
 
-    def rollback_author_addition(self, author_name, paper_id):
+    def rollback_author_addition(self, author_name: str, paper_id: str) -> bool:
         """ Delete papers associated with author that have recently been added . """
-        author_id = self.database_handler.fetch_from_db(
-                        "select author_id from authors_id where author=%s", (author_name,)
-                    )[0][0]
-        self.database_handler.delete_from_db(
-            "delete from authors_papers where (author_id=%s and paper_id=%s);",
-            (author_id, paper_id),
-        )
-        # check if author does not exist outside of that specific paper
-        authors = self.database_handler.fetch_from_db(
-            "select * from authors_papers where author_id=%s", (author_id,)
-        )
-        if not authors:
-            self.__delete_author_with_no_papers(author_id)
+        try:
+            author_id = self.database_handler.fetch_from_db(
+                            "select author_id from authors_id where author=%s", (author_name,)
+                        )[0][0]
+            self.database_handler.delete_from_db(
+                "delete from authors_papers where (author_id=%s and paper_id=%s);",
+                (author_id, paper_id),
+            )
+            # check if author does not exist outside of that specific paper
+            authors = self.database_handler.fetch_from_db(
+                "select * from authors_papers where author_id=%s", (author_id,)
+            )
+            if not authors:
+                self.__delete_author_with_no_papers(author_id)
+        except ValueError as value_error:
+            self.logger.exception(value_error)
+            return False
+        return True
 
     def delete_paper_entry_from_database(
         self,
@@ -426,39 +447,8 @@ class DatabaseConnector:
             raise ValueError(
                 f"Paper {title} does not exist in database Check logs."
             ) from exc
-
-        for author in author_names:
-            author_id_list = self.database_handler.fetch_from_db(
-                "select * from authors_id where author=%s;", (author,)
-            )
-            if author_id_list:
-                author_id = author_id_list[0][0]
-                author_name = author_id_list[0][1]
-                try:
-                    self.database_handler.delete_from_db(
-                        "delete from authors_papers where (author_id=%s and paper_id=%s);",
-                        (author_id, paper_id),
-                    )
-                    self.logger.info(
-                        "marking author '%s' and paper_information '%s' for deletion",
-                        author_name,
-                        title
-                    )
-                    authors = self.database_handler.fetch_from_db(
-                        "select * from authors_papers where author_id=%s", (author_id,)
-                    )
-                    if not authors:
-                        self.database_handler.delete_from_db(
-                            "delete from authors_id where id=%s;",
-                            (author_id,),
-                        )
-                        self.logger.info(
-                            "marking author '%s' for deletion in authors_id",
-                            author_name
-                        )
-                except ValueError as value_error:
-                    self.logger.exception(value_error)
-                    return False
+        if not self.delete_authors_in_name_list(author_names, paper_id, title):
+            return False
 
         try:
             self.database_handler.delete_from_db(
@@ -510,6 +500,7 @@ class DatabaseConnector:
         :type author: str
         :param paper_id: unique author_identification of the paper_information
         :type paper_id: str
+        :raises ValueError: if interaction with db failed
         """
         author_meta_data_list = self.database_handler.fetch_from_db(
             "select * from authors_id where author=%s;", (author,)
@@ -705,7 +696,7 @@ class DatabaseConnector:
         if not authors:
             self.__delete_author_with_no_papers(author_id)
 
-    def __delete_author_with_no_papers(self, author_id):
+    def __delete_author_with_no_papers(self, author_id: str) -> None:
         """
         Delete author with no publication from database.
 
@@ -793,3 +784,45 @@ class DatabaseConnector:
         )
         self.logger.info("deleted possible duplicates in authors_papers")
         return author_id
+
+    def delete_author_of_list(self, author_id_list: List[str], paper_id: str, title: str) -> bool:
+        """ Delete author of specified in author_id_list."""
+        author_id = author_id_list[0][0]
+        author_name = author_id_list[0][1]
+        try:
+            self.database_handler.delete_from_db(
+                "delete from authors_papers where (author_id=%s and paper_id=%s);",
+                (author_id, paper_id),
+            )
+            self.logger.info(
+                "marking author '%s' and paper_information '%s' for deletion",
+                author_name,
+                title
+            )
+            authors = self.database_handler.fetch_from_db(
+                "select * from authors_papers where author_id=%s", (author_id,)
+            )
+            if not authors:
+                self.database_handler.delete_from_db(
+                    "delete from authors_id where id=%s;",
+                    (author_id,),
+                )
+                self.logger.info(
+                    "marking author '%s' for deletion in authors_id",
+                    author_name
+                )
+        except ValueError as value_error:
+            self.logger.exception(value_error)
+            return False
+        return True
+
+    def delete_authors_in_name_list(self, author_names: List[str], paper_id: str, title: str) -> bool:
+        """ Delete authors in author_names list for paper paper_id from db."""
+        for author in author_names:
+            author_id_list: List[str] = self.database_handler.fetch_from_db(
+                "select * from authors_id where author=%s;", (author,)
+            )
+            if author_id_list:
+                if not self.delete_author_of_list(author_id_list, paper_id, title):
+                    return False
+        return True
