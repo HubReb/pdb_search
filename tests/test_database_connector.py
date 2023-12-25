@@ -48,7 +48,7 @@ class DataBaseTest(unittest.TestCase):
             "Lee, Ann and Chen, Peng-Jen and Wang, Changhan and Gu, Jiatao and Ma, Xutai and Polyak, A. and Adi, Yossi "
             "and He, Qing and Tang, Yun and Pino, J. and Hsu, Wei-Ning",
         )
-        self.assertRaises(KeyError, database.search_by_title, "no title")
+        self.assertIsNone(database.search_by_title("no title"))
 
     def test_adding_and_removing(self):
         """Test whether an entry can be added and removed from the database safely. """
