@@ -65,7 +65,7 @@ class DatabaseConnector:
         for title, values in data_dict.items():
             bibtex_key = values["bibtex_id"]
             if not bibtex_key:
-                self.logger.error("bibtex entry %s not found", bibtex_key)
+                self.logger.exception("bibtex entry %s not found", bibtex_key)
                 continue
             bibtex = values["bibtex"]
             try:
@@ -83,8 +83,10 @@ class DatabaseConnector:
                 continue
             authors = values["author"]
             content = values["contents"]
-            self.__add_paper_to_db(authors, bibtex, bibtex_key, content, title)
-
+            try:
+                self.__add_paper_to_db(authors, bibtex, bibtex_key, content, title)
+            except ValueError as value_error:
+                self.logger.exception(value_error)
 
     def __add_paper_to_db(self, authors: List[str], bibtex: str, bibtex_key: str, content: str, title: str) -> None:
         """
@@ -113,12 +115,16 @@ class DatabaseConnector:
             (title, content, bibtex_key),
         )
         for author in authors:
-            self.__add_single_author(author)
-            self.logger.info(
-                "added author %s and paper_information %s to database",
-                author,
-                title
-            )
+            try:
+                self.__add_single_author(author)
+                self.logger.info(
+                    "added author %s and paper_information %s to database",
+                    author,
+                    title
+                )
+            except ValueError as value_error:
+                self.logger.exception(value_error)
+                break
 
     def create_tables(self) -> None:
         """
@@ -179,7 +185,7 @@ class DatabaseConnector:
                 (author_id, paper_id),
             )
 
-    def search_for_bibtex_entry_by_id(self, paper: List[str]) -> List[str]:
+    def search_for_bibtex_entry_by_id(self, paper: List[str]) -> List[str] | None:
         """
         Search the bib table for the entry specified by  bibtex_id that must be present in paper.
 
@@ -191,9 +197,9 @@ class DatabaseConnector:
             return self.database_handler.fetch_from_db(
                 "select * from bib where bibtex_id=%s;", (paper[3],)
             )
-        raise KeyError("Bibtex entry was not found!")
+        return
 
-    def search_by_title(self, title: str) -> List[Optional[List[str]]]:
+    def search_by_title(self, title: str) -> List[Optional[List[str]]] | None:
         """
         Search the database for the entire paper information record via the title of the paper.
 
@@ -201,7 +207,6 @@ class DatabaseConnector:
         :type title: str
         :return: all paper's meta information whose title matches the parameter title
         :rtype: List[Optional[List[str]]]
-        :raises KeyError: if no paper with the specified title could be found
         """
         papers = self.database_handler.fetch_from_db(
             "select  authors_id.author, papers.id, papers.title, papers.bibtex_id, papers.contents from "
@@ -214,7 +219,8 @@ class DatabaseConnector:
             self.logger.info(
                 "Paper with title %s not found in table papers, abort!", title
             )
-            raise KeyError("Paper not found!")
+            self.logger.info("Paper not found!")
+            return
         down_papers = []
 
         if len(set(p[2] for p in papers)) > 1:
@@ -234,15 +240,19 @@ class DatabaseConnector:
         :return: information on all paper's the author has worked on that are in the database
         :rtype: List[str]
         """
-        results = self.database_handler.fetch_from_db(
-            "select authors_id.id, authors_id.author, paper_id, title, bibtex_id, contents from "
-            "authors_id INNER JOIN authors_papers on "
-            "authors_papers.author_id=authors_id.id INNER JOIN papers on paper_id=papers.id where author=%s;",
-            (author,),
-        )
-        if not results:
-            self.logger.info("author not found")
-            raise KeyError("Author not found!")
+        try:
+            results = self.database_handler.fetch_from_db(
+                "select authors_id.id, authors_id.author, paper_id, title, bibtex_id, contents from "
+                "authors_id INNER JOIN authors_papers on "
+                "authors_papers.author_id=authors_id.id INNER JOIN papers on paper_id=papers.id where author=%s;",
+                (author,),
+            )
+            if not results:
+                self.logger.info("author not found")
+                raise KeyError("Author not found!")
+        except ValueError as value_error:
+            results = []
+            self.logger.exception(value_error)
         return results
 
     def search_for_entry_by_specified_paper_information(
@@ -312,7 +322,7 @@ class DatabaseConnector:
                 (bibtex_ident, new_bibtex_entry),
             )
         except ValueError as bibtex_error:
-            self.logger.error(bibtex_error)
+            self.logger.exception(bibtex_error)
             raise ValueError("Could not add entry to bib table. Check logs") from bibtex_error
         sql_instruction = (
             "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)"
@@ -322,7 +332,7 @@ class DatabaseConnector:
                 sql_instruction, (title, content, bibtex_ident)
             )
         except ValueError as paper_table_error:
-            self.logger.error(paper_table_error)
+            self.logger.exception(paper_table_error)
             # delete paper bib entry to avoid inconsistencies
             self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s)", (bibtex_ident, ))
             raise ValueError("Could not add entry to paper table. Check logs") from paper_table_error
@@ -334,18 +344,26 @@ class DatabaseConnector:
                 self.__insert_single_author(author, paper_id)
 
             except ValueError as value_error:
-                self.logger.error(value_error)
+                self.logger.exception(value_error)
                 # delete paper bib entry to avoid inconsistencies
-                self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident, ))
-                # delete any author-paper connection already made
-                for already_created_author_connection in range(author_number):
-                    self.rollback_author_addition(author_names[already_created_author_connection], paper_id)
+                self.rollback_database_additions(bibtex_ident, author_names, author_number)
                 raise ValueError("Errors occurred in handling of the database - could not add author. End application!") from value_error
 
         return True
 
+    def rollback_database_additions(self, bibtex_ident, author_names, author_number):
+        """ Delete bib entry and any author-paper connections to avoid database inconsistencies. """
+        try:
+            self.database_handler.delete_from_db("Delete from bib where (bibtex_ident=%s", (bibtex_ident,))
+            # delete any author-paper connection already made
+            for already_created_author_connection in range(author_number):
+                self.rollback_author_addition(author_names[already_created_author_connection], paper_id)
+        except ValueError as value_error:
+            self.logger.exception(value_error)
+        return
+
     def rollback_author_addition(self, author_name, paper_id):
-        """ Delete papers associated with auhor that have recently been added . """
+        """ Delete papers associated with author that have recently been added . """
         author_id = self.database_handler.fetch_from_db(
                         "select author_id from authors_id where author=%s", (author_name,)
                     )[0][0]
@@ -390,7 +408,7 @@ class DatabaseConnector:
                 "select id from papers where title=%s", (title,)
             )[0][0]
         except IndexError as exc:
-            self.logger.error("paper_information %s does not exist in database", title)
+            self.logger.exception("paper_information %s does not exist in database", title)
             raise ValueError(
                 f"Paper {title} does not exist in database Check logs."
             ) from exc
@@ -402,38 +420,47 @@ class DatabaseConnector:
             if author_id_list:
                 author_id = author_id_list[0][0]
                 author_name = author_id_list[0][1]
-                self.database_handler.delete_from_db(
-                    "delete from authors_papers where (author_id=%s and paper_id=%s);",
-                    (author_id, paper_id),
-                )
-                self.logger.info(
-                    "marking author '%s' and paper_information '%s' for deletion",
-                    author_name,
-                    title
-                )
-                authors = self.database_handler.fetch_from_db(
-                    "select * from authors_papers where author_id=%s", (author_id,)
-                )
-                if not authors:
+                try:
                     self.database_handler.delete_from_db(
-                        "delete from authors_id where id=%s;",
-                        (author_id,),
+                        "delete from authors_papers where (author_id=%s and paper_id=%s);",
+                        (author_id, paper_id),
                     )
                     self.logger.info(
-                        "marking author '%s' for deletion in authors_id",
-                        author_name
+                        "marking author '%s' and paper_information '%s' for deletion",
+                        author_name,
+                        title
                     )
-        self.database_handler.delete_from_db(
-            "delete from papers where (title=%s and contents=%s and bibtex_id=%s)",
-            (title, content, bibtex_ident),
-        )
-        self.logger.info("marking bibtex id %s for deletion in papers", bibtex_ident)
-        self.database_handler.delete_from_db(
-            "delete from bib where (bibtex_id=%s and bibtex=%s);",
-            (bibtex_ident, bibtex_entry),
-        )
-        self.logger.info("marking bibtex id %s for deletion", bibtex_ident)
-        self.logger.info("successfully deleted data")
+                    authors = self.database_handler.fetch_from_db(
+                        "select * from authors_papers where author_id=%s", (author_id,)
+                    )
+                    if not authors:
+                        self.database_handler.delete_from_db(
+                            "delete from authors_id where id=%s;",
+                            (author_id,),
+                        )
+                        self.logger.info(
+                            "marking author '%s' for deletion in authors_id",
+                            author_name
+                        )
+                except ValueError as value_error:
+                    self.logger.exception(value_error)
+                    return False
+
+        try:
+            self.database_handler.delete_from_db(
+                "delete from papers where (title=%s and contents=%s and bibtex_id=%s)",
+                (title, content, bibtex_ident),
+            )
+            self.logger.info("marking bibtex id %s for deletion in papers", bibtex_ident)
+            self.database_handler.delete_from_db(
+                "delete from bib where (bibtex_id=%s and bibtex=%s);",
+                (bibtex_ident, bibtex_entry),
+            )
+            self.logger.info("marking bibtex id %s for deletion", bibtex_ident)
+            self.logger.info("successfully deleted data")
+        except ValueError as value_error:
+            self.logger.exception(value_error)
+            return False
         return True
 
     def sanity_checks(self, bibtex_ident: str) -> None:
@@ -448,13 +475,13 @@ class DatabaseConnector:
         if not self.database_handler.fetch_from_db(
             "select relname from pg_class where relname = 'papers';"
         ):
-            self.logger.error("Table papers not found in db_connector, abort!")
+            self.logger.exception("Table papers not found in db_connector, abort!")
             raise ValueError("Table papers not found!")
 
         if self.database_handler.fetch_from_db(
             f"select exists(select * from papers where bibtex_id='{bibtex_ident}');"
         )[0][0]:
-            self.logger.error("Entry %s already exists in table papers", bibtex_ident)
+            self.logger.exception("Entry %s already exists in table papers", bibtex_ident)
             raise ValueError("Entry already exists")
 
     def __insert_single_author(self, author: str, paper_id: str) -> None:
@@ -517,7 +544,7 @@ class DatabaseConnector:
             case "papers":
                 self.__update_papers_table(identifier, update_column, update_value)
             case "authors_papers":
-                self.logger.error("Tried to access table authors_papers!")
+                self.logger.exception("Tried to access table authors_papers!")
                 raise ValueError(
                     f"Table authors_papers has no column {update_column} that is changeable!"
                 )
