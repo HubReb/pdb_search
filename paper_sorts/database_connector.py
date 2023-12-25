@@ -75,7 +75,9 @@ class DatabaseConnector:
                 )
             except ValueError as value_error:
                 self.logger.exception(value_error)
-                raise RuntimeError("Failed to create tables and populate them - ending application!")
+                raise RuntimeError(
+                    'Failed to create tables and populate them - ending application!') \
+                    from value_error
             if database_entries[0]:
                 self.logger.info(
                     "bibtex key %s already in database - skipping", bibtex_key
@@ -83,12 +85,12 @@ class DatabaseConnector:
                 continue
             authors = values["author"]
             content = values["contents"]
-            try:
-                self.__add_paper_to_db(authors, bibtex, bibtex_key, content, title)
-            except ValueError as value_error:
-                self.logger.exception(value_error)
+            if not self.store_paper_in_db(bibtex_key, bibtex, title, content):
+                return
+            if not self.__add_paper_to_db(authors, title):
+                return
 
-    def __add_paper_to_db(self, authors: List[str], bibtex: str, bibtex_key: str, content: str, title: str) -> None:
+    def __add_paper_to_db(self, authors: List[str], title: str) -> bool:
         """
         Add a new publication to the database.
 
@@ -103,17 +105,6 @@ class DatabaseConnector:
         :param title: title of the publication
         :type title: str
         """
-        self.database_handler.store_in_db(
-            "select exists(select * from papers where bibtex_id=%s);",
-            (bibtex_key,),
-        )
-        self.database_handler.store_in_db(
-            "insert into bib values (%s, %s);", (bibtex_key, bibtex)
-        )
-        self.database_handler.store_in_db(
-            "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)",
-            (title, content, bibtex_key),
-        )
         for author in authors:
             try:
                 self.__add_single_author(author)
@@ -124,7 +115,27 @@ class DatabaseConnector:
                 )
             except ValueError as value_error:
                 self.logger.exception(value_error)
-                break
+                return False
+        return True
+
+    def store_paper_in_db(self, bibtex_key, bibtex, title, content) -> bool:
+        """ Store paper in db tables. """
+        try:
+            self.database_handler.store_in_db(
+                "select exists(select * from papers where bibtex_id=%s);",
+                (bibtex_key,),
+            )
+            self.database_handler.store_in_db(
+                "insert into bib values (%s, %s);", (bibtex_key, bibtex)
+            )
+            self.database_handler.store_in_db(
+                "INSERT INTO papers (title, contents, bibtex_id) VALUES (%s, %s, %s)",
+                (title, content, bibtex_key),
+            )
+        except ValueError as value_error:
+            self.logger.exception(value_error)
+            return False
+        return True
 
     def create_tables(self) -> None:
         """
@@ -155,7 +166,7 @@ class DatabaseConnector:
 
         except ValueError as exc:
             self.logger.exception(exc)
-            raise RuntimeError("Failed to create tables - ending application!")
+            raise RuntimeError('Failed to create tables - ending application!') from exc
 
     def __add_single_author(self, author: str) -> None:
         """
@@ -186,7 +197,7 @@ class DatabaseConnector:
                 (author_id, paper_id),
             )
 
-    def search_for_bibtex_entry_by_id(self, paper: List[str]) -> List[str] | None:
+    def search_for_bibtex_entry_by_id(self, paper: List[str]) -> List[str]:
         """
         Search the bib table for the entry specified by  bibtex_id that must be present in paper.
 
@@ -199,9 +210,9 @@ class DatabaseConnector:
             return self.database_handler.fetch_from_db(
                 "select * from bib where bibtex_id=%s;", (paper[3],)
             )
-        return
+        return []
 
-    def search_by_title(self, title: str) -> List[Optional[List[str]]] | None:
+    def search_by_title(self, title: str) -> List[Optional[List[str]]]:
         """
         Search the database for the entire paper information record via the title of the paper.
 
@@ -223,7 +234,7 @@ class DatabaseConnector:
                 "Paper with title %s not found in table papers, abort!", title
             )
             self.logger.info("Paper not found!")
-            return
+            return []
         down_papers = []
 
         if len(set(p[2] for p in papers)) > 1:
@@ -353,7 +364,6 @@ class DatabaseConnector:
                 # delete paper bib entry to avoid inconsistencies
                 self.rollback_database_additions(bibtex_ident, author_names, author_number, paper_id)
                 raise ValueError("Errors occurred in handling of the database - could not add author. End application!") from value_error
-
         return True
 
     def rollback_database_additions(self, bibtex_ident, author_names, author_number, paper_id):
@@ -365,7 +375,6 @@ class DatabaseConnector:
                 self.rollback_author_addition(author_names[already_created_author_connection], paper_id)
         except ValueError as value_error:
             self.logger.exception(value_error)
-        return
 
     def rollback_author_addition(self, author_name, paper_id):
         """ Delete papers associated with author that have recently been added . """
