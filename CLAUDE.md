@@ -8,16 +8,18 @@ Off-line paper-database searcher: a CLI that stores publication metadata (title,
 
 ## Commands
 
-Dependencies are managed with Poetry (Python ^3.10):
+Dependencies are managed with **uv** (Python ≥ 3.11; the package-manager switch from Poetry happens in T002 of the `001-modernize-stack` plan):
 
 ```bash
-poetry install                              # install deps
-poetry run python paper_sorts/run.py \      # start the interactive CLI
+uv sync --all-extras                        # install runtime + dev deps
+uv run python paper_sorts/run.py \          # start the interactive CLI
     -c ${config} --section ${section} -k ${key_file}
-poetry run pylint paper_sorts               # lint (pylint is a project dep)
-poetry run python -m unittest discover tests  # run tests
-poetry run python -m unittest tests.test_database_connector.DataBaseTest.test_search_by_author  # single test
+uv run pylint paper_sorts                   # lint (current pyproject still pins pylint; replaced by ruff in T002)
+uv run python -m unittest discover tests    # run tests (replaced by pytest in T009/T031+)
+uv run python -m unittest tests.test_database_connector.DataBaseTest.test_search_by_author  # single test
 ```
+
+Note: until T002 lands, the current `pyproject.toml` still has `[tool.poetry]` rather than PEP 621 `[project]` — `uv sync` will fail against it, so for *current-state* work you'd need to install Poetry. Once T002 lands, `uv sync` is the canonical command. See `specs/001-modernize-stack/quickstart.md` for the post-modernization workflow.
 
 Note: the README's `python run.py` is wrong — the entry point lives at `paper_sorts/run.py`. The default paths in argparse (`../../database.crypt`, `../../key`) assume the program is launched from inside `paper_sorts/`; otherwise pass `-c` and `-k` explicitly.
 
@@ -61,8 +63,8 @@ They are not wired into `run.py`. When fixing or extending behaviour, change the
 
 ## SpecKit
 
-`.specify/` contains SpecKit templates and `memory/constitution.md` (ratified 2026-04-26, current v1.1.0). The constitution defines four binding principles — Code Quality, Testing Standards, User Experience Consistency, Performance Requirements — and rules out a few things that come up naturally (mocking psycopg in DB tests; extending the legacy `add.py`/`search.py`/`get_data.py` modules; adding connection pools/caches/async drivers). The performance principle is framed as "no measurable regression vs. the current baseline" rather than absolute numbers — there's no benchmark behind any specific bound, so refactors are evaluated against measured baseline. Read the constitution before generating a plan or making non-trivial changes.
+`.specify/` contains SpecKit templates and `memory/constitution.md` (ratified 2026-04-26, current v1.3.0). The constitution defines four binding principles — Code Quality, Testing Standards, User Experience Consistency, Performance Requirements — and rules out a few things that come up naturally (mocking psycopg in DB tests; extending the legacy `add.py`/`search.py`/`get_data.py` modules; adding connection pools/caches/async drivers). The performance principle is framed as "no measurable regression vs. the current baseline" rather than absolute numbers — there's no benchmark behind any specific bound, so refactors are evaluated against measured baseline. Read the constitution before generating a plan or making non-trivial changes.
 
 <!-- SPECKIT START -->
-**Active feature**: `specs/001-modernize-stack/` — Modernize the Stack. See [plan.md](specs/001-modernize-stack/plan.md) for the implementation plan, [research.md](specs/001-modernize-stack/research.md) for framework decisions and the bundled v1.2.0 constitution amendment text, [data-model.md](specs/001-modernize-stack/data-model.md), [contracts/](specs/001-modernize-stack/contracts/), and [quickstart.md](specs/001-modernize-stack/quickstart.md). Work on this feature happens on branch `001-modernize-stack`.
+**Active feature**: `specs/001-modernize-stack/` — Modernize the Stack. See [plan.md](specs/001-modernize-stack/plan.md) for the implementation plan, [research.md](specs/001-modernize-stack/research.md) for framework decisions and the bundled v1.3.0 constitution amendment text (five amendments: Principles I–IV plus Stack & Constraints / Section 2), [data-model.md](specs/001-modernize-stack/data-model.md), [contracts/](specs/001-modernize-stack/contracts/), and [quickstart.md](specs/001-modernize-stack/quickstart.md). Work on this feature happens on branch `001-modernize-stack`.
 <!-- SPECKIT END -->

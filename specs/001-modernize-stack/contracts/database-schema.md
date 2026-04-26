@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS authors_papers (
 
 NOT NULL is application-level here, not schema-level: the prompt grammar (constitution Principle III) re-prompts on empty input, and the import service validates via pybtex before insert. Schema integrity is therefore "what the application produces", not "what the column types enforce" — preserving the original behaviour exactly.
 
-Indexes added by modernization: **none**. The current schema has no indexes beyond the primary keys, and constitution Principle IV (v1.2.0) requires a Complexity Tracking entry for any addition. Indexes are deferred until the baseline benchmark (SC-006) shows an actual regression that can be attributed to scan cost — at which point an index becomes a measurement-driven decision and can be added with proper justification.
+Indexes added by modernization: **none**. The current schema has no indexes beyond the primary keys, and constitution Principle IV (v1.3.0) requires a Complexity Tracking entry for any addition. Indexes are deferred until the baseline benchmark (SC-006) shows an actual regression that can be attributed to scan cost — at which point an index becomes a measurement-driven decision and can be added with proper justification.
 
 ## Alembic revision plan
 

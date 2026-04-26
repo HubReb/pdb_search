@@ -32,7 +32,7 @@ What do you want to do?
 Your choice:
 ```
 
-Grammar (constitution Principle III, v1.2.0):
+Grammar (constitution Principle III, v1.3.0):
 - 1-indexed numeric.
 - Mandatory abort/quit at the bottom.
 - Empty input re-prompts.

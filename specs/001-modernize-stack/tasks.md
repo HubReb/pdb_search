@@ -29,13 +29,13 @@ description: "Task list for feature 001-modernize-stack"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Project-level configuration changes that every later phase depends on. The constitution amendment is first because spec FR-016 forbids violating the existing constitution while modernizing — every subsequent task assumes the v1.2.0 text is in effect.
+**Purpose**: Project-level configuration changes that every later phase depends on. The constitution amendment is first because spec FR-016 forbids violating the existing constitution while modernizing — every subsequent task assumes the v1.3.0 text is in effect.
 
-- [ ] T001 Apply constitution v1.2.0 amendment via `/speckit-constitution` per `specs/001-modernize-stack/research.md` § R10 (four bundled amendments: Principles I–IV — replace `pylint` with `ruff`; replace `psycopg2`-named driver-isolation rule with persistence-layer rule; replace `unittest` with `pytest`; replace `helpers.get_user_input` references with `paper_sorts.cli.prompts`; replace function-level perf references with layer-level).
-- [ ] T002 Update `pyproject.toml`: bump `python = "^3.11"`; add runtime deps `sqlalchemy >= 2.0`, `alembic`, `typer`, `rich`, `pydantic-settings >= 2.0`, `psycopg[binary] >= 3.1`; remove `psycopg2-binary` and `pylint`; add dev deps `pytest`, `pytest-postgresql`, `pytest-cov`, `ruff`, `mypy`; configure `[tool.ruff]`, `[tool.ruff.lint]`, `[tool.ruff.format]`, `[tool.mypy]` (strict for `src/paper_sorts/`), `[tool.pytest.ini_options]`; switch `packages` to `[{include = "paper_sorts", from = "src"}]`; register `[tool.poetry.scripts] pdbsearch = "paper_sorts.cli.app:main"`.
-- [ ] T003 Run `poetry install` and commit the refreshed `poetry.lock`.
-- [ ] T004 [P] Create `tests/fixtures/seed_papers.py` and `tests/fixtures/sample.bib` defining a minimal but representative dataset (≥ 3 papers, ≥ 2 with shared author, ≥ 1 with two papers same title for disambiguation testing) referenced by all integration tests.
-- [ ] T005 [P] Create `docs/` directory with a `.gitkeep` so it tracks; the architecture document lands here in Phase 3.
+- [X] T001 Apply constitution v1.3.0 amendment via `/speckit-constitution` per `specs/001-modernize-stack/research.md` § R10 (five bundled amendments: Principles I–IV plus Stack & Constraints (Section 2) — replace `pylint` with `ruff`; replace `psycopg2`-named driver-isolation rule with persistence-layer rule; replace `unittest` with `pytest`; replace `helpers.get_user_input` references with `paper_sorts.cli.prompts`; replace function-level perf references with layer-level; in Stack & Constraints, replace "Python ^3.10, dependencies managed by Poetry" with "Python ≥ 3.11, dependencies managed by uv" and replace "Driver is `psycopg2`" with "Driver is `psycopg` v3").
+- [X] T002 Rewrite `pyproject.toml` to PEP 621 + uv (no `[tool.poetry]` anywhere). Required tables: `[project]` with `name = "paper-sorts"`, `version = "0.1.0"`, `requires-python = ">=3.11"`, `dependencies = [...]` listing `sqlalchemy>=2.0`, `alembic`, `typer`, `rich`, `pydantic-settings>=2.0`, `psycopg[binary]>=3.1`, `pybtex`, `pylatexenc`, `cryptography`. `[project.optional-dependencies]` with `dev = [...]` listing `pytest`, `pytest-postgresql`, `pytest-cov`, `ruff`, `mypy`. `[project.scripts]` with `pdbsearch = "paper_sorts.cli.app:main"`. `[build-system] requires = ["hatchling"]`, `build-backend = "hatchling.build"`. `[tool.hatch.build.targets.wheel] packages = ["src/paper_sorts"]`. `[tool.uv]` block (lockfile config). Tool config: `[tool.ruff]`, `[tool.ruff.lint]`, `[tool.ruff.format]`, `[tool.mypy]` (strict for `src/paper_sorts/`), `[tool.pytest.ini_options]` (with `tests/` paths and pytest-postgresql plugin). Drop `psycopg2-binary` and `pylint` from dependencies entirely.
+- [X] T003 Run `uv sync --all-extras` to resolve runtime + dev deps; commit the generated `uv.lock`.
+- [X] T004 [P] Create `tests/fixtures/seed_papers.py` and `tests/fixtures/sample.bib` defining a minimal but representative dataset (≥ 3 papers, ≥ 2 with shared author, ≥ 1 with two papers same title for disambiguation testing) referenced by all integration tests.
+- [X] T005 [P] Create `docs/` directory with a `.gitkeep` so it tracks; the architecture document lands here in Phase 3.
 
 ---
 
@@ -45,11 +45,11 @@ description: "Task list for feature 001-modernize-stack"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Create `tests/conftest.py` with a session-scoped `pytest-postgresql` fixture exposing a clean ephemeral Postgres URL; no Alembic invocation yet (the schema is not under version control until Phase 4).
+- [X] T006 Create `tests/conftest.py` with a session-scoped `pytest-postgresql` fixture exposing a clean ephemeral Postgres URL; no Alembic invocation yet (the schema is not under version control until Phase 4).
 - [ ] T007 Create `tests/benchmarks/bench_baseline.py` — drives the existing `paper_sorts/run.py` CLI via subprocess against the seeded fixture: search-by-title, search-by-author, single add (inline), single update (title), single delete; records wall-clock per operation to `tests/benchmarks/baseline.json`.
-- [ ] T008 Run `poetry run pytest tests/benchmarks/bench_baseline.py --baseline-record` against the current implementation; commit `tests/benchmarks/baseline.json` as the SC-006 reference and document the host hardware in a header comment.
+- [ ] T008 Run `uv run pytest tests/benchmarks/bench_baseline.py --baseline-record` against the current implementation; commit `tests/benchmarks/baseline.json` as the SC-006 reference and document the host hardware in a header comment.
 
-**Checkpoint**: Baseline captured. Constitution at v1.2.0. Ready for user story implementation.
+**Checkpoint**: Baseline captured. Constitution at v1.3.0. Ready for user story implementation.
 
 ---
 
@@ -61,7 +61,7 @@ description: "Task list for feature 001-modernize-stack"
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Write `docs/architecture.md` covering: purpose; user journeys (search/add/update/delete/import) with prompt traces; data model (the four-table schema as it actually exists, including the `bibtext_id` legacy variant); control flow `UserInteraction → DatabaseConnector → PsycopgDB`; configuration via Fernet-encrypted INI + `ConfigReader`; install/run via `python paper_sorts/run.py -c ... -k ...`; known limitations (per-class log files, mocked-DB tests forbidden, legacy procedural modules `add.py`/`search.py`/`get_data.py`, schema variants `bibtex_id` vs `bibtext_id`, duplicate authorship rows tolerated). Reference module names verbatim because the document is also the rename map for Phase 4.
+- [X] T009 [US1] Write `docs/architecture.md` covering: purpose; user journeys (search/add/update/delete/import) with prompt traces; data model (the four-table schema as it actually exists, including the `bibtext_id` legacy variant); control flow `UserInteraction → DatabaseConnector → PsycopgDB`; configuration via Fernet-encrypted INI + `ConfigReader`; install/run via `python paper_sorts/run.py -c ... -k ...`; known limitations (per-class log files, mocked-DB tests forbidden, legacy procedural modules `add.py`/`search.py`/`get_data.py`, schema variants `bibtex_id` vs `bibtext_id`, duplicate authorship rows tolerated). Reference module names verbatim because the document is also the rename map for Phase 4.
 
 **Checkpoint**: Architecture document complete. It is the acceptance reference for User Story 2 — every flow it describes must work in the modernized version.
 
@@ -96,7 +96,7 @@ description: "Task list for feature 001-modernize-stack"
 
 ### CLI prompts (the UX-consistency wrapper)
 
-- [ ] T019 [P] [US2] Create `src/paper_sorts/cli/prompts.py` — wraps `rich.prompt.Prompt.ask`, `IntPrompt.ask`, `Confirm.ask`. Public functions: `ask_text(prompt: str) -> str` (re-prompts on empty), `ask_choice(prompt: str, options: list[str]) -> int` (1-indexed; mandatory abort/quit option as the last entry; re-prompts on out-of-range), `ask_confirm(prompt: str) -> bool` (accepts `1`/`y`/`yes` for true, `2`/`n`/`no` for false, anything else returns false and logs an error). This is the **only** module under `src/paper_sorts/` permitted to import `rich.prompt` (constitution Principle III v1.2.0).
+- [ ] T019 [P] [US2] Create `src/paper_sorts/cli/prompts.py` — wraps `rich.prompt.Prompt.ask`, `IntPrompt.ask`, `Confirm.ask`. Public functions: `ask_text(prompt: str) -> str` (re-prompts on empty), `ask_choice(prompt: str, options: list[str]) -> int` (1-indexed; mandatory abort/quit option as the last entry; re-prompts on out-of-range), `ask_confirm(prompt: str) -> bool` (accepts `1`/`y`/`yes` for true, `2`/`n`/`no` for false, anything else returns false and logs an error). This is the **only** module under `src/paper_sorts/` permitted to import `rich.prompt` (constitution Principle III v1.3.0).
 
 ### CLI subcommands
 
@@ -132,7 +132,7 @@ description: "Task list for feature 001-modernize-stack"
 
 **Goal**: A fresh-clone test run completes successfully on a machine that has never had the project's personal database.
 
-**Independent Test**: From a clean checkout, `git clone && poetry install && poetry run pytest` succeeds in under 5 minutes wall-clock without any `database.crypt`/`key` file present (spec SC-003).
+**Independent Test**: From a clean checkout, `git clone && uv sync --all-extras && uv run pytest` succeeds in under 5 minutes wall-clock without any `database.crypt`/`key` file present (spec SC-003).
 
 ### Test infrastructure
 
@@ -147,8 +147,8 @@ description: "Task list for feature 001-modernize-stack"
 
 ### Coverage and fresh-checkout gates
 
-- [ ] T036 [US3] Run `poetry run pytest --cov=paper_sorts.db --cov-fail-under=80`; verify SC-008 passes. If under 80 %, add focused tests for the uncovered repository methods.
-- [ ] T037 [US3] On a fresh clone (or simulate via `git clean -fdx && poetry install`), without any `database.crypt`/`key` file in the working tree or in `../../`, run `poetry run pytest` and verify it succeeds in under 5 minutes (SC-003).
+- [ ] T036 [US3] Run `uv run pytest --cov=paper_sorts.db --cov-fail-under=80`; verify SC-008 passes. If under 80 %, add focused tests for the uncovered repository methods.
+- [ ] T037 [US3] On a fresh clone (or simulate via `git clean -fdx && uv sync --all-extras`), without any `database.crypt`/`key` file in the working tree or in `../../`, run `uv run pytest` and verify it succeeds in under 5 minutes (SC-003).
 
 **Checkpoint**: The test suite runs from any clean checkout. CI is unblocked.
 
@@ -188,9 +188,9 @@ description: "Task list for feature 001-modernize-stack"
 
 **Purpose**: Verify the success criteria that span the whole feature and clean up.
 
-- [ ] T046 Run `poetry run pytest tests/benchmarks/bench_baseline.py --baseline-compare`; verify SC-006 (no measurable regression vs. `tests/benchmarks/baseline.json` from T008). If a regression is observed, investigate root cause; do **not** add indexes or other speculative optimisations — the constitution permits them only with a Complexity Tracking entry, and any need would have to be measurement-justified.
-- [ ] T047 [P] Run `poetry run ruff check . && poetry run ruff format --check .`; fix any violations.
-- [ ] T048 [P] Run `poetry run mypy src/`; fix any type errors.
+- [ ] T046 Run `uv run pytest tests/benchmarks/bench_baseline.py --baseline-compare`; verify SC-006 (no measurable regression vs. `tests/benchmarks/baseline.json` from T008). If a regression is observed, investigate root cause; do **not** add indexes or other speculative optimisations — the constitution permits them only with a Complexity Tracking entry, and any need would have to be measurement-justified.
+- [ ] T047 [P] Run `uv run ruff check . && uv run ruff format --check .`; fix any violations.
+- [ ] T048 [P] Run `uv run mypy src/`; fix any type errors.
 - [ ] T049 Verify SC-005 — line count under `src/paper_sorts/` (excluding `tests/` and `migrations/`) is at least 30 % lower than the pre-modernization `paper_sorts/` line count. Capture the before/after numbers in the final commit message. If the cut is < 30 %, the difference is likely lingering boilerplate worth investigating before merge.
 - [ ] T050 Update `CLAUDE.md` — replace the "3-layer architecture" description (currently `UserInteraction → DatabaseConnector → PsycopgDB`) with the new layered architecture (`cli/` → `services/` → `db/`); update the legacy-modules paragraph (they no longer exist); SPECKIT START/END markers continue to point at `specs/001-modernize-stack/plan.md` until merge.
 - [ ] T051 Re-validate `specs/001-modernize-stack/checklists/requirements.md` against the implemented system; mark items complete; add a "verified-on" date.

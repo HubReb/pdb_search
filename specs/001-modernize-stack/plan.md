@@ -15,7 +15,7 @@ Reverse-engineer the existing CLI paper-database tool into a written architectur
 - **Lint/format**: ruff (lint + format) — replacing pylint, with optional mypy for static type checking.
 - **Logging**: stdlib `logging` with one dict-config — replacing per-class `create_logger` boilerplate.
 
-CLI-only deployment surface (spec FR-017). In-place refactor on this branch. Constitution amended in parallel from v1.1.0 to v1.2.0 (MINOR — testable predicates redefined to layer/role names instead of specific filenames and tool names; no principle removed).
+CLI-only deployment surface (spec FR-017). In-place refactor on this branch. Constitution amended in parallel from v1.1.0 to v1.3.0 (MINOR — five testable predicates redefined to layer/role names; uv replaces Poetry; psycopg v3 replaces psycopg2; Python ≥ 3.11; no principle removed).
 
 ## Technical Context
 
@@ -33,14 +33,15 @@ CLI-only deployment surface (spec FR-017). In-place refactor on this branch. Con
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-The plan triggers four bundled amendments to the constitution that the spec already anticipates (FR-016). The amendments are the change mechanism, not violations. They MUST be applied via `/speckit-constitution` as the **first** commit of the implementation phase, raising v1.1.0 → v1.2.0.
+The plan triggers five bundled amendments to the constitution that the spec already anticipates (FR-016). The amendments are the change mechanism, not violations. They MUST be applied via `/speckit-constitution` as the **first** commit of the implementation phase, raising v1.1.0 → v1.3.0.
 
-| Principle | Current text references | Status under this plan | Amendment scope (v1.2.0) |
-|-----------|-------------------------|-----------------------|--------------------------|
+| Principle / Section | Current text references | Status under this plan | Amendment scope (v1.3.0) |
+|---------------------|-------------------------|-----------------------|---------------------------|
 | I. Code Quality | `pylint paper_sorts`; `psycopg2` isolated to `psycopg_db.py`; legacy `add.py` / `search.py` / `get_data.py` frozen | ruff replaces pylint; SQLAlchemy session isolated to `paper_sorts/db/`; legacy modules deleted (FR-012) | Replace tool name `pylint` → `ruff`; replace driver-name rule with persistence-layer rule; remove the "frozen legacy modules" clause (the modules no longer exist after this work). |
 | II. Testing Standards | "Tests run via `python -m unittest discover tests`"; integration tests against a real Postgres, no mocking psycopg | pytest replaces unittest; integration tests run against pytest-postgresql ephemeral DB; placeholder `tests/test_user_interaction.py` deleted; seed fixtures co-located with tests | Replace tool name `unittest` → `pytest`; document pytest-postgresql as the canonical ephemeral-DB mechanism; placeholder rule and "no mocking the persistence layer" rule carry forward unchanged. |
 | III. UX Consistency | Prompts MUST route through `helpers.get_user_input()` / `helpers.get_user_choice()` | New `paper_sorts/cli/prompts.py` module wraps `rich.prompt` with the same grammar (1-indexed menus, mandatory abort/quit, empty-input re-prompt, dual `1`/`y`/`yes` confirmations) | Replace named-helper references with `paper_sorts.cli.prompts`; preserve grammar rules verbatim. |
 | IV. Performance | References to `PsycopgDB`, `search_by_title`, `search_by_author`, `add_data_from_dict`, `load_data_into_db` | Layer-level references to "the persistence layer", "search paths", "bulk import paths". Non-regression criterion (already in v1.1.0) carries forward unchanged. | Replace function-level names with layer / role names. |
+| Stack & Constraints (Section 2) | "Language: Python ^3.10, dependencies managed by Poetry"; "Driver is `psycopg2` (binary)" | Python ≥ 3.11; uv replaces Poetry (PEP 621 metadata, `uv.lock`, hatchling build backend); psycopg v3 replaces psycopg2; SQLAlchemy 2.x sits in the persistence layer | Replace Python version line; replace build-tool name; replace driver name. (Reasoning: original R9 deferred uv on the premise that Poetry was already installed; that premise was false — see `research.md` § R9.) |
 
 **Gate result**: PASS (with bundled amendments). No unjustified violations. No Complexity Tracking entries needed. The amendment text is drafted in `research.md` and committed as the first implementation step before any framework-bearing code is added.
 
@@ -129,6 +130,6 @@ The current modules (`paper_sorts/{add,search,get_data,psycopg_db,database_conne
 
 ## Complexity Tracking
 
-> No constitution violations require justification under this plan. The four bundled v1.2.0 amendments are the change mechanism (FR-016), not deviations.
+> No constitution violations require justification under this plan. The five bundled v1.3.0 amendments are the change mechanism (FR-016), not deviations.
 
 No entries.

@@ -168,27 +168,30 @@ This document records framework-choice decisions and the constitution-amendment 
 
 ## R9. Packaging and Python version
 
-**Decision**: Poetry (already in use), raised `requires-python = ">=3.11"`. Move source under `src/paper_sorts/` (PEP 517/518 src-layout). Console script `pdbsearch = "paper_sorts.cli.app:main"` registered in `[tool.poetry.scripts]`.
+**Decision**: **uv** (PEP 621 `[project]` metadata, `uv.lock` for reproducibility, `hatchling` build backend). `requires-python = ">=3.11"`. Move source under `src/paper_sorts/` (PEP 517/518 src-layout). Console script `pdbsearch = "paper_sorts.cli.app:main"` registered in `[project.scripts]`.
 
 **Rationale**:
 
-- Poetry is mainstream; no reason to switch tooling at the same time as the rest of the modernization (would make the diff harder to review).
+- The original entry deferred a Poetry → uv switch on the grounds that "Poetry is already installed" and "switching at the same time as the framework change would conflate two changes." Both premises were re-examined before T002 and found to be false: Poetry is **not** present on this target system, and there is no installed package-manager state to preserve. Switching to uv is now the *cheapest* path, not the most expensive — choosing Poetry would mean installing it first, which is the same friction as installing uv with no upside.
+- uv is the 2026 mainstream Python package manager, written in Rust, ~10–100× faster than Poetry, and pairs cleanly with PEP 621 metadata. The pyproject layout becomes `[project]` + `[project.optional-dependencies]` + `[project.scripts]` + `[tool.uv]` instead of `[tool.poetry]` and its sub-tables.
 - 3.11 is the minimum that gives full `Self`-type and `tomllib` support and that SQLAlchemy 2.x targets cleanly.
 - src-layout is the recommended Python packaging layout post-2020 — prevents accidental imports from the working directory and matches what new contributors expect.
 - A registered console script replaces `python paper_sorts/run.py` with `pdbsearch`, fixing the README's incorrect path.
 
 **Alternatives considered**:
 
-- *uv* / *hatch* — both rising; switching at the same time as the framework change would conflate two changes. Defer to a future spec if desired.
-- *Stay 3.10* — possible, but raises edge-case maintenance cost on libraries that are already 3.11+. Spec FR-015 explicitly permits raising the minimum.
+- *Poetry* — the originally-deferred choice. Rejected because the "already installed" premise didn't hold; choosing it now would also mean installing Poetry first, which is the same friction as installing uv with no upside.
+- *Hatch* — also mainstream, also PEP 621-native. Less ubiquitous than uv in 2026.
+- *pip + plain virtualenv* — not a real packaging story for a multi-dependency project.
+- *Stay on 3.10* — possible, but raises edge-case maintenance cost on libraries that are already 3.11+. Spec FR-015 explicitly permits raising the minimum.
 
-**Constraint check**: None.
+**Constraint check**: Triggers a fifth amendment in the bundled v1.3.0 constitution change (see R10). The Stack & Constraints section currently reads "Language: Python ^3.10, dependencies managed by Poetry"; it must be amended to reflect uv and Python ≥ 3.11. The "Driver is `psycopg2`" line in the same section is amended to `psycopg` v3 in lockstep, since the modernization swaps drivers as part of the ORM change.
 
 ---
 
-## R10. Constitution amendment text (v1.1.0 → v1.2.0)
+## R10. Constitution amendment text (v1.1.0 → v1.3.0)
 
-The four amendments below are committed as the **first** implementation step (a single `/speckit-constitution` invocation) before any framework-bearing code is added. Bump rationale: MINOR — testable predicates redefined; no principle removed; no rule materially loosened beyond renaming.
+The five amendments below are committed as the **first** implementation step (a single `/speckit-constitution` invocation) before any framework-bearing code is added. Bump rationale: MINOR — five testable predicates redefined; no principle removed; no rule materially loosened beyond renaming. The version jump 1.1.0 → 1.3.0 reflects two cumulative MINOR-level amendment groups: the original four targeted at v1.2.0 (Principles I–IV), plus the fifth Stack & Constraints amendment added before drafting (uv, Python ≥ 3.11, psycopg v3) that lands at the same time. Both groups land in a single `/speckit-constitution` invocation; they are tracked as 1.2.0 → 1.3.0 in version space rather than as a single 1.2.0 to keep "what changed when" honest.
 
 ### Principle I — Code Quality
 
@@ -246,6 +249,24 @@ With:
 > Bulk import paths (the import service backing `pdbsearch import`) MAY exceed the interactive baseline …
 
 (The non-regression-vs.-baseline criterion from v1.1.0 carries forward unchanged.)
+
+### Stack & Constraints (Section 2) — fifth amendment
+
+Replace:
+
+> - Language: Python ^3.10, dependencies managed by Poetry.
+> - Database: PostgreSQL only. Driver is `psycopg2` (binary). The newer `psycopg` (v3) imports that exist in the legacy modules are technical debt, not an alternative supported driver.
+> - Configuration: Database credentials live in a Fernet-encrypted INI file read by `ConfigReader`. Plaintext credentials, decryption keys, and encrypted config files MUST NOT be committed to the repository, and MUST NOT be written to logs.
+
+With:
+
+> - Language: Python >= 3.11, dependencies managed by uv (PEP 621 `[project]` metadata, `uv.lock` for reproducibility, `hatchling` build backend).
+> - Database: PostgreSQL only. Driver is `psycopg` v3 (binary). SQLAlchemy 2.x sits on top of the driver and is isolated to the persistence layer per Principle I.
+> - Configuration: Loaded by `paper_sorts.config` (pydantic-settings v2) from four sources in priority order — CLI args > environment variables (`PDBSEARCH_*`) > `.env` file > Fernet-encrypted INI file (custom pydantic-settings source). Plaintext credentials, decryption keys, and encrypted config files MUST NOT be committed to the repository, and MUST NOT be written to logs.
+
+(The Configuration line is updated in lockstep because `ConfigReader` is deleted in T026; leaving the original wording would make the constitution reference a class that no longer exists. Fernet support is preserved — it just becomes one source among four.)
+
+(Other Stack & Constraints rules — personal/offline single-user scope, multi-user/network/auth out-of-scope — carry forward unchanged.)
 
 ---
 

@@ -7,7 +7,7 @@
 
 - Python ≥ 3.11
 - PostgreSQL ≥ 13 (`psql`, `pg_ctl`, and `initdb` available on `PATH`)
-- Poetry ≥ 1.8
+- uv ≥ 0.5 (https://docs.astral.sh/uv/)
 
 > Docker is **not** required. The test suite uses `pytest-postgresql`, which spins up Postgres from the host's binary.
 
@@ -17,7 +17,7 @@
 git clone <repo>
 cd pdb_search
 git checkout 001-modernize-stack    # or main, after merge
-poetry install
+uv sync --all-extras
 ```
 
 ## Configure
@@ -52,7 +52,7 @@ pdbsearch --config /path/to/database.crypt --key /path/to/key search ...
 First-time setup of the schema, *or* upgrade an existing personal database (including the legacy `bibtext_id` schema):
 
 ```bash
-poetry run pdbsearch migrate
+uv run pdbsearch migrate
 ```
 
 Output on a fresh DB:
@@ -83,7 +83,7 @@ Schema is at head (002).
 ## First search
 
 ```bash
-poetry run pdbsearch
+uv run pdbsearch
 ```
 
 Drops into the top-level menu. Select `1) Search the database`, then `2) Search by paper title`, type a title fragment, and the system prints the title / authors / summary / BibTeX entry as before.
@@ -91,8 +91,8 @@ Drops into the top-level menu. Select `1) Search the database`, then `2) Search 
 For non-interactive use:
 
 ```bash
-poetry run pdbsearch search --by author --query "Pino, J."
-poetry run pdbsearch search --by title --query "Direct speech-to-speech translation with discrete units"
+uv run pdbsearch search --by author --query "Pino, J."
+uv run pdbsearch search --by title --query "Direct speech-to-speech translation with discrete units"
 ```
 
 ## Add an entry
@@ -100,25 +100,25 @@ poetry run pdbsearch search --by title --query "Direct speech-to-speech translat
 Interactive (drops into the same step-by-step prompt as before):
 
 ```bash
-poetry run pdbsearch add
+uv run pdbsearch add
 ```
 
 From a `.bib` file directly:
 
 ```bash
-poetry run pdbsearch add --bib-file paper.bib --summary "one-sentence summary of the paper"
+uv run pdbsearch add --bib-file paper.bib --summary "one-sentence summary of the paper"
 ```
 
 ## Bulk import (preserves the current `get_data.py` behaviour)
 
 ```bash
-poetry run pdbsearch import literature_overview.tex bib.bib
+uv run pdbsearch import literature_overview.tex bib.bib
 ```
 
 ## Run the tests
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 This is the SC-003 acceptance command. It:
@@ -134,9 +134,9 @@ There is no dependency on a personal `database.crypt` or `key` file. A fresh clo
 ## Lint and format
 
 ```bash
-poetry run ruff check .
-poetry run ruff format --check .
-poetry run mypy src/
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src/
 ```
 
 These are the SC-007 / Principle I gates. CI runs all three.
@@ -146,13 +146,13 @@ These are the SC-007 / Principle I gates. CI runs all three.
 The baseline timings are captured **before** any modernization commits land, against the existing implementation, on the same fixture that the modernized integration tests use:
 
 ```bash
-poetry run pytest tests/benchmarks/bench_baseline.py --baseline-record
+uv run pytest tests/benchmarks/bench_baseline.py --baseline-record
 ```
 
 After modernization, re-run with `--baseline-compare` to verify non-regression:
 
 ```bash
-poetry run pytest tests/benchmarks/bench_baseline.py --baseline-compare
+uv run pytest tests/benchmarks/bench_baseline.py --baseline-compare
 ```
 
 A regression of more than the configured tolerance (default 10 % wall-clock per operation) fails the build and the gate.
@@ -162,7 +162,7 @@ A regression of more than the configured tolerance (default 10 % wall-clock per 
 To roll the schema back to revision 001 (e.g. for testing):
 
 ```bash
-poetry run alembic downgrade 001
+uv run alembic downgrade 001
 ```
 
 Note: revision 002's `downgrade()` is intentionally `NotImplementedError` — once a database is converged off the legacy `bibtext_id` column, going back is not a supported operation.
