@@ -54,7 +54,7 @@ This document records framework-choice decisions and the constitution-amendment 
 **Rationale**:
 
 - Typer is type-annotation driven and built on Click; recognisable to anyone who has used either.
-- Subcommands map cleanly to the existing top-level menu options (FR-006): `pdbsearch search` / `add` / `update` / `delete` / `import` / `migrate`. Running `pdbsearch` with no subcommand still drops into the top-level interactive menu, so existing muscle memory is preserved.
+- The Typer subcommand surface is `pdbsearch search` / `add` / `update` / `delete` / `import` / `migrate`. The interactive top-level menu (when `pdbsearch` is run with no subcommand) preserves the **original four entries verbatim**: search / add / update / quit. Delete, import, and migrate are reachable only as subcommands — adding them to the menu would be a UX-surface expansion that spec FR-002 ("preserve existing CLI feature set") does not authorise. See `contracts/cli-commands.md` § "Why only four options" for the rationale.
 - `rich` is the de-facto Python pretty-output and prompt library. `rich.prompt` covers every interactive primitive the existing app uses.
 - The wrapper module is small (one file) and makes the UX-consistency principle testable: a unit test can assert that an empty input re-prompts, that `0` on a 1-indexed menu re-prompts, that `n` and `2` both abort confirmations.
 

@@ -28,9 +28,7 @@ What do you want to do?
 1) Search the database
 2) Add an entry
 3) Update an entry
-4) Delete an entry          # NEW: now exposed in the menu (FR-002 requires delete)
-5) Import from .tex + .bib  # NEW: explicit menu entry; was a separate script before
-6) (Q)uit
+4) (Q)uit
 Your choice:
 ```
 
@@ -38,8 +36,18 @@ Grammar (constitution Principle III, v1.2.0):
 - 1-indexed numeric.
 - Mandatory abort/quit at the bottom.
 - Empty input re-prompts.
-- `q` is accepted in addition to `6`.
+- `q` is accepted in addition to `4`.
 - Selecting an option dispatches to the corresponding subcommand's interactive flow, then returns to the menu when that flow completes.
+
+### Why only four options
+
+The original `UserInteraction.interact()` menu has exactly these four entries (search / add / update / quit). Modernization preserves the **menu surface** verbatim, even though the **subcommand surface** is richer:
+
+- **Delete** is intentionally absent from the menu. It is reachable as a Typer subcommand (`pdbsearch delete`) but is not a one-keystroke menu choice. The original code likewise does not expose delete in the top-level menu — destructive operations get friction by design. Promoting it would be a UX-surface expansion, which spec FR-002 ("preserve existing CLI feature set") does not authorise.
+- **Import** is intentionally absent from the menu. Bulk import from `.tex` + `.bib` is, in the current code, a separate scripted invocation (`python paper_sorts/get_data.py ...`) — not an interactive convenience. Modernization preserves that as `pdbsearch import <tex> <bib>` (a deliberate scripted call), not a menu entry.
+- **Migrate** is intentionally absent from the menu — admin/setup operation, subcommand-only (see tasks.md T040 for the same reasoning applied separately).
+
+Adding any of these to the menu would be a separate UX change requiring its own spec.
 
 ## Subcommand: `search`
 
@@ -163,7 +171,7 @@ Your choice:
 
 ### Behaviour
 
-- Cascades to `authors_papers` rows for that paper. If any author has no remaining papers afterward, the author row is also deleted (preserves current `__delete_author_with_no_papers` behaviour).
+- Cascades to `authors_papers` rows for that paper. If any author has no remaining papers afterward, the author row is also deleted (preserves the cascade-on-delete behaviour in `delete_author_of_list`; note that the `__delete_author_with_no_papers` method exists in the current code but is not on the standard delete path).
 - BibEntry is deleted iff no other paper references it.
 - All in one transaction.
 
