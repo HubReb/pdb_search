@@ -1,6 +1,31 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR — Principle IV (Performance Requirements) is materially
+redefined. The "1 s interactive / 10 000 papers" budget inserted at
+ratification was not grounded in measurement; it is replaced by a
+non-regression-vs.-current-baseline criterion on a personal-library-sized
+dataset. No principle is removed; the testable predicate changes from an
+absolute bound to a relative bound.
+
+Modified principles:
+  IV. Performance Requirements — interactive-latency rule rewritten;
+  bulk-import bullet wording updated to match ("interactive baseline");
+  rationale rewritten to drop fabricated numerics.
+
+Sections: unchanged.
+Templates / docs reviewed for propagation:
+  ✅ specs/001-modernize-stack/spec.md SC-006 — already updated in same
+     change to match (non-regression criterion).
+  ✅ CLAUDE.md — quoted the now-removed "1 s / ≤10 k" numerics in its
+     SpecKit section; updated to the non-regression phrasing.
+  ✅ .specify/templates/* — no embedded numerics; no edit needed.
+
+Deferred / TODO: None.
+
+---
+
 Version change: (uninitialised template) → 1.0.0
 Bump rationale: Initial ratification — the prior file was a 100% unfilled
 template with no semantic content. First concrete fill is treated as 1.0.0.
@@ -114,13 +139,14 @@ operations.
 ### IV. Performance Requirements
 
 Performance constraints exist to bound scope, not to optimise. The target
-profile is a single user, a local PostgreSQL instance, and a personal
-library-sized dataset.
+profile is a single user, a local PostgreSQL instance, and a
+personal-library-sized dataset (the current corpus is the reference).
 
 - All interactive operations (search by title, search by author, add a
-  single paper, update a single field, delete a single paper) MUST complete
-  in under 1 second on a database of up to 10 000 papers on commodity
-  hardware. This is the user-perceived latency budget.
+  single paper, update a single field, delete a single paper) MUST show
+  no measurable regression versus the current implementation on equivalent
+  operations, measured on the same data with wall-clock timing on
+  commodity hardware.
 - High-throughput, multi-user, or network-tier optimisations are explicitly
   OUT OF SCOPE. Connection pooling, async drivers, caching layers, and
   read replicas MUST NOT be introduced. Connections opened in `PsycopgDB`
@@ -130,16 +156,20 @@ library-sized dataset.
   queries and JOINs over the existing four-table schema. Introducing a new
   table, denormalisation, or an index beyond the existing primary keys
   requires an entry in the plan's Complexity Tracking section explaining
-  why the 1-second budget cannot otherwise be met.
+  why baseline-parity cannot otherwise be met.
 - Bulk import paths (`DatabaseConnector.add_data_from_dict`,
-  `get_data.load_data_into_db`) MAY exceed the interactive budget but MUST
-  commit per-paper, so a partial failure leaves the database in a
+  `get_data.load_data_into_db`) MAY exceed the interactive baseline but
+  MUST commit per-paper, so a partial failure leaves the database in a
   consistent state recoverable on rerun.
 
 **Rationale**: The genuine risk in this codebase is *not* throughput — it
 is leaked connections, partial-write inconsistency, and speculative
-complexity added under a "performance" banner. Naming the budget
-explicitly (1 s, 10 k papers, single user) shuts down those rationalisations.
+complexity added under a "performance" banner. The criterion is framed as
+"non-regression vs. the current baseline on a personal-library-sized
+dataset" rather than as fabricated absolute numbers, because the current
+implementation has not been benchmarked and any specific bound would be a
+guess. Refactors are evaluated against measured baseline, not against a
+fictional target.
 
 ## Stack & Constraints
 
@@ -189,4 +219,4 @@ explicitly (1 s, 10 k papers, single user) shuts down those rationalisations.
   practice (false positives in review, blocking legitimate work), amend it
   rather than ignore it.
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-26
+**Version**: 1.1.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-26
