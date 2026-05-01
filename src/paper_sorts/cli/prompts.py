@@ -1,11 +1,9 @@
 """Rich-backed user-prompt wrappers (constitution Principle III v1.3.0 boundary).
 
 This is the only module under ``src/paper_sorts/`` permitted to import
-:mod:`rich.prompt`. All imports — and the token sets used by
-:func:`ask_confirm` — live inside the functions that need them, so
-importing this module has no side effects whatsoever. Useful when the
-surrounding test harness wants to swap ``rich`` out before any wrapper
-runs.
+:mod:`rich.prompt`. The module has no module-level *constants* — token
+sets are inlined into the ``in`` checks where they are used — so adding
+a new acceptance token requires touching exactly one site.
 
 Three helpers cover the dialog grammar the legacy
 ``UserInteraction``/``helpers.get_user_input`` pair imposed:
@@ -22,6 +20,10 @@ Three helpers cover the dialog grammar the legacy
   pair.
 """
 
+import logging
+
+from rich.prompt import IntPrompt, Prompt
+
 
 def ask_text(prompt: str) -> str:
     """Read a non-empty string from the user, re-prompting on empty input.
@@ -32,8 +34,6 @@ def ask_text(prompt: str) -> str:
     Returns:
         The first non-empty response.
     """
-    from rich.prompt import Prompt
-
     while True:
         value = Prompt.ask(prompt)
         if value:
@@ -68,8 +68,6 @@ def ask_choice(
     Raises:
         ValueError: If ``options`` is empty.
     """
-    from rich.prompt import IntPrompt, Prompt
-
     if not options:
         msg = "ask_choice requires at least one option"
         raise ValueError(msg)
@@ -101,10 +99,6 @@ def ask_confirm(prompt: str) -> bool:
     Returns:
         ``True`` for affirmative tokens, ``False`` otherwise.
     """
-    import logging
-
-    from rich.prompt import Prompt
-
     response = Prompt.ask(prompt).strip().lower()
     if response in {"1", "y", "yes"}:
         return True

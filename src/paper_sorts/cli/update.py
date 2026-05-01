@@ -25,12 +25,6 @@ from paper_sorts.cli.prompts import ask_choice, ask_confirm, ask_text
 from paper_sorts.db.session import with_session
 from paper_sorts.services.paper_service import PaperService
 
-_TABLE_FIELDS: dict[str, list[str]] = {
-    "papers": ["title", "contents", "abort"],
-    "bib": ["bibtex", "abort"],
-    "authors": ["author", "abort"],
-}
-
 
 def update(ctx: typer.Context) -> None:
     """Drive the legacy two-step update dialog and apply the change."""
@@ -84,7 +78,13 @@ def _pick_table() -> Literal["papers", "bib", "authors"] | None:
 
 def _pick_field(table: Literal["papers", "bib", "authors"]) -> str | None:
     """Show the table-specific field menu and return the choice, or ``None``."""
-    options = _TABLE_FIELDS[table]
+    match table:
+        case "papers":
+            options = ["title", "contents", "abort"]
+        case "bib":
+            options = ["bibtex", "abort"]
+        case "authors":
+            options = ["author", "abort"]
     choice = ask_choice("Which information do you want to update?", options)
     if choice == len(options):  # last entry is always "abort"
         return None
