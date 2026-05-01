@@ -196,6 +196,7 @@ def _fetch_added_paper_id(env: dict[str, Any], bibtex_id: str) -> int:
     return int(row[0])
 
 
+@pytest.mark.skip(reason="legacy stack removed in T026; T046 will rewrite for modern")
 @pytest.mark.benchmark
 def test_baseline(
     legacy_db_env: dict[str, Any],

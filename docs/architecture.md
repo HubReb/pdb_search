@@ -316,12 +316,8 @@ The default paths (`../../database.crypt`, `../../key`) only resolve if the prog
 
 ## 6. Install and run
 
-```bash
-uv sync --extra legacy-baseline   # pulls psycopg2-binary; required since T002 dropped it
-uv run python paper_sorts/run.py -c ../../database.crypt --section postgresql -k ../../key
-```
-
-The README example writes `python run.py`, which is the wrong path; run from the repo root with the path above.
+The legacy install/run flow is gone after T026 — see `quickstart.md` for
+the modern `uv sync` + `pdbsearch` workflow.
 
 For the bulk import:
 
