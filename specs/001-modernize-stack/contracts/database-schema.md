@@ -84,7 +84,7 @@ def upgrade():
     # Body omitted from sketch; see versions/002_legacy_bibtext_to_bibtex.py for full code.
 ```
 
-`downgrade()`: unimplemented (`raise NotImplementedError("legacy schema is no longer supported")`). Per constitution Principle II ("schema changes MUST update… in the same change"), removing the rename later would require a new migration.
+`downgrade()`: intentionally one-way. Raises `NotImplementedError` with an operator-friendly message: `"Migration 002 is one-way: bibtext_id -> bibtex_id rename cannot be reversed without data loss. Restore from a pre-migration backup if rollback is required."` The mechanical ALTER is trivial, but doing it without also reverting the application code (which only knows `bibtex_id`) makes any rows written after the upgrade unreachable to legacy queries — the safe rollback is a backup restore. This is an engineering choice, not a constitutional rule; if a future feature needs reversibility it can land as Revision 003.
 
 ## Migration acceptance criteria (FR-011, US4)
 
