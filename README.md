@@ -16,23 +16,23 @@ any problems in your setup, consult the logs.
 
 ## Installation
 
-The repo contains all information required to install the package with poetry. 
-Install poetry and run
+The project is packaged with [uv](https://docs.astral.sh/uv/). With uv installed, run:
+
 ```bash
-poetry install
+uv sync --all-extras
 ```
+
+This installs the runtime dependencies plus the dev tooling (pytest, ruff, mypy). The console script `pdbsearch` is registered automatically. See `specs/001-modernize-stack/quickstart.md` for the full developer setup.
 
 ## Interaction
 
-Start the interaction with the following command:
+Start the interactive CLI:
 
 ```bash
-python run.py -c ${config} --section ${section_of_the_config_to_access} \
--k ${file_to_key_if_your_database_is_encrypted} 
+uv run pdbsearch
 ```
 
-The configuration file should be encrypted if it contains sensitive information, e.g. a password. 
-In this case, the key should be stored in a relatively safe location.
+Drops into the top-level menu (search / add / update / quit). The non-interactive subcommands are also available — `pdbsearch search`, `pdbsearch add`, `pdbsearch update`, `pdbsearch delete`, `pdbsearch import`, `pdbsearch migrate`. Run `pdbsearch --help` for the full list.
 
 ## Search
 
@@ -123,14 +123,23 @@ Proceed?
 Your choice: 1
 ```
 
-# Config 
+# Config
 
-Your configuration should be of the form
-```
-[postgresql]
-dbname=your_dbname
-user=your_dbuser
-password=your_dbuser_password
-```
-It is recommended to use an encrypted version of this file.
+The database connection can come from any of four sources, in priority order (highest first):
+
+1. **CLI flags** — `--database-url`, `--log-level`, etc.
+2. **Environment variables** — `PDBSEARCH_DATABASE_URL`, optionally `PDBSEARCH_LOG_LEVEL`, `PDBSEARCH_LOG_FILE`.
+3. **`.env` file** at the project root (same keys as the env vars).
+4. **Fernet-encrypted INI** for sensitive deployments — pass `--config <path>` and `--key <path>`. The INI is the same shape as before:
+
+   ```ini
+   [postgresql]
+   dbname=your_dbname
+   user=your_dbuser
+   password=your_dbuser_password
+   ```
+
+   The key file holds a single Fernet key, generated once and kept in a relatively safe location.
+
+See `specs/001-modernize-stack/quickstart.md` for full setup, including how to seed the database with `pdbsearch migrate`.
 
