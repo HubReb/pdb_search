@@ -141,9 +141,9 @@ description: "Task list for feature 001-modernize-stack"
 ### Integration tests for User Story 2's CLI surface
 
 - [X] T032 [P] [US3] `tests/integration/test_search.py` — single-match-by-title, multi-match disambiguation, no-match-by-title; same three for author search.
-- [ ] T033 [P] [US3] `tests/integration/test_add.py` — add inline; add from `.bib` file; duplicate `bibtex_id` rejected with plain-language error; missing `.bib` file rejected; partial-failure rolls back atomically (no orphan rows).
-- [ ] T034 [P] [US3] `tests/integration/test_update.py` — update title; update contents; update bibtex; abort confirmation leaves data unchanged; non-existent paper id rejected; attempting to update `bibtex_id` itself is rejected.
-- [ ] T035 [P] [US3] `tests/integration/test_delete.py` — delete with `authors_papers` cascade; orphan author removed; bib row preserved if another paper still references it; non-existent id rejected.
+- [X] T033 [P] [US3] `tests/integration/test_add.py` — add inline; add from `.bib` file; duplicate `bibtex_id` rejected with plain-language error; missing `.bib` file rejected; partial-failure rolls back atomically (no orphan rows).
+- [X] T034 [P] [US3] `tests/integration/test_update.py` — update title; update contents; update bibtex; abort confirmation leaves data unchanged; non-existent paper id rejected; attempting to update `bibtex_id` itself is rejected.
+- [X] T035 [P] [US3] `tests/integration/test_delete.py` — delete with `authors_papers` cascade; orphan author removed; bib row preserved if another paper still references it; non-existent id rejected.
 
 ### Coverage and fresh-checkout gates
 

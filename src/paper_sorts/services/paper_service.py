@@ -101,6 +101,9 @@ class PaperService:
                 if not isinstance(identifier, int):
                     msg = "Identifier for table 'papers' must be an int (paper id)."
                     raise TypeError(msg)
+                if self._papers.find_by_id(identifier) is None:
+                    msg = f"No paper with id {identifier}."
+                    raise ValueError(msg)
                 self._papers.update_field(
                     identifier,
                     cast("Literal['title', 'contents']", field),
@@ -129,5 +132,13 @@ class PaperService:
                 assert_never(table)
 
     def delete_paper(self, paper_id: int) -> None:
-        """Delete a paper, cascade its links, drop orphan authors and bib row."""
+        """Delete a paper, cascade its links, drop orphan authors and bib row.
+
+        Raises:
+            ValueError: If no paper with ``paper_id`` exists. Caught by the
+                CLI delete command and rendered as a plain-language error.
+        """
+        if self._papers.find_by_id(paper_id) is None:
+            msg = f"No paper with id {paper_id}."
+            raise ValueError(msg)
         self._papers.delete(paper_id)
