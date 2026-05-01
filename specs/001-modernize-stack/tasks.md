@@ -117,8 +117,8 @@ description: "Task list for feature 001-modernize-stack"
 
 ### Unit tests for the new pure modules
 
-- [ ] T028 [P] [US2] `tests/unit/test_prompts.py` — empty input re-prompts; menu rejects 0 and out-of-range input; `1`/`y`/`yes` confirm and `2`/`n`/`no` abort; unrecognised confirmation returns False and emits a log.
-- [ ] T029 [P] [US2] `tests/unit/test_config.py` — env / .env / Fernet sources resolve in correct priority; `Settings(fernet_config=..., fernet_key=None)` raises `ValueError` with the documented message; absent `database_url` from any source raises `ValueError`.
+- [X] T028 [P] [US2] `tests/unit/test_prompts.py` — empty input re-prompts; menu rejects 0 and out-of-range input; `1`/`y`/`yes` confirm and `2`/`n`/`no` abort; unrecognised confirmation returns False and emits a log.
+- [X] T029 [P] [US2] `tests/unit/test_config.py` — env / .env / Fernet sources resolve in correct priority; `Settings(fernet_config=..., fernet_key=None)` raises `ValueError` with the documented message; absent `database_url` from any source raises `ValueError`.
 
 ### MVP gate
 
