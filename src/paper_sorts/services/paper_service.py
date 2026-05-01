@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Literal, assert_never, cast
 from paper_sorts.db.repositories import (
     AuthorRepository,
     BibRepository,
+    DuplicateBibtexIdError,
     PaperCreate,
     PaperRepository,
     PaperSummary,
@@ -55,7 +56,20 @@ class PaperService:
         return self._papers.find_by_author(name)
 
     def add_paper(self, payload: PaperCreate) -> PaperSummary:
-        """Insert a paper, its bib row, and its authors and links atomically."""
+        """Insert a paper, its bib row, and its authors and links atomically.
+
+        Raises:
+            DuplicateBibtexIdError: When ``payload.bibtex_id`` is already
+                in the ``bib`` table. The check runs *before* any insert
+                so the CLI can render a plain-language error and the
+                database state is unchanged (per the FR-002 contract).
+        """
+        if self._bibs.exists(payload.bibtex_id):
+            msg = (
+                f"BibTeX key {payload.bibtex_id!r} already exists in the "
+                "database."
+            )
+            raise DuplicateBibtexIdError(msg)
         return self._papers.add(payload)
 
     def update_field(

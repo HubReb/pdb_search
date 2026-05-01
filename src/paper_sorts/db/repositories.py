@@ -85,12 +85,26 @@ class AuthorRepository:
         self._session.execute(stmt)
 
 
+class DuplicateBibtexIdError(ValueError):
+    """Raised by :meth:`PaperService.add_paper` when ``bibtex_id`` already exists.
+
+    Subclasses :class:`ValueError` so callers that catch the broader type
+    keep working; specific catches give the CLI a single targeted handler
+    for the documented "duplicate BibTeX key" plain-language error.
+    """
+
+
 class BibRepository:
     """Reads and writes against the ``bib`` table."""
 
     def __init__(self, session: Session) -> None:
         """Bind to a unit-of-work session yielded by :func:`with_session`."""
         self._session = session
+
+    def exists(self, bibtex_id: str) -> bool:
+        """Return ``True`` if a bib row with that key is already present."""
+        stmt = select(BibEntry.bibtex_id).where(BibEntry.bibtex_id == bibtex_id)
+        return self._session.execute(stmt).scalar_one_or_none() is not None
 
     def add(self, bibtex_id: str, bibtex: str) -> None:
         """Insert a new bib row keyed by ``bibtex_id``."""
