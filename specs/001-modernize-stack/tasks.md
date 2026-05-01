@@ -122,7 +122,7 @@ description: "Task list for feature 001-modernize-stack"
 
 ### MVP gate
 
-- [ ] T030 [US2] Manually drive the top-level menu end-to-end against an Alembic-migrated test DB seeded with `tests/fixtures/seed_papers.py`: confirm every dialog path from `contracts/cli-commands.md` produces equivalent output. Document the run as a checkpoint commit.
+- [ ] T030 [US2] **Deferred to a manual operator session** (2026-05-01): drive the top-level menu end-to-end against an Alembic-migrated test DB seeded with `tests/fixtures/seed_papers.py`; confirm every dialog path from `contracts/cli-commands.md` produces equivalent output; document the run as a checkpoint commit. The integration suite (T032–T035, T041) covers the underlying behavioural surface; T030 is the final UX-eyes-on pass before merge. Run via `uv run pdbsearch migrate && uv run pdbsearch` against a fresh ephemeral PG, or against a personal DB if one is available.
 
 **Checkpoint**: User Story 2 complete. The modernized CLI works end-to-end against a fresh DB. The legacy `paper_sorts/` directory is gone; `src/paper_sorts/` is the only source tree.
 
