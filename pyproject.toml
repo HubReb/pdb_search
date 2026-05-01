@@ -26,6 +26,11 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
 ]
+# psycopg2-binary is only needed by tests/benchmarks/bench_baseline.py to
+# drive the legacy paper_sorts/run.py CLI for the SC-006 baseline.
+# Pull in with `uv sync --extra legacy-baseline`. Removed together with
+# the legacy tree in T026.
+legacy-baseline = ["psycopg2-binary>=2.9"]
 
 [project.scripts]
 pdbsearch = "paper_sorts.cli.app:main"

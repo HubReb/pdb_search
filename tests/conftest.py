@@ -21,12 +21,13 @@ from pytest_postgresql.executor import PostgreSQLExecutor
 from pytest_postgresql.janitor import DatabaseJanitor
 
 # Spin up a single proc-level PostgreSQL using the host's pg_ctl binary.
-# The default search path looks at /usr/lib/postgresql/*/bin and
-# /usr/pgsql-*/bin; on this Fedora host pg_ctl lives at /usr/bin/pg_ctl,
-# which pytest-postgresql discovers via PATH.
+# pytest-postgresql defaults to /usr/lib/postgresql/<n>/bin/pg_ctl and
+# falls back to `pg_config --bindir`; neither resolves on this Fedora
+# host, where pg_ctl lives at /usr/bin/pg_ctl, so pass it explicitly.
 postgresql_proc = factories.postgresql_proc(
     port=None,  # let pytest-postgresql pick a free port
     unixsocketdir="/tmp",
+    executable="/usr/bin/pg_ctl",
 )
 
 

@@ -143,6 +143,7 @@ Notable rules baked into `UserInteraction.update` and `DatabaseConnector.update_
 - The BibTeX **identifier** (the `bibtex_id` column / primary key) is **not** updatable — only the BibTeX *source* (the `bibtex` column) is.
 - For author updates, only the author's name string can change; you cannot reassign which author is on which paper via this flow.
 - Confirmation accepts `1` / `y` / `yes` for proceed, `2` / `n` / `no` for abort. Anything else aborts and logs an error.
+- **Known bug:** the first-step prompt accepts the menu numbers `1`/`2`/`3` *or* the canonical names `papers`/`bib`/`authors`. `UserInteraction.update` accepts both via `match … case "papers" | "1": …`, but it then forwards `table_to_be_updated` to `DatabaseConnector.update_entry(..., table=…)` *without normalising* — and `update_entry`'s dispatch (`match table: case "papers": …`) only knows canonical names. So entering `1` raises `ValueError("Updating table 1 is not supported.")` which `UserInteraction.update` swallows and prints "Could not update entry — please check logs." Practical effect: the legacy CLI's update path only works when the user types the canonical name, never the menu number. Modernisation fixes this by construction (cli/update.py normalises before calling `paper_service.update_field`).
 
 ### 2.4 Delete (no menu entry)
 
@@ -268,7 +269,7 @@ The strongest architectural rule in the current codebase is **"only `psycopg_db.
 4. `DatabaseConnector.search_by_title` constructs a JOIN across `papers`, `authors_papers`, `authors_id`, and calls `self.database_handler.fetch_from_db(query, (title,))`.
 5. `PsycopgDB.fetch_from_db` opens a connection, runs `cur.execute(sql.SQL(query), params)`, calls `cur.fetchall()`, closes.
 6. `DatabaseConnector` post-processes the rows: if multiple papers share the title, it returns one row per (paper, joined-author-string); otherwise it returns the single row.
-7. `UserInteraction.search_by_paper_title` calls `get_user_choice(papers)` if disambiguation is needed, then `db_connector.search_for_bibtex_entry_by_id(chosen_paper)` to fetch the BibTeX, then `pretty_print_results(bibtex_data, chosen_paper)`.
+7. `UserInteraction.search_by_paper_title` calls `get_user_choice(papers)` if disambiguation is needed, then `db_connector.search_for_bibtex_entry_by_id(chosen_paper)` to fetch the BibTeX, then `pretty_print_results(bibtex_data, chosen_paper)`. **Known crash:** `pretty_print_results` indexes `bibtex_data[1]`, but `search_for_bibtex_entry_by_id` returns a `fetchall()` *list* of rows (one row), not the unpacked tuple — so the print step raises `IndexError` after emitting `title:`/`authors:` and before the bib line. The same bug fires on the search-by-author journey (§4.x). Modernization replaces both `pretty_print_results` and `search_for_bibtex_entry_by_id` so this is fixed by construction post-T020.
 
 Total round-trips to Postgres for a single-match title search: **3** (the JOIN query, the `search_for_entry_by_specified_paper_information` author-lookup query, and the `search_for_bibtex_entry_by_id` bib-fetch query).
 
@@ -316,8 +317,8 @@ The default paths (`../../database.crypt`, `../../key`) only resolve if the prog
 ## 6. Install and run
 
 ```bash
-poetry install
-python paper_sorts/run.py -c ../../database.crypt --section postgresql -k ../../key
+uv sync --extra legacy-baseline   # pulls psycopg2-binary; required since T002 dropped it
+uv run python paper_sorts/run.py -c ../../database.crypt --section postgresql -k ../../key
 ```
 
 The README example writes `python run.py`, which is the wrong path; run from the repo root with the path above.
