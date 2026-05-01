@@ -40,17 +40,27 @@ def ask_text(prompt: str) -> str:
             return value
 
 
-def ask_choice(prompt: str, options: list[str]) -> int:
+def ask_choice(
+    prompt: str,
+    options: list[str],
+    *,
+    quit_alias: str | None = None,
+) -> int:
     """Print a numbered menu of ``options`` and return the 1-indexed selection.
 
     The caller is responsible for putting the abort/quit option as the last
     entry. Out-of-range and non-integer responses are rejected by
-    :class:`IntPrompt`'s ``choices=`` validation, which re-prompts.
+    :class:`IntPrompt`'s ``choices=`` validation (or :class:`Prompt`'s when
+    a ``quit_alias`` is set), which re-prompts.
 
     Args:
         prompt: The question presented after the numbered list.
         options: Menu entries; index 0 is shown as ``"1)"``, index 1 as
             ``"2)"``, and so on.
+        quit_alias: Optional keyword-only single character (e.g. ``"q"``)
+            accepted case-insensitively as a shortcut for the *last*
+            option, satisfying the contract's "``q`` is accepted in
+            addition to ``4``" rule for the top-level menu.
 
     Returns:
         The 1-indexed selection.
@@ -58,15 +68,23 @@ def ask_choice(prompt: str, options: list[str]) -> int:
     Raises:
         ValueError: If ``options`` is empty.
     """
-    from rich.prompt import IntPrompt
+    from rich.prompt import IntPrompt, Prompt
 
     if not options:
         msg = "ask_choice requires at least one option"
         raise ValueError(msg)
     for i, opt in enumerate(options, start=1):
         print(f"{i}) {opt}")
-    choices = [str(i) for i in range(1, len(options) + 1)]
-    return IntPrompt.ask(prompt, choices=choices)
+    n = len(options)
+    if quit_alias is None:
+        return IntPrompt.ask(prompt, choices=[str(i) for i in range(1, n + 1)])
+
+    aliases = {quit_alias.lower(), quit_alias.upper()}
+    valid = [str(i) for i in range(1, n + 1)] + sorted(aliases)
+    response = Prompt.ask(prompt, choices=valid, show_choices=False)
+    if response in aliases:
+        return n
+    return int(response)
 
 
 def ask_confirm(prompt: str) -> bool:
