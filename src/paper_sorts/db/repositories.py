@@ -124,6 +124,12 @@ class PaperRepository:
         self._session = session
         self._authors = AuthorRepository(session)
 
+    def find_by_id(self, paper_id: int) -> PaperSummary | None:
+        """Return the paper with that primary key, or ``None`` if absent."""
+        stmt = select(Paper).where(Paper.id == paper_id)
+        paper = self._session.execute(stmt).scalar_one_or_none()
+        return self._project(paper) if paper is not None else None
+
     def find_by_title(self, title: str) -> list[PaperSummary]:
         """Return all papers whose title matches ``title`` exactly."""
         stmt = select(Paper).where(Paper.title == title)

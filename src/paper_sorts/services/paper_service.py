@@ -47,6 +47,10 @@ class PaperService:
         self._bibs = BibRepository(session)
         self._authors = AuthorRepository(session)
 
+    def find_by_id(self, paper_id: int) -> PaperSummary | None:
+        """Return the paper with that id or ``None`` if no such row exists."""
+        return self._papers.find_by_id(paper_id)
+
     def search_by_title(self, title: str) -> list[PaperSummary]:
         """Return papers whose title matches ``title`` exactly."""
         return self._papers.find_by_title(title)
@@ -65,10 +69,7 @@ class PaperService:
                 database state is unchanged (per the FR-002 contract).
         """
         if self._bibs.exists(payload.bibtex_id):
-            msg = (
-                f"BibTeX key {payload.bibtex_id!r} already exists in the "
-                "database."
-            )
+            msg = f"BibTeX key {payload.bibtex_id!r} already exists in the database."
             raise DuplicateBibtexIdError(msg)
         return self._papers.add(payload)
 
