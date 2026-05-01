@@ -136,11 +136,11 @@ description: "Task list for feature 001-modernize-stack"
 
 ### Test infrastructure
 
-- [ ] T031 [US3] Extend `tests/conftest.py`: the session-scoped pytest-postgresql fixture now runs `alembic upgrade head` against the ephemeral DB once per session, then loads `tests/fixtures/seed_papers.py`; add a per-test transaction-rollback fixture for isolation between tests.
+- [X] T031 [US3] Extend `tests/conftest.py`: the session-scoped pytest-postgresql fixture now runs `alembic upgrade head` against the ephemeral DB once per session, then loads `tests/fixtures/seed_papers.py`; add a per-test transaction-rollback fixture for isolation between tests.
 
 ### Integration tests for User Story 2's CLI surface
 
-- [ ] T032 [P] [US3] `tests/integration/test_search.py` — single-match-by-title, multi-match disambiguation, no-match-by-title; same three for author search.
+- [X] T032 [P] [US3] `tests/integration/test_search.py` — single-match-by-title, multi-match disambiguation, no-match-by-title; same three for author search.
 - [ ] T033 [P] [US3] `tests/integration/test_add.py` — add inline; add from `.bib` file; duplicate `bibtex_id` rejected with plain-language error; missing `.bib` file rejected; partial-failure rolls back atomically (no orphan rows).
 - [ ] T034 [P] [US3] `tests/integration/test_update.py` — update title; update contents; update bibtex; abort confirmation leaves data unchanged; non-existent paper id rejected; attempting to update `bibtex_id` itself is rejected.
 - [ ] T035 [P] [US3] `tests/integration/test_delete.py` — delete with `authors_papers` cascade; orphan author removed; bib row preserved if another paper still references it; non-existent id rejected.
