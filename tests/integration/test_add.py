@@ -41,15 +41,11 @@ def test_add_inline_persists_paper_bib_authors_and_links(db_session: Session) ->
     assert summary.title == "T033 New Paper"
     assert set(summary.authors) == {"New, A.", "Coauthor, B."}
 
-    paper = db_session.execute(
-        select(Paper).where(Paper.bibtex_id == "T033Key")
-    ).scalar_one()
+    paper = db_session.execute(select(Paper).where(Paper.bibtex_id == "T033Key")).scalar_one()
     assert paper.title == "T033 New Paper"
     assert {a.name for a in paper.authors} == {"New, A.", "Coauthor, B."}
 
-    bib = db_session.execute(
-        select(BibEntry).where(BibEntry.bibtex_id == "T033Key")
-    ).scalar_one()
+    bib = db_session.execute(select(BibEntry).where(BibEntry.bibtex_id == "T033Key")).scalar_one()
     assert bib.bibtex is not None
     assert "T033Key" in bib.bibtex
 
@@ -71,9 +67,7 @@ def test_add_duplicate_bibtex_id_raises_plain_language_error(
 def test_add_partial_failure_rolls_back_atomically(db_session: Session) -> None:
     """Bib UNIQUE on the source string fails the second insert; no orphans remain."""
     service = PaperService(db_session)
-    shared_bibtex = (
-        "@article{Shared, author={X, Y.}, title={Same Source}, year={2026}}"
-    )
+    shared_bibtex = "@article{Shared, author={X, Y.}, title={Same Source}, year={2026}}"
     service.add_paper(_payload(bibtex_id="A1", bibtex=shared_bibtex))
 
     with pytest.raises(IntegrityError):
@@ -87,9 +81,7 @@ def test_add_partial_failure_rolls_back_atomically(db_session: Session) -> None:
     db_session.rollback()  # release the failed savepoint
 
     # Verify no orphan rows for the failed insert.
-    paper_b = db_session.execute(
-        select(Paper).where(Paper.bibtex_id == "B1")
-    ).scalar_one_or_none()
+    paper_b = db_session.execute(select(Paper).where(Paper.bibtex_id == "B1")).scalar_one_or_none()
     assert paper_b is None
 
     bib_b = db_session.execute(
@@ -97,18 +89,12 @@ def test_add_partial_failure_rolls_back_atomically(db_session: Session) -> None:
     ).scalar_one_or_none()
     assert bib_b is None
 
-    solo = db_session.execute(
-        select(Author).where(Author.name == "Solo, B.")
-    ).scalar_one_or_none()
+    solo = db_session.execute(select(Author).where(Author.name == "Solo, B.")).scalar_one_or_none()
     assert solo is None
 
 
-def test_gather_input_reads_bib_file(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    bib_content = (
-        "@article{FromFile2026, author={File and CoFile}, title={From File}, year={2026}}"
-    )
+def test_gather_input_reads_bib_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    bib_content = "@article{FromFile2026, author={File and CoFile}, title={From File}, year={2026}}"
     bib_path = tmp_path / "x.bib"
     bib_path.write_text(bib_content)
 
@@ -131,7 +117,5 @@ def test_gather_input_missing_bib_file_rejected(
     answers = iter(["A, B.", "Title", "Key", "summary"])
     monkeypatch.setattr(add_cli, "ask_text", lambda *_a, **_kw: next(answers))
 
-    payload = add_cli._gather_input(
-        bib_file=tmp_path / "nonexistent.bib", summary=None
-    )
+    payload = add_cli._gather_input(bib_file=tmp_path / "nonexistent.bib", summary=None)
     assert payload is None

@@ -32,6 +32,7 @@ import typer
 
 from paper_sorts.cli import add as add_cmd
 from paper_sorts.cli import delete as delete_cmd
+from paper_sorts.cli import importer as import_cmd
 from paper_sorts.cli import migrate as migrate_cmd
 from paper_sorts.cli import search as search_cmd
 from paper_sorts.cli import update as update_cmd
@@ -100,7 +101,17 @@ def _root(
 
 
 def _run_top_menu(ctx: typer.Context) -> None:
-    """Drive the legacy four-option menu, dispatching via ``ctx.invoke``."""
+    """Drive the legacy four-option menu, dispatching to the subcommand callables.
+
+    ``ctx.invoke(cb)`` is *not* used: typer subcommand functions take
+    ``ctx`` as their first positional argument, but click's ``invoke`` only
+    auto-injects context when the callable is a registered ``Command``
+    (and at this call site the references are the raw functions, not the
+    ``app.command``-wrapped ones). Calling each function directly with
+    ``ctx`` lets the per-subcommand defaults (``--by``, ``--bib-file``,
+    etc.) fall through to ``None`` so each command's interactive prompt
+    sequence runs.
+    """
     options = [
         "Search the database",
         "Add an entry",
@@ -112,26 +123,32 @@ def _run_top_menu(ctx: typer.Context) -> None:
         choice = ask_choice("Your choice", options, quit_alias="q")
         match choice:
             case 1:
-                ctx.invoke(search_cmd.search)
+                search_cmd.search(ctx)
             case 2:
-                ctx.invoke(add_cmd.add)
+                add_cmd.add(ctx)
             case 3:
-                ctx.invoke(update_cmd.update)
+                update_cmd.update(ctx)
             case 4:
                 return
 
 
-# T025: register the four UX subcommands as Typer commands. Importer (T044)
-# is added in its own user-story phase. Migrate (T040) is registered as a
-# subcommand only — deliberately absent from the top-level menu, since
-# schema migration is admin/setup work, not part of the four-option UX.
+# Register the UX subcommands as Typer commands. Migrate (T040) and import
+# (T044) are registered as subcommands only — deliberately absent from the
+# top-level menu, since both are admin/scripted operations, not part of the
+# four-option interactive UX (see contracts/cli-commands.md § "Why only
+# four options").
 app.command(name="search", help="Search papers by author or title.")(search_cmd.search)
 app.command(name="add", help="Add a paper to the database.")(add_cmd.add)
 app.command(name="update", help="Update a single editable field.")(update_cmd.update)
 app.command(name="delete", help="Delete a paper after confirmation.")(delete_cmd.delete)
 app.command(name="migrate", help="Apply pending schema migrations.")(migrate_cmd.migrate)
+app.command(name="import", help="Bulk-import papers from a .tex + .bib pair.")(import_cmd.import_)
 
 
 def main() -> None:
     """Console-script entry point — wired in pyproject as ``pdbsearch``."""
     app()
+
+
+if __name__ == "__main__":
+    main()

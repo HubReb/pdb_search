@@ -31,9 +31,7 @@ def test_update_title(db_session: Session) -> None:
     service = PaperService(db_session)
     service.update_field("papers", "title", paper_id, "New Title")
 
-    title = db_session.execute(
-        select(Paper.title).where(Paper.id == paper_id)
-    ).scalar_one()
+    title = db_session.execute(select(Paper.title).where(Paper.id == paper_id)).scalar_one()
     assert title == "New Title"
 
 
@@ -42,9 +40,7 @@ def test_update_contents(db_session: Session) -> None:
     service = PaperService(db_session)
     service.update_field("papers", "contents", paper_id, "Rewritten summary.")
 
-    contents = db_session.execute(
-        select(Paper.contents).where(Paper.id == paper_id)
-    ).scalar_one()
+    contents = db_session.execute(select(Paper.contents).where(Paper.id == paper_id)).scalar_one()
     assert contents == "Rewritten summary."
 
 
@@ -60,15 +56,11 @@ def test_update_bibtex_source(db_session: Session) -> None:
 
 
 def test_update_author_name(db_session: Session) -> None:
-    pino_id = db_session.execute(
-        select(Author.id).where(Author.name == "Pino, J.")
-    ).scalar_one()
+    pino_id = db_session.execute(select(Author.id).where(Author.name == "Pino, J.")).scalar_one()
     service = PaperService(db_session)
     service.update_field("authors", "author", pino_id, "Pino, Juan")
 
-    name = db_session.execute(
-        select(Author.name).where(Author.id == pino_id)
-    ).scalar_one()
+    name = db_session.execute(select(Author.name).where(Author.id == pino_id)).scalar_one()
     assert name == "Pino, Juan"
 
 
@@ -76,9 +68,7 @@ def test_update_bibtex_id_itself_is_rejected(db_session: Session) -> None:
     """The BibTeX identifier cannot be updated; only its source string is."""
     service = PaperService(db_session)
     with pytest.raises(ValueError, match="not editable"):
-        service.update_field(
-            "bib", "bibtex_id", "Wang2021LargeScaleSA", "RenameAttempt"
-        )
+        service.update_field("bib", "bibtex_id", "Wang2021LargeScaleSA", "RenameAttempt")
 
 
 def test_update_nonexistent_paper_id_rejected(db_session: Session) -> None:
@@ -110,13 +100,9 @@ def test_abort_complement_data_unchanged(db_session: Session) -> None:
     complement is asserting that without a service call no row is mutated.
     """
     paper_id = _wang_paper_id(db_session)
-    title_before = db_session.execute(
-        select(Paper.title).where(Paper.id == paper_id)
-    ).scalar_one()
+    title_before = db_session.execute(select(Paper.title).where(Paper.id == paper_id)).scalar_one()
 
     # Deliberately do NOT call service.update_field — the "abort" path.
 
-    title_after = db_session.execute(
-        select(Paper.title).where(Paper.id == paper_id)
-    ).scalar_one()
+    title_after = db_session.execute(select(Paper.title).where(Paper.id == paper_id)).scalar_one()
     assert title_after == title_before

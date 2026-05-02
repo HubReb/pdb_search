@@ -35,3 +35,4 @@
 - Constitution amended in parallel from v1.0.0 to v1.1.0: Principle IV's interactive-latency rule was redefined from "1 s on ≤10 k papers" (an unmeasured guess) to "no measurable regression vs. the current baseline." Spec SC-006 was updated to match.
 - The "non-technical stakeholders" item remains marked partial because this project's stakeholder is the developer-owner; over-abstracting would lose precision (e.g. the legacy `bibtext_id` vs `bibtex_id` schema split is a real edge case the migration must handle, and naming it is the only way to test it). Accepted as a documented partial.
 - Spec is ready for `/speckit-plan`.
+- **Verified-on 2026-05-02 (T051)**: re-walked each item against the implemented system; quality items hold (the spec-quality predicates don't change post-implementation, and every FR/SC has a corresponding tested artifact in `tests/integration/` or the `bench_baseline.py` baseline). The single `[ ]` item is the documented partial above.

@@ -74,13 +74,12 @@ SEED_PAPERS: list[SeedPaper] = [
     SeedPaper(
         title="On Fairness in Machine Translation",
         contents=(
-            "Position paper on fairness metrics for MT systems; "
-            "the variant by Schöttler et al."
+            "Position paper on fairness metrics for MT systems; the variant by Schöttler et al."
         ),
         bibtex_id="Schoettler2023FairnessMT",
         bibtex=(
             "@article{Schoettler2023FairnessMT,\n"
-            "  author = {Sch{\\\"o}ttler, K.},\n"
+            '  author = {Sch{\\"o}ttler, K.},\n'
             "  title = {On Fairness in Machine Translation},\n"
             "  journal = {Proc. WMT},\n"
             "  year = {2023}\n"
