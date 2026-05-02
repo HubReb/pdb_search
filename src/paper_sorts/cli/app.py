@@ -132,9 +132,7 @@ app.command(name="add", help="Add a paper to the database.")(add_cmd.add)
 app.command(name="update", help="Update a single editable field.")(update_cmd.update)
 app.command(name="delete", help="Delete a paper after confirmation.")(delete_cmd.delete)
 app.command(name="migrate", help="Apply pending schema migrations.")(migrate_cmd.migrate)
-app.command(name="import", help="Bulk-import papers from a .tex + .bib pair.")(
-    import_cmd.import_
-)
+app.command(name="import", help="Bulk-import papers from a .tex + .bib pair.")(import_cmd.import_)
 
 
 def main() -> None:

@@ -69,7 +69,7 @@ def _row_counts(url: str) -> dict[str, int]:
                     counts[table] = int(
                         conn.execute(text(f"SELECT count(*) FROM {table}")).scalar_one()  # noqa: S608
                     )
-                except Exception:  # noqa: BLE001 — pre-migration tables may be absent
+                except Exception:  # pre-migration tables may be absent
                     counts[table] = 0
     finally:
         engine.dispose()
@@ -99,12 +99,7 @@ def _create_legacy_schema(url: str) -> None:
     engine = create_engine(url)
     try:
         with engine.begin() as conn:
-            conn.execute(
-                text(
-                    "CREATE TABLE bib ("
-                    "bibtext_id text PRIMARY KEY, bibtex text UNIQUE)"
-                )
-            )
+            conn.execute(text("CREATE TABLE bib (bibtext_id text PRIMARY KEY, bibtex text UNIQUE)"))
             conn.execute(
                 text(
                     "CREATE TABLE papers ("
@@ -112,9 +107,7 @@ def _create_legacy_schema(url: str) -> None:
                     "bibtext_id text REFERENCES bib(bibtext_id))"
                 )
             )
-            conn.execute(
-                text("CREATE TABLE authors_id (id SERIAL PRIMARY KEY, author text)")
-            )
+            conn.execute(text("CREATE TABLE authors_id (id SERIAL PRIMARY KEY, author text)"))
             conn.execute(
                 text(
                     "CREATE TABLE authors_papers ("
@@ -135,10 +128,7 @@ def _seed_legacy_rows(url: str) -> None:
                 [{"k": "Legacy1", "b": "@article{Legacy1, year={2020}}"}],
             )
             conn.execute(
-                text(
-                    "INSERT INTO papers (title, contents, bibtext_id) "
-                    "VALUES (:t, :c, :b)"
-                ),
+                text("INSERT INTO papers (title, contents, bibtext_id) VALUES (:t, :c, :b)"),
                 [{"t": "Legacy Paper", "c": "summary", "b": "Legacy1"}],
             )
             conn.execute(
@@ -174,10 +164,7 @@ def test_modern_db_at_001_with_rows_is_noop_at_002(fresh_db_url: str) -> None:
                 [{"k": "Modern1", "b": "@article{Modern1, year={2025}}"}],
             )
             conn.execute(
-                text(
-                    "INSERT INTO papers (title, contents, bibtex_id) "
-                    "VALUES (:t, :c, :b)"
-                ),
+                text("INSERT INTO papers (title, contents, bibtex_id) VALUES (:t, :c, :b)"),
                 [{"t": "Modern Paper", "c": "summary", "b": "Modern1"}],
             )
     finally:

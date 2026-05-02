@@ -68,17 +68,14 @@ def _read_until(proc: subprocess.Popen[bytes], marker: bytes, timeout: float) ->
     while marker not in buf:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            raise TimeoutError(
-                f"timed out waiting for {marker!r}; got {bytes(buf)!r}"
-            )
+            raise TimeoutError(f"timed out waiting for {marker!r}; got {bytes(buf)!r}")
         ready, _, _ = select.select([fd], [], [], remaining)
         if not ready:
             continue
         chunk = os.read(fd, 4096)
         if not chunk:
             raise RuntimeError(
-                f"legacy CLI closed stdout before emitting {marker!r}; "
-                f"got {bytes(buf)!r}"
+                f"legacy CLI closed stdout before emitting {marker!r}; got {bytes(buf)!r}"
             )
         buf.extend(chunk)
     return bytes(buf)
@@ -102,7 +99,7 @@ def _spawn_legacy(env: dict[str, Any]) -> subprocess.Popen[bytes]:
         **os.environ,
         "PYTHONPATH": str(Path(__file__).resolve().parents[2]),
     }
-    return subprocess.Popen(
+    return subprocess.Popen(  # noqa: S603 — cmd is a fixed Python invocation, no shell, no user input
         cmd,
         cwd=str(env["tmp_path"]),
         stdin=subprocess.PIPE,
@@ -212,9 +209,7 @@ def test_baseline(
         legacy_db_env,
         "Large-scale Self- and Semi-Supervised learning for speech translation",
     )
-    timings["search_by_author"] = _time_search_by_author(
-        legacy_db_env, "Schöttler, K."
-    )
+    timings["search_by_author"] = _time_search_by_author(legacy_db_env, "Schöttler, K.")
 
     # add (inline bibtex): top "2" -> authors -> title -> bibkey -> "2" (no
     # bib file) -> bibtex -> summary.
@@ -222,18 +217,22 @@ def test_baseline(
     bench_title = "Bench Paper Title"
     bench_authors = "Bench, A."
     bench_bibtex = (
-        "@inproceedings{BenchPaper2026,author={Bench, A.},"
-        "title={Bench Paper Title},year={2026}}"
+        "@inproceedings{BenchPaper2026,author={Bench, A.},title={Bench Paper Title},year={2026}}"
     )
     bench_summary = "Synthetic benchmark insertion."
     add_payload = (
         b"2\n"
-        + bench_authors.encode() + b"\n"
-        + bench_title.encode() + b"\n"
-        + bench_bibkey.encode() + b"\n"
+        + bench_authors.encode()
+        + b"\n"
+        + bench_title.encode()
+        + b"\n"
+        + bench_bibkey.encode()
+        + b"\n"
         + b"2\n"
-        + bench_bibtex.encode() + b"\n"
-        + bench_summary.encode() + b"\n"
+        + bench_bibtex.encode()
+        + b"\n"
+        + bench_summary.encode()
+        + b"\n"
     )
     timings["add_inline"] = _time_op(legacy_db_env, add_payload)
 
@@ -246,8 +245,10 @@ def test_baseline(
     updated_title = "Updated Bench Paper Title"
     update_payload = (
         b"3\npapers\n1\n"
-        + str(new_paper_id).encode() + b"\n"
-        + updated_title.encode() + b"\n"
+        + str(new_paper_id).encode()
+        + b"\n"
+        + updated_title.encode()
+        + b"\n"
         + b"1\n"
     )
     timings["update_title"] = _time_op(legacy_db_env, update_payload)
@@ -292,13 +293,11 @@ def test_baseline(
         regressions = [
             (op, baseline["ops"][op], elapsed)
             for op, elapsed in timings.items()
-            if op in baseline["ops"]
-            and elapsed > baseline["ops"][op] * tolerance
+            if op in baseline["ops"] and elapsed > baseline["ops"][op] * tolerance
         ]
         if regressions:
             lines = "\n".join(
-                f"  {op}: {ref:.3f}s -> {now:.3f}s "
-                f"({(now / ref - 1) * 100:+.1f}%)"
+                f"  {op}: {ref:.3f}s -> {now:.3f}s ({(now / ref - 1) * 100:+.1f}%)"
                 for op, ref, now in regressions
             )
             pytest.fail(f"SC-006 regression detected:\n{lines}")

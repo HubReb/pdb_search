@@ -45,7 +45,7 @@ from paper_sorts.db.repositories import PaperCreate, PaperRepository
 # host, where pg_ctl lives at /usr/bin/pg_ctl, so pass it explicitly.
 postgresql_proc = factories.postgresql_proc(
     port=None,  # let pytest-postgresql pick a free port
-    unixsocketdir="/tmp",
+    unixsocketdir="/tmp",  # noqa: S108 — pytest-postgresql owns the per-run socket file lifecycle
     executable="/usr/bin/pg_ctl",
 )
 

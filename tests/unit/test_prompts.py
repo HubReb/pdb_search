@@ -60,17 +60,13 @@ def test_ask_choice_empty_options_raises() -> None:
 
 
 @pytest.mark.parametrize("token", ["1", "y", "yes", "Y", "YES", "  yes  "])
-def test_ask_confirm_accepts_yes_tokens(
-    token: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ask_confirm_accepts_yes_tokens(token: str, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(prompts.Prompt, "ask", lambda *_a, **_kw: token)
     assert prompts.ask_confirm("?") is True
 
 
 @pytest.mark.parametrize("token", ["2", "n", "no", "N", "No", "  NO "])
-def test_ask_confirm_accepts_no_tokens(
-    token: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_ask_confirm_accepts_no_tokens(token: str, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(prompts.Prompt, "ask", lambda *_a, **_kw: token)
     assert prompts.ask_confirm("?") is False
 
@@ -81,6 +77,4 @@ def test_ask_confirm_unrecognised_returns_false_and_logs(
     monkeypatch.setattr(prompts.Prompt, "ask", lambda *_a, **_kw: "maybe")
     with caplog.at_level(logging.WARNING, logger="paper_sorts.cli.prompts"):
         assert prompts.ask_confirm("?") is False
-    assert any(
-        "Unrecognised confirmation" in record.message for record in caplog.records
-    )
+    assert any("Unrecognised confirmation" in record.message for record in caplog.records)

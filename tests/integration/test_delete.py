@@ -17,9 +17,7 @@ from paper_sorts.services.paper_service import PaperService
 
 
 def _paper_id_by_bibtex(session: Session, bibtex_id: str) -> int:
-    return session.execute(
-        select(Paper.id).where(Paper.bibtex_id == bibtex_id)
-    ).scalar_one()
+    return session.execute(select(Paper.id).where(Paper.bibtex_id == bibtex_id)).scalar_one()
 
 
 def test_delete_drops_paper_and_its_authorship_links(db_session: Session) -> None:
@@ -27,14 +25,14 @@ def test_delete_drops_paper_and_its_authorship_links(db_session: Session) -> Non
     service = PaperService(db_session)
     service.delete_paper(paper_id)
 
-    paper = db_session.execute(
-        select(Paper).where(Paper.id == paper_id)
-    ).scalar_one_or_none()
+    paper = db_session.execute(select(Paper).where(Paper.id == paper_id)).scalar_one_or_none()
     assert paper is None
 
-    links = db_session.execute(
-        select(Authorship).where(Authorship.paper_id == paper_id)
-    ).scalars().all()
+    links = (
+        db_session.execute(select(Authorship).where(Authorship.paper_id == paper_id))
+        .scalars()
+        .all()
+    )
     assert links == []
 
 
@@ -59,9 +57,7 @@ def test_delete_keeps_authors_with_other_papers(db_session: Session) -> None:
     paper_id = _paper_id_by_bibtex(db_session, "Lee2022DirectSpeechToSpeech")
     PaperService(db_session).delete_paper(paper_id)
 
-    pino = db_session.execute(
-        select(Author).where(Author.name == "Pino, J.")
-    ).scalar_one_or_none()
+    pino = db_session.execute(select(Author).where(Author.name == "Pino, J.")).scalar_one_or_none()
     assert pino is not None
 
 
@@ -127,9 +123,7 @@ def test_delete_inserts_new_paper_then_round_trip(db_session: Session) -> None:
     PaperService(db_session).delete_paper(inserted.id)
 
     assert (
-        db_session.execute(
-            select(Paper).where(Paper.id == inserted.id)
-        ).scalar_one_or_none()
+        db_session.execute(select(Paper).where(Paper.id == inserted.id)).scalar_one_or_none()
         is None
     )
     assert (
@@ -139,8 +133,6 @@ def test_delete_inserts_new_paper_then_round_trip(db_session: Session) -> None:
         is None
     )
     assert (
-        db_session.execute(
-            select(Author).where(Author.name == "Solo, A.")
-        ).scalar_one_or_none()
+        db_session.execute(select(Author).where(Author.name == "Solo, A.")).scalar_one_or_none()
         is None
     )

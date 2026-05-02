@@ -28,12 +28,12 @@ from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 
 def migrate(ctx: typer.Context) -> None:
     """Apply pending migrations and report row counts before and after."""
-    factory = cast("sessionmaker[object]", ctx.obj)
+    factory = cast("sessionmaker[Session]", ctx.obj)
     engine = cast("Engine", factory.kw["bind"])
 
     cfg = _alembic_config()
@@ -61,9 +61,7 @@ def migrate(ctx: typer.Context) -> None:
     if counts_before != counts_after:
         for table in ("papers", "authors_id", "bib", "authors_papers"):
             if counts_before[table] != counts_after[table]:
-                print(
-                    f"  {table}: {counts_before[table]} -> {counts_after[table]}"
-                )
+                print(f"  {table}: {counts_before[table]} -> {counts_after[table]}")
     print(f"Tables: {', '.join(parts)}")
     print(f"Schema is at head ({head}).")
 
@@ -94,7 +92,7 @@ def _row_counts(engine: Engine) -> dict[str, int]:
             try:
                 result = conn.execute(text(f"SELECT count(*) FROM {table}"))  # noqa: S608
                 counts[table] = int(result.scalar_one())
-            except Exception:  # noqa: BLE001 — pre-migration tables may not exist
+            except Exception:  # pre-migration tables may not exist
                 counts[table] = 0
     return counts
 
@@ -103,7 +101,6 @@ def _print_counts(engine: Engine, *, label: str) -> None:
     """Print one-line row-count summary."""
     counts = _row_counts(engine)
     parts = [
-        f"{table}={counts[table]}"
-        for table in ("papers", "authors_id", "bib", "authors_papers")
+        f"{table}={counts[table]}" for table in ("papers", "authors_id", "bib", "authors_papers")
     ]
     print(f"{label}: {', '.join(parts)}")

@@ -12,9 +12,7 @@ from cryptography.fernet import Fernet
 from paper_sorts.config import Settings
 
 
-def _write_fernet_ini(
-    tmp_path: Path, postgres_section: dict[str, str]
-) -> tuple[Path, Path]:
+def _write_fernet_ini(tmp_path: Path, postgres_section: dict[str, str]) -> tuple[Path, Path]:
     """Generate a Fernet-encrypted INI + key file; return their paths."""
     cp = configparser.ConfigParser()
     cp["postgresql"] = postgres_section
@@ -48,9 +46,7 @@ def isolated_cwd(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
 def test_init_kwarg_wins_over_env_and_fernet(
     monkeypatch: pytest.MonkeyPatch, isolated_cwd: Path
 ) -> None:
-    monkeypatch.setenv(
-        "PDBSEARCH_DATABASE_URL", "postgresql+psycopg://env@h/env_db"
-    )
+    monkeypatch.setenv("PDBSEARCH_DATABASE_URL", "postgresql+psycopg://env@h/env_db")
     config_path, key_path = _write_fernet_ini(
         isolated_cwd,
         {"dbname": "fernet_db", "user": "fuser", "password": "fpw"},
@@ -66,12 +62,8 @@ def test_init_kwarg_wins_over_env_and_fernet(
 def test_env_wins_over_dotenv_and_fernet(
     monkeypatch: pytest.MonkeyPatch, isolated_cwd: Path
 ) -> None:
-    monkeypatch.setenv(
-        "PDBSEARCH_DATABASE_URL", "postgresql+psycopg://env@h/env_db"
-    )
-    (isolated_cwd / ".env").write_text(
-        "PDBSEARCH_DATABASE_URL=postgresql+psycopg://dot@h/dot_db\n"
-    )
+    monkeypatch.setenv("PDBSEARCH_DATABASE_URL", "postgresql+psycopg://env@h/env_db")
+    (isolated_cwd / ".env").write_text("PDBSEARCH_DATABASE_URL=postgresql+psycopg://dot@h/dot_db\n")
     config_path, key_path = _write_fernet_ini(
         isolated_cwd,
         {"dbname": "fernet_db", "user": "fuser", "password": "fpw"},
@@ -81,9 +73,7 @@ def test_env_wins_over_dotenv_and_fernet(
 
 
 def test_dotenv_wins_over_fernet(isolated_cwd: Path) -> None:
-    (isolated_cwd / ".env").write_text(
-        "PDBSEARCH_DATABASE_URL=postgresql+psycopg://dot@h/dot_db\n"
-    )
+    (isolated_cwd / ".env").write_text("PDBSEARCH_DATABASE_URL=postgresql+psycopg://dot@h/dot_db\n")
     config_path, key_path = _write_fernet_ini(
         isolated_cwd,
         {"dbname": "fernet_db", "user": "fuser", "password": "fpw"},
@@ -106,10 +96,7 @@ def test_fernet_only_assembles_url_with_quoted_credentials(
         },
     )
     s = Settings(fernet_config=config_path, fernet_key=key_path)
-    assert (
-        s.database_url
-        == "postgresql+psycopg://fuser:p%40ss%2Fword@h.example:5433/fdb"
-    )
+    assert s.database_url == "postgresql+psycopg://fuser:p%40ss%2Fword@h.example:5433/fdb"
 
 
 def test_fernet_config_without_key_raises(isolated_cwd: Path) -> None:
@@ -133,7 +120,5 @@ def test_fernet_with_wrong_key_raises_clear_error(
     )
     bad_key_path = isolated_cwd / "bad_key"
     bad_key_path.write_bytes(Fernet.generate_key())
-    with pytest.raises(
-        ValueError, match="could not be decrypted with the given key file"
-    ):
+    with pytest.raises(ValueError, match="could not be decrypted with the given key file"):
         Settings(fernet_config=config_path, fernet_key=bad_key_path)

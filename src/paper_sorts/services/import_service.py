@@ -41,9 +41,7 @@ class _TexCitation:
     bibtex_id: str
 
 
-def extract_papers_from_tex_bib(
-    tex_path: Path, bib_path: Path
-) -> Iterator[PaperCreate]:
+def extract_papers_from_tex_bib(tex_path: Path, bib_path: Path) -> Iterator[PaperCreate]:
     r"""Yield one :class:`PaperCreate` per ``.tex`` cite that resolves in the ``.bib``.
 
     Args:
@@ -111,9 +109,7 @@ def _parse_tex_citations(tex_path: Path) -> Iterator[_TexCitation]:
     matching raw-source line gives the bibtex key.
     """
     raw = tex_path.read_text(encoding="utf-8")
-    rendered_lines = [
-        line for line in LatexNodes2Text().latex_to_text(raw).split("\n") if line
-    ]
+    rendered_lines = [line for line in LatexNodes2Text().latex_to_text(raw).split("\n") if line]
     raw_lines = raw.split("\n")
 
     title: str | None = None

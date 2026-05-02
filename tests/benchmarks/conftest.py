@@ -49,9 +49,7 @@ def baseline_compare(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture
-def legacy_db_env(
-    postgresql_proc: PostgreSQLExecutor, tmp_path: Path
-) -> Iterator[dict[str, Any]]:
+def legacy_db_env(postgresql_proc: PostgreSQLExecutor, tmp_path: Path) -> Iterator[dict[str, Any]]:
     """Yield a seeded ephemeral PG plus the file paths the legacy CLI needs.
 
     The yielded dict contains:
@@ -101,8 +99,7 @@ def legacy_db_env(
                 "REFERENCES bib(bibtex_id));"
             )
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS authors_id ("
-                "id SERIAL PRIMARY KEY, author text);"
+                "CREATE TABLE IF NOT EXISTS authors_id (id SERIAL PRIMARY KEY, author text);"
             )
             cur.execute(
                 "CREATE TABLE IF NOT EXISTS authors_papers ("

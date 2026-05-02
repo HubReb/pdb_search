@@ -91,6 +91,4 @@ def import_(
     finally:
         service_logger.removeHandler(counter)
 
-    print(
-        f"Import complete: inserted={inserted}, skipped={skipped}, warned={counter.count}."
-    )
+    print(f"Import complete: inserted={inserted}, skipped={skipped}, warned={counter.count}.")
