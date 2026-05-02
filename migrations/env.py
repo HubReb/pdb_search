@@ -23,7 +23,12 @@ from paper_sorts.db.models import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # disable_existing_loggers=False — the default True silently disables
+    # any application logger created before alembic runs (e.g. when the
+    # test harness applies migrations between test runs), causing
+    # subsequent ``logger.warning(...)`` calls in app code to drop on the
+    # floor. The runtime ``pdbsearch migrate`` path hits the same code.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 
