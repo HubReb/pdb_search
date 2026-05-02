@@ -101,7 +101,17 @@ def _root(
 
 
 def _run_top_menu(ctx: typer.Context) -> None:
-    """Drive the legacy four-option menu, dispatching via ``ctx.invoke``."""
+    """Drive the legacy four-option menu, dispatching to the subcommand callables.
+
+    ``ctx.invoke(cb)`` is *not* used: typer subcommand functions take
+    ``ctx`` as their first positional argument, but click's ``invoke`` only
+    auto-injects context when the callable is a registered ``Command``
+    (and at this call site the references are the raw functions, not the
+    ``app.command``-wrapped ones). Calling each function directly with
+    ``ctx`` lets the per-subcommand defaults (``--by``, ``--bib-file``,
+    etc.) fall through to ``None`` so each command's interactive prompt
+    sequence runs.
+    """
     options = [
         "Search the database",
         "Add an entry",
@@ -113,11 +123,11 @@ def _run_top_menu(ctx: typer.Context) -> None:
         choice = ask_choice("Your choice", options, quit_alias="q")
         match choice:
             case 1:
-                ctx.invoke(search_cmd.search)
+                search_cmd.search(ctx)
             case 2:
-                ctx.invoke(add_cmd.add)
+                add_cmd.add(ctx)
             case 3:
-                ctx.invoke(update_cmd.update)
+                update_cmd.update(ctx)
             case 4:
                 return
 
@@ -138,3 +148,7 @@ app.command(name="import", help="Bulk-import papers from a .tex + .bib pair.")(i
 def main() -> None:
     """Console-script entry point — wired in pyproject as ``pdbsearch``."""
     app()
+
+
+if __name__ == "__main__":
+    main()
