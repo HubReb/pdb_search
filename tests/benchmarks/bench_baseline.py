@@ -168,9 +168,7 @@ def _fetch_paper_id(env: dict[str, Any], bibtex_id: str) -> int:
     """Return the paper id whose ``bibtex_id`` matches; used to wire add → update → delete."""
     factory = env["factory"]
     with with_session(factory) as session:
-        row = session.execute(
-            sa.select(Paper.id).where(Paper.bibtex_id == bibtex_id)
-        ).scalar_one()
+        row = session.execute(sa.select(Paper.id).where(Paper.bibtex_id == bibtex_id)).scalar_one()
         return int(row)
 
 
