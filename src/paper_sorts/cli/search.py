@@ -49,7 +49,7 @@ def _run(service: PaperService, by: str | None, query: str | None) -> None:
         print("Search interface")
         choice = ask_choice(
             "Please choose a method:",
-            ["Search by author", "Search by paper title"],
+            ["Search by (a)uthor", "Search by (t)itle"],
         )
         by = "author" if choice == 1 else "title"
 
@@ -73,16 +73,23 @@ def _run(service: PaperService, by: str | None, query: str | None) -> None:
         )
         return
 
-    chosen = _disambiguate(results) if len(results) > 1 else results[0]
+    chosen = disambiguate(results) if len(results) > 1 else results[0]
     if chosen is None:
         return
     _render(chosen)
 
 
-def _disambiguate(results: list[PaperSummary]) -> PaperSummary | None:
-    """Show a numbered list with a trailing ``abort`` option; return the choice."""
+def disambiguate(results: list[PaperSummary]) -> PaperSummary | None:
+    """Show a numbered list with a trailing ``abort`` option; return the choice.
+
+    Title rows are passed as ``(label, None)`` tuples so they remain
+    digit-only on the menu — every title would otherwise alias to ``t``,
+    which would be a collision under the v1.4.0 alias rule. The trailing
+    ``"abort"`` row keeps its alias ``a`` (uncontested on this menu).
+    """
     print("Following papers found:")
-    options = [f"title: {r.title}" for r in results] + ["abort"]
+    options: list[str | tuple[str, str | None]] = [(f"title: {r.title}", None) for r in results]
+    options.append("abort")
     idx = ask_choice("Choose paper to extract:", options)
     if idx == len(options):
         return None

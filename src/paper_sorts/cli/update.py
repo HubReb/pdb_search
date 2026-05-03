@@ -62,8 +62,14 @@ def update(ctx: typer.Context) -> None:
 
 
 def _pick_table() -> Literal["papers", "bib", "authors"] | None:
-    """Show the first menu and return the chosen table, or ``None`` on abort."""
-    options = ["papers", "bib", "authors", "abort"]
+    """Show the first menu and return the chosen table, or ``None`` on abort.
+
+    The trailing slot is labelled ``"(q)uit"`` (alias ``q``) rather than
+    ``"abort"`` because ``"authors"`` and ``"abort"`` would both
+    auto-derive the alias ``a``, triggering the v1.4.0 collision-rejection
+    rule on construction.
+    """
+    options = ["papers", "bib", "authors", "(q)uit"]
     choice = ask_choice("Which information do you want to update?", options)
     match choice:
         case 1:
@@ -77,16 +83,20 @@ def _pick_table() -> Literal["papers", "bib", "authors"] | None:
 
 
 def _pick_field(table: Literal["papers", "bib", "authors"]) -> str | None:
-    """Show the table-specific field menu and return the choice, or ``None``."""
+    """Show the table-specific field menu and return the choice, or ``None``.
+
+    The trailing slot is ``"(q)uit"`` for menu-grammar consistency with
+    ``_pick_table``.
+    """
     match table:
         case "papers":
-            options = ["title", "contents", "abort"]
+            options = ["title", "contents", "(q)uit"]
         case "bib":
-            options = ["bibtex", "abort"]
+            options = ["bibtex", "(q)uit"]
         case "authors":
-            options = ["author", "abort"]
+            options = ["author", "(q)uit"]
     choice = ask_choice("Which information do you want to update?", options)
-    if choice == len(options):  # last entry is always "abort"
+    if choice == len(options):  # last entry is always the abort/quit slot
         return None
     return options[choice - 1]
 
