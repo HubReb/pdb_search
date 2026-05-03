@@ -397,7 +397,34 @@ This map is the rename guide for Phase 4 of the modernize-stack feature. Reviewe
 | `paper_sorts/helpers.py::get_data`, `get_bibtex_information` | `src/paper_sorts/services/import_service.py` | LaTeX / BibTeX parsing logic |
 | `paper_sorts/helpers.py::iterate_through_papers` | `src/paper_sorts/services/paper_service.py` (private helper) | ad-hoc result reshaping for the title-search disambiguation list |
 
-## 9. What this document does *not* cover
+## 9. Adding a new field on a paper
+
+§§ 2–4 describe the *pre-modernization* stack; new fields land in the **modern stack** (post-T026). The end-to-end checklist:
+
+1. **Schema migration** — create a new Alembic revision under `migrations/versions/` that does `op.add_column('papers', sa.Column('<field>', sa.<Type>, nullable=True))`. Per the schema-preservation contract (constitution Principle II + `specs/001-modernize-stack/contracts/database-schema.md`): **do not add `NOT NULL`** unless you also write a backfill default; **do not add FKs** to `authors_papers`; **do not add indexes** that the original DDL doesn't have, unless you have a measured perf reason.
+
+2. **ORM model** — add the column to the relevant class in `src/paper_sorts/db/models.py` (most likely `Paper`). Match the type to the migration. `uv run mypy src` flags type mismatches.
+
+3. **DTOs** — extend `PaperSummary` (read-side projection) and/or `PaperCreate` (insert-side payload) in `src/paper_sorts/db/repositories.py`. Both are pydantic v2 `BaseModel`s; an optional field is one line. Update `PaperRepository._project()` to populate the new field from the ORM row.
+
+4. **Repository methods** — only needed if the field requires custom population (joined data, computed values). Otherwise step 3 covers it. If editable, also add an `update_field` clause in `PaperRepository`.
+
+5. **Service layer** — if the new field is **editable**, extend `PaperService.update_field`:
+   - Add the field to the `Literal[...]` allowed values for the `papers` case in the `match`/`case` block.
+   - Add the new case body, delegating to `PaperRepository.update_field`.
+   - The `case _: assert_never(table)` is mypy-enforced exhaustiveness; type-check after editing.
+
+6. **CLI** — surface the new field where appropriate:
+   - `src/paper_sorts/cli/add.py` — append a `prompts.ask_text(...)` call if the field is collected at insert time.
+   - `src/paper_sorts/cli/update.py::_pick_field` — extend the `match table: case "papers": [...]` field list so the new field appears in the update menu.
+
+7. **Tests** — add an integration test under `tests/integration/` that drives the new field end-to-end against the ephemeral Postgres fixture. If editable, include an update + persist + read-back assertion. Per constitution Principle II: no mocking; tests run against a real DB.
+
+8. **Doc updates** — refresh § 3 (data model) and § 8 (module map) entries that reference the affected table. If the field changes the user-visible CLI surface, also update `specs/001-modernize-stack/contracts/cli-commands.md`.
+
+The legacy procedural files in § 7.1 are gone (T026); ignore them when locating the change site. § 8's module map is the authoritative legacy → modern locator.
+
+## 10. What this document does *not* cover
 
 - Performance characteristics of the existing implementation. There are no benchmarks today; the modernization's User Story 2 / SC-006 establishes a baseline (T007/T008) and the modernized stack must show no regression against it. Until that baseline exists, any performance claim is a guess.
 - The Alembic migration plan and the modernized data model. Those live in `specs/001-modernize-stack/contracts/database-schema.md` and `specs/001-modernize-stack/data-model.md`.
