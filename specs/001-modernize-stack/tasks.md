@@ -122,7 +122,7 @@ description: "Task list for feature 001-modernize-stack"
 
 ### MVP gate
 
-- [ ] T030 [US2] **Deferred to a manual operator session** (2026-05-01): drive the top-level menu end-to-end against an Alembic-migrated test DB seeded with `tests/fixtures/seed_papers.py`; confirm every dialog path from `contracts/cli-commands.md` produces equivalent output; document the run as a checkpoint commit. The integration suite (T032–T035, T041) covers the underlying behavioural surface; T030 is the final UX-eyes-on pass before merge. Run via `uv run pdbsearch migrate && uv run pdbsearch` against a fresh ephemeral PG, or against a personal DB if one is available.
+- [X] T030 [US2] Manual operator walk completed (2026-05-02). Every dialog path from `contracts/cli-commands.md` produces equivalent output; no functional regressions surfaced. Two ergonomics findings (digit-only sub-menus; raw-id `update`/`delete` prompts) are out of scope for 001 (FR-002 preservation) and filed as issue #7 → successor spec `002-ux-polish`.
 
 **Checkpoint**: User Story 2 complete. The modernized CLI works end-to-end against a fresh DB. The legacy `paper_sorts/` directory is gone; `src/paper_sorts/` is the only source tree.
 
@@ -289,7 +289,6 @@ After Phase 4 completes, US3, US4, and US5 are mutually independent. Three devel
 
 ## Deferred / Future Work
 
-- **T030** (manual end-to-end menu walk) is deferred to an operator session — only outstanding task. Annotated in commit `6f08fb8`.
 - **CI performance gate**: `.github/workflows/ci.yml` deliberately does *not* run `--baseline-compare`. `tests/benchmarks/baseline.json` was recorded against the developer host; GitHub-hosted runners are commodity but slower, so a CI comparison can fail without any real regression. The bench stays a developer-machine gate. Future work: replace the wall-clock comparison with an *environment-invariant* perf signal — e.g. SQLAlchemy query-count budgets per op (catches accidental N+1 regressions without depending on host speed) or an algorithmic-complexity assertion on the search/insert paths. Either would fit a CI gate cleanly and would tighten Principle IV's "no measurable regression" predicate without re-introducing the host-hardware coupling baseline.json embeds.
 
 ## Notes
