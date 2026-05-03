@@ -1,6 +1,46 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.3.0 → 1.4.0
+Bump rationale: MINOR — Principle III is amended with one additional
+permissive rule: numbered menus MAY accept single-letter aliases per
+option, derived deterministically and case-insensitively, with
+caller-supplied disambiguation on collision. Previously the only
+formal alias support was the `quit_alias=` parameter on `ask_choice`
+covering the top-level menu's `q` shortcut; this generalises the
+mechanism to every menu and every option. No existing rule is relaxed
+in a backward-incompatible way; the 1-indexed/abort-last grammar and
+the dual-form confirmation grammar carry forward unchanged.
+
+Modified principles:
+  III. User Experience Consistency — added one bullet (the fourth)
+    authorising letter aliases on numbered menus. Previous bullets
+    (prompt routing, 1-indexed-with-abort, destructive-op
+    confirmation, failure-path logging) are untouched.
+
+Sections: unchanged.
+
+Templates / docs reviewed for propagation:
+  ✅ specs/002-ux-polish/spec.md — drafted against the v1.4.0 text;
+    FR-017 names this amendment as a deliverable of the feature.
+  ⚠ specs/001-modernize-stack/contracts/cli-commands.md § "Top-level
+    interactive menu (default command)" — its grammar bullet still
+    reads as the v1.3.0 text ("`q` is accepted in addition to `4`").
+    Updated as part of the 002-ux-polish implementation PR (per
+    feature spec FR-016), not in this amendment commit, so the
+    historical record of what 001-modernize-stack delivered stays
+    accurate against its own constitution version.
+  ✅ CLAUDE.md — single "current v1.3.0" reference bumped to v1.4.0.
+    Other v1.3.0 citations (CLAUDE.md lines 29 and 55, and
+    docs/architecture.md line 398) are historical "rule added in
+    v1.3.0" attributions and intentionally retained.
+  ✅ .specify/templates/* — no embedded references to the quit-alias
+    mechanism or to specific Principle-III text; no edit needed.
+
+Deferred / TODO: None.
+
+---
+
 Version change: 1.1.0 → 1.3.0
 Bump rationale: MINOR — five testable predicates redefined to layer/role
 names; uv replaces Poetry; psycopg v3 replaces psycopg2; Python ≥ 3.11.
@@ -167,6 +207,15 @@ be uniform so users can build correct expectations after seeing one screen.
 - Numbered menus MUST be 1-indexed in display and MUST always include an
   explicit abort/quit option (e.g. `4) (Q)uit`, `3) abort`). Menus
   without an exit are a violation.
+- Numbered menus MAY accept a single-letter alias per option in addition
+  to the option's 1-indexed digit. When used, aliases MUST be derived
+  deterministically (first alphabetic character of the label by default,
+  case-insensitive), MUST be rendered on the option label so the
+  shortcut is discoverable (e.g. `1) (P)apers`, `4) (q)uit`), and MUST
+  be unique within a menu — collisions MUST be resolved at construction
+  time by the caller supplying an explicit alias, never by silent
+  first-letter-wins. Digit input MUST continue to work on every menu;
+  the alias mechanism is strictly additive.
 - Destructive operations (update, delete) MUST present a confirmation
   step that summarises the exact change before it is applied.
   Confirmation MUST accept both numeric (`1`/`2`) and word
@@ -267,4 +316,4 @@ fictional target.
   practice (false positives in review, blocking legitimate work), amend it
   rather than ignore it.
 
-**Version**: 1.3.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-27
+**Version**: 1.4.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-05-04
