@@ -1,4 +1,4 @@
-# Paper Sorts — Architecture (current implementation, pre-modernization)
+# Paper Sorts — Architecture (legacy reference + modern extension points)
 
 **Audience**: a Python developer who has never seen the project. After reading this document end-to-end, you should be able to answer:
 
@@ -7,7 +7,9 @@
 3. Where would I add a new feature, or a new field on a paper?
 4. What happens if a partial add fails midway through?
 
-This is the **acceptance reference** for User Story 2 of the modernize-stack feature. The rebuilt CLI must reproduce every flow described here. The document also serves as a **rename map** for Phase 4 of that work — every module name mentioned here is one of the targets of FR-012 (delete the legacy modules) and the `paper_sorts/* → src/paper_sorts/*` migration.
+> **Current state (2026-05)**: the modernization that this document refers to in future tense throughout has shipped. The legacy module names in §§ 2–8 are historical — the legacy `paper_sorts/` tree was deleted at T026 and the modern entry points are documented in `specs/001-modernize-stack/quickstart.md`. The only modern-state walkthrough inside this file is § 9 ("Adding a new field on a paper"); for everything else, this document is a legacy reverse-engineering snapshot. § 8's module map remains the authoritative legacy → modern locator.
+
+This document was the **acceptance reference** for User Story 2 of the modernize-stack feature; the rebuilt CLI reproduces every flow described here. It also served as the **rename map** for Phase 4 of that work — every module name mentioned was one of the targets of FR-012 (delete the legacy modules) and the `paper_sorts/* → src/paper_sorts/*` migration.
 
 ## 1. Purpose
 
@@ -375,7 +377,7 @@ Every class builds its own file-backed logger via `create_logger(log_file_name, 
 
 ## 8. Module map (current → modernized)
 
-This map is the rename guide for Phase 4 of the modernize-stack feature. Reviewers comparing the modernized branch against this branch can use it to trace equivalence.
+This map was the rename guide for Phase 4 of the modernize-stack feature (now shipped). It remains the authoritative legacy → modern locator — useful when reading historical commits, interpreting any artifact that names a legacy module, or following § 9's "where does this live now?" pointers.
 
 | Current location (legacy) | Modernized location | Notes |
 |---------------------------|--------------------|-------|
