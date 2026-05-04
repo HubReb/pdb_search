@@ -120,7 +120,7 @@ def _run_top_menu(ctx: typer.Context) -> None:
     ]
     while True:
         print("\nWhat do you want to do?")
-        choice = ask_choice("Your choice", options, quit_alias="q")
+        choice = ask_choice("Your choice", options)
         match choice:
             case 1:
                 search_cmd.search(ctx)
