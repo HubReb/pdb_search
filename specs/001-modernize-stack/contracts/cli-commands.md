@@ -25,18 +25,18 @@ If no subcommand is given, drops into the **interactive top-level menu** (preser
 
 ```text
 What do you want to do?
-1) Search the database
-2) Add an entry
-3) Update an entry
+1) (S)earch the database
+2) (A)dd an entry
+3) (U)pdate an entry
 4) (Q)uit
 Your choice:
 ```
 
-Grammar (constitution Principle III, v1.3.0):
+Grammar (constitution Principle III, v1.4.0):
 - 1-indexed numeric.
 - Mandatory abort/quit at the bottom.
 - Empty input re-prompts.
-- `q` is accepted in addition to `4`.
+- **Single-letter aliases are accepted on every numbered menu in addition to the digit.** Aliases are derived deterministically (parenthesised single-alpha char of the option label wins; otherwise the first alphabetic character of the label, lower-cased), case-insensitive, and unique within a menu. Callers disambiguate collisions by passing an explicit alias for at least one of the colliding options, or by opting an option out (`alias=None`, digit-only on that row).
 - Selecting an option dispatches to the corresponding subcommand's interactive flow, then returns to the menu when that flow completes.
 
 ### Why only four options
@@ -63,16 +63,18 @@ pdbsearch search --by title --query "Direct speech-to-speech translation with di
 ```text
 Search interface
 Please choose a method:
-1) Search by author
-2) Search by paper title
+1) Search by (a)uthor
+2) Search by (t)itle
 Your choice: 2
 Please enter the paper title:
 > Direct speech-to-speech translation with discrete units
 ```
 
+The axis labels carry their alias inside parens (`(a)uthor`, `(t)itle`) per the v1.4.0 grammar — the leading-`S` char would otherwise collide between the two options.
+
 ### Behaviour
 
-- If multiple papers match the title or author, present a 1-indexed disambiguation list (preserves `get_user_choice`).
+- If multiple papers match the title or author, present a 1-indexed disambiguation list. Title rows on that list opt out of letter-aliasing (every row would otherwise alias to `t`, a collision); the trailing `abort` row keeps its `a` alias.
 - On a single match, render results as:
   ```
   title: <title>
@@ -120,60 +122,98 @@ summary of the paper_information:
 
 ## Subcommand: `update`
 
-Preserves the existing two-step menu:
+```text
+pdbsearch update [--id N]
+```
+
+The two-step menu (table → field) is preserved verbatim. The row-identification step diverges by table per spec 002-ux-polish:
+
+* On the **`papers`** table the legacy raw-id prompt is replaced by the interactive search-then-pick dialog (axis → query → optional disambiguation, factored as `cli/search.search_and_pick`). With `--id <N>`, the search step is skipped and the row is fetched directly by id; table, field, and new-value collection still run interactively. No `--table` / `--field` / `--value` flags are provided in this feature.
+* On the **`bib`** and **`authors`** tables the legacy `Please enter the respective id` prompt is preserved verbatim — search-by-bibtex-key and search-by-author-row are not part of this feature.
 
 ```text
 Which information do you want to update?
-1) papers
-2) bib
-3) authors
-4) abort
-Your choice: 1
+1) (P)apers
+2) (B)ib
+3) (A)uthors
+4) (q)uit
+Your choice: p
 
 Which information do you want to update?
-1) title
-2) contents
-3) abort
-Your choice: 1
+1) (T)itle
+2) (C)ontents
+3) (q)uit
+Your choice: t
 
-Which entry do you want to update?
-Please enter the respective id: 42
+Search interface
+Please choose a method:
+1) Search by (a)uthor
+2) Search by (t)itle
+Your choice: t
+
+Please enter the paper title: speech
+
+Following papers found:
+1) title: Direct speech-to-speech translation with discrete units
+2) abort
+Choose paper to extract: 1
 
 Enter the new information: <new title>
 
-Please verify: You wish to change 'title' of the entry '42' to '<new title>'.
+Please verify: You wish to change 'title' of the paper 'Direct speech-to-speech translation with discrete units' (id 42) to '<new title>'.
  Proceed?
 1) (Y)es
 2) (N)o
 Your choice:
 ```
 
+The trailing slot on the table-pick and field-pick menus is `(q)uit` (alias `q`), not `abort` — `authors` and `abort` would otherwise both auto-derive `a`, triggering the v1.4.0 collision-rejection rule.
+
 ### Behaviour
 
-- Non-existent `id` → plain-language error, no write.
+- The papers-table confirmation summary echoes both the picked paper's title and its id (`'... of the paper '<title>' (id <N>) ...'`) so the user verifies what they recognised in the disambig list while the id remains visible for log/audit traceability.
+- The bib/authors confirmation summary keeps the legacy `'... of the entry '<id>' ...'` wording — the user-typed identifier is the only canonical handle on those paths.
+- A search query matching no rows shows the existing `Author was not found in db_connector.` / `Paper was not found in db_connector.` message and exits without writing.
+- `--id N` against a missing paper prints `Error: no paper with id N.` and exits.
 - Updating the BibTeX `bibtex_id` is forbidden (preserves current behaviour: "the bibtex identifier cannot be changed"); only `bibtex` (the source string) can be updated.
 - Confirmation accepts `1`/`y`/`yes` (proceed) or `2`/`n`/`no` (abort). Anything else logs an error and aborts.
 
 ## Subcommand: `delete`
 
 ```text
-pdbsearch delete --id 42
+pdbsearch delete [--id N]
 ```
 
-Or interactive: prompts for the paper id, then a confirmation:
+Without `--id`, the interactive form runs the same search-then-pick dialog as `update`:
 
 ```text
-Please verify: You wish to DELETE paper id 42 ('<title>'). This cannot be undone.
+Search interface
+Please choose a method:
+1) Search by (a)uthor
+2) Search by (t)itle
+Your choice: t
+Please enter the paper title: speech
+
+Following papers found:
+1) title: Direct speech-to-speech translation with discrete units
+2) abort
+Choose paper to extract: 1
+
+Please verify: You wish to DELETE paper id 42 ('Direct speech-to-speech translation with discrete units'). This cannot be undone.
 1) (Y)es
 2) (N)o
 Your choice:
 ```
+
+With `--id <N>`, the search step is bypassed; the existing non-interactive path runs unchanged. The confirmation is still shown.
 
 ### Behaviour
 
 - Cascades to `authors_papers` rows for that paper. If any author has no remaining papers afterward, the author row is also deleted (preserves the cascade-on-delete behaviour in `delete_author_of_list`; note that the `__delete_author_with_no_papers` method exists in the current code but is not on the standard delete path).
 - BibEntry is deleted iff no other paper references it.
 - All in one transaction.
+- A search query matching no rows shows the existing not-found message and exits without deleting.
+- `--id N` against a missing paper prints `Error: no paper with id N.` and exits.
 
 ## Subcommand: `import`
 

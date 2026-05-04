@@ -116,13 +116,13 @@
 
 **Purpose**: Spec-mandated documentation deltas (FR-016) and final sweep before merging.
 
-- [ ] T015 [P] Update `specs/001-modernize-stack/contracts/cli-commands.md` per spec FR-016 — apply the verbatim deltas catalogued in [specs/002-ux-polish/contracts/cli-grammar.md § Part 2](./contracts/cli-grammar.md): (a) the grammar bullet under § "Top-level interactive menu (default command)" gains the v1.4.0 letter-alias rule; (b) § "Subcommand: `update`" replaces its legacy raw-id prompt sequence with the new papers-table search-then-update walkthrough and adds the `--id` flag entry; (c) § "Subcommand: `delete`" replaces its interactive form with the search-then-pick walkthrough. Bib/authors raw-id paths in § "Subcommand: `update`" stay; the section header adds `[--id N]` to the `update` invocation line.
+- [X] T015 [P] Update `specs/001-modernize-stack/contracts/cli-commands.md` per spec FR-016 — apply the verbatim deltas catalogued in [specs/002-ux-polish/contracts/cli-grammar.md § Part 2](./contracts/cli-grammar.md): (a) the grammar bullet under § "Top-level interactive menu (default command)" gains the v1.4.0 letter-alias rule; (b) § "Subcommand: `update`" replaces its legacy raw-id prompt sequence with the new papers-table search-then-update walkthrough and adds the `--id` flag entry; (c) § "Subcommand: `delete`" replaces its interactive form with the search-then-pick walkthrough. Bib/authors raw-id paths in § "Subcommand: `update`" stay; the section header adds `[--id N]` to the `update` invocation line.
 
-- [ ] T016 [P] Run the full quality sweep on the feature branch: `uv run pytest` (full suite green, no skips introduced for this feature), `uv run ruff check src tests` (clean), `uv run mypy src` (clean). Document any unexpected warnings inline rather than suppressing them silently.
+- [X] T016 [P] Run the full quality sweep on the feature branch: `uv run pytest` (full suite green, no skips introduced for this feature), `uv run ruff check src tests` (clean), `uv run mypy src` (clean). Document any unexpected warnings inline rather than suppressing them silently.
 
 - [ ] T017 Manual sanity walkthrough using [specs/002-ux-polish/quickstart.md](./quickstart.md) — run `uv run pdbsearch` against a local DB and exercise: top-menu letter alias, update on papers via search-then-pick (single match auto-select), update on bib via raw-id (legacy), delete via search-then-pick, delete via `--id`, abort on every menu via `q` (or `a` on the disambig list). Note any UX surprises in a follow-up issue.
 
-- [ ] T018 Self-review the diff one last time against the spec's Success Criteria SC-001..SC-008 and confirm each is verifiably met. SC-006 (constitution v1.4.0 ratified before code merges) is already satisfied by commit `8ebfa9d`; the remaining seven are verified by the test suite + the contract doc update.
+- [X] T018 Self-review the diff one last time against the spec's Success Criteria SC-001..SC-008 and confirm each is verifiably met. SC-006 (constitution v1.4.0 ratified before code merges) is already satisfied by commit `8ebfa9d`; the remaining seven are verified by the test suite + the contract doc update.
 
 ---
 
