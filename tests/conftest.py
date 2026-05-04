@@ -35,7 +35,7 @@ from pytest_postgresql.executor import PostgreSQLExecutor
 from pytest_postgresql.janitor import DatabaseJanitor
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from paper_sorts.db.repositories import PaperCreate, PaperRepository
 
@@ -135,5 +135,32 @@ def db_session(seeded_engine: Engine) -> Iterator[Session]:
         yield session
     finally:
         session.close()
+        transaction.rollback()
+        connection.close()
+
+
+@pytest.fixture
+def db_factory(seeded_engine: Engine) -> Iterator[sessionmaker[Session]]:
+    """Yield a sessionmaker that CLI flows can call as ``ctx.obj``.
+
+    Sibling of :func:`db_session` for tests that drive a Typer command
+    (``cli.update.update(ctx)``, ``cli.delete.delete(ctx)``) rather than
+    a service method directly. The factory creates sessions joining the
+    fixture's outer transaction with ``join_transaction_mode='create_savepoint'``,
+    so any number of inner ``with_session(factory)`` blocks the CLI opens
+    commit cleanly to savepoints. The outer transaction rollback at
+    teardown undoes every change the CLI made, restoring the seeded
+    baseline for the next test.
+    """
+    connection = seeded_engine.connect()
+    transaction = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        future=True,
+        join_transaction_mode="create_savepoint",
+    )
+    try:
+        yield factory
+    finally:
         transaction.rollback()
         connection.close()
