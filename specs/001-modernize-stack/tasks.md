@@ -9,14 +9,14 @@
 
 **Purpose**: Project re-initialization: pyproject.toml, src-layout scaffold, tooling config.
 
-- [ ] T001 Rewrite `pyproject.toml` to use PEP 621 metadata, hatchling build backend, uv, Python >=3.11, and add all modern dependencies (sqlalchemy[mypy], psycopg[binary], typer, alembic, pydantic-settings, pybtex, pylatexenc, cryptography, rich, ruff, mypy, pytest, pytest-postgresql, coverage)
-- [ ] T002 Create `src/paper_sorts/__init__.py` with package version
-- [ ] T003 [P] Create `src/paper_sorts/cli/__init__.py` (empty)
-- [ ] T004 [P] Create `src/paper_sorts/services/__init__.py` (empty)
-- [ ] T005 [P] Create `src/paper_sorts/db/__init__.py` (empty)
-- [ ] T006 Create `pyproject.toml` `[tool.ruff]`, `[tool.mypy]`, `[tool.pytest.ini_options]`, `[tool.coverage.run]` sections
-- [ ] T007 Create `alembic.ini` at repo root pointing to `migrations/` directory and `src/paper_sorts/db/models.py` metadata
-- [ ] T008 Create `migrations/` directory with `env.py`, `script.py.mako` wired to SQLAlchemy metadata
+- [x] T001 Rewrite `pyproject.toml` to use PEP 621 metadata, hatchling build backend, uv, Python >=3.11, and add all modern dependencies (sqlalchemy[mypy], psycopg[binary], typer, alembic, pydantic-settings, pybtex, pylatexenc, cryptography, rich, ruff, mypy, pytest, pytest-postgresql, coverage)
+- [x] T002 Create `src/paper_sorts/__init__.py` with package version
+- [x] T003 [P] Create `src/paper_sorts/cli/__init__.py` (empty)
+- [x] T004 [P] Create `src/paper_sorts/services/__init__.py` (empty)
+- [x] T005 [P] Create `src/paper_sorts/db/__init__.py` (empty)
+- [x] T006 Create `pyproject.toml` `[tool.ruff]`, `[tool.mypy]`, `[tool.pytest.ini_options]`, `[tool.coverage.run]` sections
+- [x] T007 Create `alembic.ini` at repo root pointing to `migrations/` directory and `src/paper_sorts/db/models.py` metadata
+- [x] T008 Create `migrations/` directory with `env.py`, `script.py.mako` wired to SQLAlchemy metadata
 
 ---
 
@@ -26,14 +26,14 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T009 Implement `src/paper_sorts/config.py`: pydantic-settings `Settings` model with fields `database_url`, `log_level`, `config` (path to encrypted INI), `key` (path to Fernet key); implement custom `FernetIniSettingsSource` that decrypts the INI and merges into settings; priority order: CLI flags > env (`PDBSEARCH_*`) > `.env` > encrypted INI
-- [ ] T010 Implement `src/paper_sorts/logging_config.py`: single `logging.config.dictConfig` call; RichHandler to stdout at configured level; optional FileHandler; called once from CLI app at startup
-- [ ] T011 Implement `src/paper_sorts/db/models.py`: SQLAlchemy 2.x `DeclarativeBase`; four ORM models: `Paper`, `Bib`, `Author`, `AuthorPaper` matching the exact DDL from `DatabaseConnector.create_tables()` (no extra NOT NULL, no extra FKs, no extra indexes)
-- [ ] T012 Implement `src/paper_sorts/db/session.py`: `with_session(url: str)` context manager that yields a `Session`, commits on success, rolls back on exception, and closes deterministically
-- [ ] T013 Implement `src/paper_sorts/db/repositories.py`: define `PaperCreate` and `PaperSummary` pydantic models; implement `PaperRepository` (search_by_title, search_by_author, add_paper, delete_paper), `AuthorRepository` (upsert_author, link_to_paper, delete_orphans), `BibRepository` (add_bib, update_bib); all methods accept a `Session` parameter; no raw SQL strings outside db/
-- [ ] T014 Implement `src/paper_sorts/cli/prompts.py`: all `input()`/`rich.prompt.Prompt.ask` calls live here; provide `ask_str(prompt)` (re-prompts on empty), `ask_choice(prompt, options)` (1-indexed, quit option, re-prompts on invalid), `ask_confirm(prompt)` (accepts 1/2 and y/n/yes/no), `ask_menu(title, options)` (numbered display)
-- [ ] T015 Create `migrations/versions/001_initial_schema.py`: Alembic migration that creates the four tables with `CREATE TABLE IF NOT EXISTS` using verbatim DDL from `DatabaseConnector.create_tables()` (uses `bibtex_id` canonical column names)
-- [ ] T016 Create `migrations/versions/002_converge_legacy.py`: Alembic migration that detects whether the `bib` and `papers` tables have `bibtext_id` (typo) columns and renames them to `bibtex_id`; idempotent (checks column existence before renaming)
+- [x] T009 Implement `src/paper_sorts/config.py`: pydantic-settings `Settings` model with fields `database_url`, `log_level`, `config` (path to encrypted INI), `key` (path to Fernet key); implement custom `FernetIniSettingsSource` that decrypts the INI and merges into settings; priority order: CLI flags > env (`PDBSEARCH_*`) > `.env` > encrypted INI
+- [x] T010 Implement `src/paper_sorts/logging_config.py`: single `logging.config.dictConfig` call; RichHandler to stdout at configured level; optional FileHandler; called once from CLI app at startup
+- [x] T011 Implement `src/paper_sorts/db/models.py`: SQLAlchemy 2.x `DeclarativeBase`; four ORM models: `Paper`, `Bib`, `Author`, `AuthorPaper` matching the exact DDL from `DatabaseConnector.create_tables()` (no extra NOT NULL, no extra FKs, no extra indexes)
+- [x] T012 Implement `src/paper_sorts/db/session.py`: `with_session(url: str)` context manager that yields a `Session`, commits on success, rolls back on exception, and closes deterministically
+- [x] T013 Implement `src/paper_sorts/db/repositories.py`: define `PaperCreate` and `PaperSummary` pydantic models; implement `PaperRepository` (search_by_title, search_by_author, add_paper, delete_paper), `AuthorRepository` (upsert_author, link_to_paper, delete_orphans), `BibRepository` (add_bib, update_bib); all methods accept a `Session` parameter; no raw SQL strings outside db/
+- [x] T014 Implement `src/paper_sorts/cli/prompts.py`: all `input()`/`rich.prompt.Prompt.ask` calls live here; provide `ask_str(prompt)` (re-prompts on empty), `ask_choice(prompt, options)` (1-indexed, quit option, re-prompts on invalid), `ask_confirm(prompt)` (accepts 1/2 and y/n/yes/no), `ask_menu(title, options)` (numbered display)
+- [x] T015 Create `migrations/versions/001_initial_schema.py`: Alembic migration that creates the four tables with `CREATE TABLE IF NOT EXISTS` using verbatim DDL from `DatabaseConnector.create_tables()` (uses `bibtex_id` canonical column names)
+- [x] T016 Create `migrations/versions/002_converge_legacy.py`: Alembic migration that detects whether the `bib` and `papers` tables have `bibtext_id` (typo) columns and renames them to `bibtex_id`; idempotent (checks column existence before renaming)
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 
@@ -45,7 +45,7 @@
 
 **Independent Test**: Hand the document to a Python developer who has never seen the project. They can describe the four tables, trace one user operation end-to-end, and answer what happens on a partial-add failure — without reading source.
 
-- [ ] T017 [US1] Verify `docs/architecture.md` covers all required sections: purpose, user journeys, data model, control flow, configuration, install/run, known limitations, and where-to-add-a-new-field (document was created in plan phase; this task validates it against FR-001 acceptance scenarios and fixes any gaps)
+- [x] T017 [US1] Verify `docs/architecture.md` covers all required sections: purpose, user journeys, data model, control flow, configuration, install/run, known limitations, and where-to-add-a-new-field (document was created in plan phase; this task validates it against FR-001 acceptance scenarios and fixes any gaps)
 
 **Checkpoint**: US1 complete — architecture document is the acceptance reference for all remaining stories.
 
@@ -59,16 +59,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T018 [P] [US2] Implement `src/paper_sorts/services/paper_service.py`: `search_by_title(session, title) -> list[PaperSummary]`, `search_by_author(session, author) -> list[PaperSummary]`, `add_paper(session, paper: PaperCreate) -> None`, `update_field(session, table: Literal["papers","bib","authors_id"], identifier: str, column: str, value: str) -> None` (with `assert_never`), `delete_paper(session, bibtex_id: str) -> None`; pure orchestration; no SQL, no I/O, no rich
-- [ ] T019 [P] [US2] Implement `src/paper_sorts/services/import_service.py`: `extract_papers_from_tex_bib(tex_path: str, bib_path: str) -> Iterator[PaperCreate]`; uses pylatexenc + pybtex; yields one `PaperCreate` per matched entry; logs warning on unmatched cite key; pure data pipeline
-- [ ] T020 [US2] Implement `src/paper_sorts/cli/search.py`: Typer subcommand `search`; calls `prompts.ask_menu` for author/title choice; calls `paper_service.search_by_title` or `search_by_author`; disambiguation menu when multiple results; pretty-prints with Rich; all prompts through `cli/prompts.py`
-- [ ] T021 [US2] Implement `src/paper_sorts/cli/add.py`: Typer subcommand `add`; prompts for author list (comma-sep), title, BibTeX key, BibTeX source (inline or from file), summary; confirmation before writing; calls `paper_service.add_paper`; all prompts through `cli/prompts.py`
-- [ ] T022 [US2] Implement `src/paper_sorts/cli/update.py`: Typer subcommand `update`; table menu (papers/bib/authors/abort), column menu (per table), identifier prompt, new-value prompt, confirmation; calls `paper_service.update_field`; all prompts through `cli/prompts.py`
-- [ ] T023 [US2] Implement `src/paper_sorts/cli/delete.py`: Typer subcommand `delete`; prompts for BibTeX key; fetches and displays matching paper; confirmation before deleting; calls `paper_service.delete_paper`; all prompts through `cli/prompts.py`
-- [ ] T024 [US2] Implement `src/paper_sorts/cli/importer.py`: Typer subcommand `import` (admin only, not in top-level menu); `--tex` and `--bib` path options; iterates `import_service.extract_papers_from_tex_bib`; calls `paper_service.add_paper` per entry inside individual `with_session` calls (per-paper commit); logs skips
-- [ ] T025 [US2] Implement `src/paper_sorts/cli/app.py`: top-level Typer app; registers all subcommands; `--database-url`, `--log-level`, `--config`, `--key` global options; when invoked with no subcommand drops into four-option interactive menu (1=search, 2=add, 3=update, 4=quit); `migrate` and `import` are subcommand-only; calls `logging_config.setup()` at startup; loads `Settings` from config
-- [ ] T026 [US2] Add `[project.scripts]` entry in `pyproject.toml`: `pdbsearch = "paper_sorts.cli.app:app"`; run `uv sync` to validate entry point resolves
-- [ ] T027 [US2] Remove legacy flat-layout modules: delete `paper_sorts/add.py`, `paper_sorts/search.py`, `paper_sorts/get_data.py`, `paper_sorts/helpers.py`, `paper_sorts/psycopg_db.py`, `paper_sorts/database_connector.py`, `paper_sorts/user_interaction.py`, `paper_sorts/config_reader.py`, `paper_sorts/run.py`, `paper_sorts/__init__.py` (FR-012)
+- [x] T018 [P] [US2] Implement `src/paper_sorts/services/paper_service.py`: `search_by_title(session, title) -> list[PaperSummary]`, `search_by_author(session, author) -> list[PaperSummary]`, `add_paper(session, paper: PaperCreate) -> None`, `update_field(session, table: Literal["papers","bib","authors_id"], identifier: str, column: str, value: str) -> None` (with `assert_never`), `delete_paper(session, bibtex_id: str) -> None`; pure orchestration; no SQL, no I/O, no rich
+- [x] T019 [P] [US2] Implement `src/paper_sorts/services/import_service.py`: `extract_papers_from_tex_bib(tex_path: str, bib_path: str) -> Iterator[PaperCreate]`; uses pylatexenc + pybtex; yields one `PaperCreate` per matched entry; logs warning on unmatched cite key; pure data pipeline
+- [x] T020 [US2] Implement `src/paper_sorts/cli/search.py`: Typer subcommand `search`; calls `prompts.ask_menu` for author/title choice; calls `paper_service.search_by_title` or `search_by_author`; disambiguation menu when multiple results; pretty-prints with Rich; all prompts through `cli/prompts.py`
+- [x] T021 [US2] Implement `src/paper_sorts/cli/add.py`: Typer subcommand `add`; prompts for author list (comma-sep), title, BibTeX key, BibTeX source (inline or from file), summary; confirmation before writing; calls `paper_service.add_paper`; all prompts through `cli/prompts.py`
+- [x] T022 [US2] Implement `src/paper_sorts/cli/update.py`: Typer subcommand `update`; table menu (papers/bib/authors/abort), column menu (per table), identifier prompt, new-value prompt, confirmation; calls `paper_service.update_field`; all prompts through `cli/prompts.py`
+- [x] T023 [US2] Implement `src/paper_sorts/cli/delete.py`: Typer subcommand `delete`; prompts for BibTeX key; fetches and displays matching paper; confirmation before deleting; calls `paper_service.delete_paper`; all prompts through `cli/prompts.py`
+- [x] T024 [US2] Implement `src/paper_sorts/cli/importer.py`: Typer subcommand `import` (admin only, not in top-level menu); `--tex` and `--bib` path options; iterates `import_service.extract_papers_from_tex_bib`; calls `paper_service.add_paper` per entry inside individual `with_session` calls (per-paper commit); logs skips
+- [x] T025 [US2] Implement `src/paper_sorts/cli/app.py`: top-level Typer app; registers all subcommands; `--database-url`, `--log-level`, `--config`, `--key` global options; when invoked with no subcommand drops into four-option interactive menu (1=search, 2=add, 3=update, 4=quit); `migrate` and `import` are subcommand-only; calls `logging_config.setup()` at startup; loads `Settings` from config
+- [x] T026 [US2] Add `[project.scripts]` entry in `pyproject.toml`: `pdbsearch = "paper_sorts.cli.app:app"`; run `uv sync` to validate entry point resolves
+- [x] T027 [US2] Remove legacy flat-layout modules: delete `paper_sorts/add.py`, `paper_sorts/search.py`, `paper_sorts/get_data.py`, `paper_sorts/helpers.py`, `paper_sorts/psycopg_db.py`, `paper_sorts/database_connector.py`, `paper_sorts/user_interaction.py`, `paper_sorts/config_reader.py`, `paper_sorts/run.py`, `paper_sorts/__init__.py` (FR-012)
 
 **Checkpoint**: US2 complete — `pdbsearch` is the single entry point; legacy modules removed.
 
@@ -82,12 +82,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Create `tests/conftest.py`: `postgresql_proc` fixture using `pytest_postgresql.factories.postgresql_proc` pointing to `/usr/bin/pg_ctl`; `ephemeral_db_url` fixture that builds a SQLAlchemy DSN from the proc; `seeded_session` fixture that runs Alembic migrations against the ephemeral DB and inserts `SEED_PAPERS`
-- [ ] T029 [P] [US3] Create `tests/fixtures/seed_papers.py`: define `SEED_PAPERS` as a list of `PaperCreate` objects covering at minimum: one paper with a single author, one paper with multiple authors, one paper used for title disambiguation (same title as another), one paper for update tests, one paper for delete tests
-- [ ] T030 [P] [US3] Create `tests/test_repositories.py`: integration tests using `seeded_session`; test `search_by_title` (found, not found, multiple matches), `search_by_author` (found, not found), `add_paper` (success, duplicate bibtex_id raises), `update_field` (title, contents, bibtex, author), `delete_paper` (removes all four table rows); no mocking
-- [ ] T031 [P] [US3] Create `tests/test_migrations.py`: integration test that runs migration 001 on an empty DB and verifies all four tables exist; runs migration 002 on a DB with the `bibtext_id` typo column and verifies it is renamed; verifies both migrations are idempotent
-- [ ] T032 [P] [US3] Create `tests/test_import_service.py`: integration + unit tests for `extract_papers_from_tex_bib`; fixture `.tex` + `.bib` pair with N entries; verify N `PaperCreate` objects yielded; verify missing bib key logs warning and skips; test round-trip of LaTeX accents
-- [ ] T033 [P] [US3] Create `tests/test_config.py`: unit tests for `Settings`; verify env var override, `.env` file loading, missing key file produces actionable error (not stack trace), invalid log level rejected
+- [x] T028 [US3] Create `tests/conftest.py`: `postgresql_proc` fixture using `pytest_postgresql.factories.postgresql_proc` pointing to `/usr/bin/pg_ctl`; `ephemeral_db_url` fixture that builds a SQLAlchemy DSN from the proc; `seeded_session` fixture that runs Alembic migrations against the ephemeral DB and inserts `SEED_PAPERS`
+- [x] T029 [P] [US3] Create `tests/fixtures/seed_papers.py`: define `SEED_PAPERS` as a list of `PaperCreate` objects covering at minimum: one paper with a single author, one paper with multiple authors, one paper used for title disambiguation (same title as another), one paper for update tests, one paper for delete tests
+- [x] T030 [P] [US3] Create `tests/test_repositories.py`: integration tests using `seeded_session`; test `search_by_title` (found, not found, multiple matches), `search_by_author` (found, not found), `add_paper` (success, duplicate bibtex_id raises), `update_field` (title, contents, bibtex, author), `delete_paper` (removes all four table rows); no mocking
+- [x] T031 [P] [US3] Create `tests/test_migrations.py`: integration test that runs migration 001 on an empty DB and verifies all four tables exist; runs migration 002 on a DB with the `bibtext_id` typo column and verifies it is renamed; verifies both migrations are idempotent
+- [x] T032 [P] [US3] Create `tests/test_import_service.py`: integration + unit tests for `extract_papers_from_tex_bib`; fixture `.tex` + `.bib` pair with N entries; verify N `PaperCreate` objects yielded; verify missing bib key logs warning and skips; test round-trip of LaTeX accents
+- [x] T033 [P] [US3] Create `tests/test_config.py`: unit tests for `Settings`; verify env var override, `.env` file loading, missing key file produces actionable error (not stack trace), invalid log level rejected
 
 **Checkpoint**: US3 complete — `uv run pytest` passes on fresh machine.
 
@@ -101,9 +101,9 @@
 
 ### Implementation for User Story 4
 
-- [ ] T034 [US4] Implement `src/paper_sorts/cli/migrate.py`: Typer subcommand `migrate`; `--revision` option (default `head`); calls Alembic `command.upgrade`; prints confirmation on success; catches and converts Alembic errors to plain-language user messages; no raw exceptions on stdout
-- [ ] T035 [US4] Wire `migrate` subcommand into `src/paper_sorts/cli/app.py` (subcommand-only; not in top-level interactive menu)
-- [ ] T036 [US4] Add migration idempotency test to `tests/test_migrations.py`: run `pdbsearch migrate` twice against the same ephemeral DB; verify second run exits 0 with "already up to date" (or equivalent) and row counts unchanged
+- [x] T034 [US4] Implement `src/paper_sorts/cli/migrate.py`: Typer subcommand `migrate`; `--revision` option (default `head`); calls Alembic `command.upgrade`; prints confirmation on success; catches and converts Alembic errors to plain-language user messages; no raw exceptions on stdout
+- [x] T035 [US4] Wire `migrate` subcommand into `src/paper_sorts/cli/app.py` (subcommand-only; not in top-level interactive menu)
+- [x] T036 [US4] Add migration idempotency test to `tests/test_migrations.py`: run `pdbsearch migrate` twice against the same ephemeral DB; verify second run exits 0 with "already up to date" (or equivalent) and row counts unchanged
 
 **Checkpoint**: US4 complete — `pdbsearch migrate` upgrades any historical schema variant idempotently.
 
@@ -117,8 +117,8 @@
 
 ### Implementation for User Story 5
 
-- [ ] T037 [US5] Create `tests/fixtures/literature_overview.tex` and `tests/fixtures/bib.bib` with at least 3 entries (including one cite key with no matching .bib record)
-- [ ] T038 [US5] Add end-to-end import test to `tests/test_import_service.py`: call `import_service.extract_papers_from_tex_bib` with fixture files; for each yielded `PaperCreate`, call `paper_service.add_paper`; verify DB contains correct paper/author/bib counts; verify missing key was logged and skipped; verify re-running import skips already-inserted entries (idempotent via bibtex_id uniqueness)
+- [x] T037 [US5] Create `tests/fixtures/literature_overview.tex` and `tests/fixtures/bib.bib` with at least 3 entries (including one cite key with no matching .bib record)
+- [x] T038 [US5] Add end-to-end import test to `tests/test_import_service.py`: call `import_service.extract_papers_from_tex_bib` with fixture files; for each yielded `PaperCreate`, call `paper_service.add_paper`; verify DB contains correct paper/author/bib counts; verify missing key was logged and skipped; verify re-running import skips already-inserted entries (idempotent via bibtex_id uniqueness)
 
 **Checkpoint**: US5 complete — bulk import from tex+bib works end-to-end.
 
@@ -128,14 +128,14 @@
 
 **Purpose**: Quality gates, cleanup, documentation updates.
 
-- [ ] T039 Run `uv run ruff check src tests` and fix all lint errors
-- [ ] T040 Run `uv run ruff format src tests` and fix all format issues
-- [ ] T041 Run `uv run mypy src` and fix all type errors (strict mode per constitution Principle I)
-- [ ] T042 Run `uv run pytest --cov=src/paper_sorts --cov-report=term-missing` and verify coverage >= 80% on persistence layer (SC-008)
-- [ ] T043 [P] Update `README.md` to reflect modern install/run commands (`uv sync`, `uv run pdbsearch`, etc.)
-- [ ] T044 [P] Verify `docs/architecture.md` accurately describes the modernized architecture (update "Modernized Architecture" section if needed, or mark legacy sections clearly)
-- [ ] T045 Run `uv run pytest` final clean run and confirm all tests pass with no placeholder failures
-- [ ] T046 Run `uv run pdbsearch --help` and all subcommand `--help` outputs; verify they are informative and consistent
+- [x] T039 Run `uv run ruff check src tests` and fix all lint errors
+- [x] T040 Run `uv run ruff format src tests` and fix all format issues
+- [x] T041 Run `uv run mypy src` and fix all type errors (strict mode per constitution Principle I)
+- [x] T042 Run `uv run pytest --cov=src/paper_sorts --cov-report=term-missing` and verify coverage >= 80% on persistence layer (SC-008)
+- [x] T043 [P] Update `README.md` to reflect modern install/run commands (`uv sync`, `uv run pdbsearch`, etc.)
+- [x] T044 [P] Verify `docs/architecture.md` accurately describes the modernized architecture (update "Modernized Architecture" section if needed, or mark legacy sections clearly)
+- [x] T045 Run `uv run pytest` final clean run and confirm all tests pass with no placeholder failures
+- [x] T046 Run `uv run pdbsearch --help` and all subcommand `--help` outputs; verify they are informative and consistent
 
 ---
 
