@@ -1,0 +1,21 @@
+% Sample LaTeX literature overview for testing paper_sorts bulk import.
+% Contains 3 cited entries; only 2 have matching .bib records (GraphNet2023, Accent2022).
+% MissingKey2024 has no matching .bib entry and should be skipped with a logged warning.
+
+\documentclass{article}
+\begin{document}
+
+\section*{Literature Overview}
+
+\begin{itemize}
+  \item * Graph Neural Networks for Molecules \cite{GraphNet2023}:
+  This paper introduces a novel approach to graph neural networks.
+
+  \item * Transformers with Special Characters \cite{Accent2022}:
+  This work demonstrates correct handling of LaTeX accents like {\"o}.
+
+  \item * Paper Without Bib Entry \cite{MissingKey2024}:
+  This entry should be skipped because MissingKey2024 is not in the .bib file.
+\end{itemize}
+
+\end{document}
