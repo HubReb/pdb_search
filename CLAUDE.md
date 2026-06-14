@@ -8,57 +8,58 @@ Off-line paper-database searcher: a CLI that stores publication metadata (title,
 
 ## Commands
 
-Dependencies are managed with Poetry (Python ^3.10):
+Dependencies are managed with **uv** (Python ≥ 3.11):
 
 ```bash
-poetry install                              # install deps
-poetry run python paper_sorts/run.py \      # start the interactive CLI
-    -c ${config} --section ${section} -k ${key_file}
-poetry run pylint paper_sorts               # lint (pylint is a project dep)
-poetry run python -m unittest discover tests  # run tests
-poetry run python -m unittest tests.test_database_connector.DataBaseTest.test_search_by_author  # single test
+uv sync --all-extras                        # install runtime + dev deps
+uv run pdbsearch                            # start the interactive CLI
+uv run ruff check src tests                 # lint
+uv run mypy src                             # type-check (strict on src/)
+uv run pytest                               # run the suite (ephemeral PG via pytest-postgresql)
 ```
 
-Note: the README's `python run.py` is wrong — the entry point lives at `paper_sorts/run.py`. The default paths in argparse (`../../database.crypt`, `../../key`) assume the program is launched from inside `paper_sorts/`; otherwise pass `-c` and `-k` explicitly.
+Subcommands: `pdbsearch search`, `pdbsearch add`, `pdbsearch update`, `pdbsearch delete`, `pdbsearch import`, `pdbsearch migrate`. `pdbsearch --help` lists them.
 
-## Tests require a live database
-
-`tests/test_database_connector.py` is an **integration test**, not a unit test. It opens a real PostgreSQL connection using `../../database.crypt` + `../../key` and asserts on specific seeded rows (e.g. `"Pino, J."`, `"Wang2021LargeScaleSA"`). Running the suite without that database + that data will fail with connection or assertion errors — this is expected, not a regression you introduced. `tests/test_user_interaction.py` is a placeholder (`assertEqual(True, False)`) and intentionally fails.
+Configuration sources, priority order (highest first): CLI flags (`--database-url`, `--log-level`) → env (`PDBSEARCH_*`) → `.env` → Fernet-encrypted INI (`--config <path> --key <path>`). See `specs/001-modernize-stack/quickstart.md`.
 
 ## Architecture
 
-Three layers, top-to-bottom:
+Modern src-layout package at `src/paper_sorts/`. Top-down:
 
-1. **`paper_sorts/user_interaction.py` — `UserInteraction`**: All CLI dialog (`input()`/`print()`). Drives a `DatabaseConnector` based on user choices. The only place stdin/stdout should be touched.
-2. **`paper_sorts/database_connector.py` — `DatabaseConnector`**: High-level domain operations (`search_by_author`, `add_entry_to_db`, `update_entry`, `delete_paper_entry_from_database`, `rollback_database_addition`). Contains the SQL strings and the multi-step transactional logic (e.g. add paper → add bib → link authors → rollback on partial failure).
-3. **`paper_sorts/psycopg_db.py` — `PsycopgDB`**: Thin wrapper around `psycopg2` exposing `store_in_db`, `fetch_from_db`, `delete_from_db`, `update_db_entry`. Per the docstring, this is the *only* module that imports psycopg2 — if the driver is ever swapped, this is the single point of change. Preserve that boundary: do not call psycopg2 from `DatabaseConnector`.
+1. **`cli/`** — Typer subcommands (`search`, `add`, `update`, `delete`, `migrate`, `importer`, plus `app.py` that wires them and drops into the four-option top-level menu when invoked with no subcommand; `migrate` and `importer` are subcommand-only and deliberately absent from the menu — admin/scripted operations, not part of the four-option UX). `cli/prompts.py` is the only module under `src/paper_sorts/` permitted to import `rich.prompt` (constitution Principle III v1.3.0).
+2. **`services/`** — `paper_service.py` holds the high-level domain operations (`search_by_title`, `search_by_author`, `add_paper`, `update_field`, `delete_paper`); `import_service.py` exposes `extract_papers_from_tex_bib(tex, bib) -> Iterator[PaperCreate]` for the per-paper bulk-import path. Pure orchestration; no SQL, no rich, no I/O. `update_field` uses `match`/`case` over a `Literal[...]` table arg with `assert_never` for compile-time exhaustiveness.
+3. **`db/`** — SQLAlchemy 2.x persistence. `db/session.py` exposes `with_session(...)` (commit on success, rollback on exception). `db/repositories.py` defines `PaperRepository` / `AuthorRepository` / `BibRepository` plus pydantic DTOs (`PaperSummary`, `PaperCreate`). `db/models.py` declares the four ORM models. **`db/` is the only place under `src/paper_sorts/` permitted to import `sqlalchemy`** — services depend on DTOs, never on ORM types.
 
 Supporting modules:
 
-- `paper_sorts/config_reader.py` — decrypts a Fernet-encrypted INI file at startup to get DB credentials. Config layout is `[postgresql] dbname=… user=… password=…`.
-- `paper_sorts/helpers.py` — pure functions used across layers: `create_logger` (every class builds its own file-backed logger via this), `cast` (safe int parse, returns -1), `get_user_input`/`get_user_choice`, `pretty_print_results`, plus latex/bibtex parsing for bulk import.
+- **`config.py`** — pydantic-settings `Settings` model with the four-source priority chain.
+- **`logging_config.py`** — single `logging.config.dictConfig` (RichHandler to stdout, optional FileHandler). Called once from `cli/app.py` at startup.
+
+`migrations/versions/` holds the Alembic schema migrations. Revision 001 is the verbatim port of the original DDL; revision 002 converges legacy database variants (e.g. the `bibtext_id` typo column) onto the canonical schema.
+
+For a reverse-engineered description of the *legacy* stack as it was before modernization (useful when reading historical commits), see `docs/architecture.md`.
 
 ### Database schema
 
-Four tables, created lazily by `DatabaseConnector.create_tables()`:
+Four tables, defined declaratively in `src/paper_sorts/db/models.py` and managed via Alembic:
 
 - `papers(id, title, contents, bibtex_id → bib.bibtex_id)`
-- `bib(bibtex_id PK, bibtex)`
+- `bib(bibtex_id PK, bibtex UNIQUE)`
 - `authors_id(id, author)`
-- `authors_papers(id, author_id, paper_id)` — many-to-many link
+- `authors_papers(id, author_id, paper_id)` — many-to-many link, **no DDL FKs**.
 
-A paper is identified internally by `papers.id`; the BibTeX key (`bibtex_id`) is the user-facing unique identifier and is the FK target from `papers` into `bib`.
+A paper is identified internally by `papers.id`; the BibTeX key (`bibtex_id`) is the user-facing unique identifier and is the FK target from `papers` into `bib`. Schema-preservation contract: do not add NOT NULL outside primary keys, do not add FKs to `authors_papers`, do not add indexes that the original DDL did not have.
 
-### Legacy / duplicate modules — read before editing
+## Tests
 
-`paper_sorts/add.py`, `paper_sorts/search.py`, and `paper_sorts/get_data.py` are **older, standalone, procedural versions** of functionality that has since been refactored into the `UserInteraction` / `DatabaseConnector` / `PsycopgDB` stack. They:
+`uv run pytest` runs the suite against an ephemeral PostgreSQL spun up by `pytest-postgresql` from the host's `pg_ctl`. No personal database, no `database.crypt`, no `key` file required. Per constitution Principle II v1.3.0, persistence-layer tests run against a real DB — no mocking the SQLAlchemy session, repositories, or driver.
 
-- import `psycopg` (v3) instead of `psycopg2` — different driver,
-- use the column name `bibtext_id` (sic) instead of `bibtex_id` used by the OO stack,
-- duplicate a `create_logger` and `read_config` independently of `helpers.py` / `ConfigReader`.
-
-They are not wired into `run.py`. When fixing or extending behaviour, change the OO stack — do not edit the legacy scripts unless the task is explicitly to remove or reconcile them. If you find yourself porting logic *from* these files, double-check column names against the live schema in `DatabaseConnector.create_tables()`.
+Session fixtures live in `tests/conftest.py` (`postgresql_proc`, `ephemeral_db_url`); the canonical seed dataset is `tests/fixtures/seed_papers.py::SEED_PAPERS`. Bench harness lives under `tests/benchmarks/`; run via `uv run pytest tests/benchmarks/ --benchmark-autosave`.
 
 ## SpecKit
 
-`.specify/` contains SpecKit templates and `memory/constitution.md` (ratified 2026-04-26, current v1.1.0). The constitution defines four binding principles — Code Quality, Testing Standards, User Experience Consistency, Performance Requirements — and rules out a few things that come up naturally (mocking psycopg in DB tests; extending the legacy `add.py`/`search.py`/`get_data.py` modules; adding connection pools/caches/async drivers). The performance principle is framed as "no measurable regression vs. the current baseline" rather than absolute numbers — there's no benchmark behind any specific bound, so refactors are evaluated against measured baseline. Read the constitution before generating a plan or making non-trivial changes. The README's instruction "read the current plan" refers to a SpecKit plan that may or may not exist in the workspace at any given time; check `.specify/` before assuming one is available.
+<!-- SPECKIT START -->
+Active feature plan: `specs/001-modernize-stack/plan.md`
+<!-- SPECKIT END -->
+
+`.specify/` contains SpecKit templates and `memory/constitution.md` (ratified 2026-04-26, current v1.3.0-b2-hardened). The constitution defines four binding principles — Code Quality, Testing Standards, User Experience Consistency, Performance Requirements — and rules out a few things that come up naturally (mocking the SQLAlchemy session in DB tests; adding connection pools/caches/async drivers). The performance principle is framed as "no measurable regression vs. the current baseline" rather than absolute numbers — there's no benchmark behind any specific bound, so refactors are evaluated against measured baseline. Read the constitution before generating a plan or making non-trivial changes.

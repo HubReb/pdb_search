@@ -1,0 +1,10 @@
+% Test LaTeX file for bulk import
+% Contains 3 cite references; only 2 have matching .bib entries (ImportMissing should be skipped)
+
+\begin{document}
+\begin{itemize}
+  \item ImportPaper1\_2024 \cite{ImportPaper1_2024}: First import paper about machine learning with useful content.
+  \item ImportPaper2\_2024 \cite{ImportPaper2_2024}: Second import paper about deep learning networks.
+  \item ImportMissing\_2024 \cite{ImportMissing_2024}: This paper has no matching bib entry and should be skipped.
+\end{itemize}
+\end{document}
