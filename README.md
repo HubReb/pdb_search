@@ -1,136 +1,89 @@
-# Off-line Paper Database searcher 
+# Off-line Paper Database Searcher
 
-A small, bare-bones application to add publication metadata to a postgresql database for later querying in case no online connection
-is available to enable querying one of the freely available online resources, e.g. traveling by train.
+A small CLI tool to store and search academic publication metadata in a local PostgreSQL database — for use when no online connection is available (e.g. traveling by train).
 
-The database can be searched by either author or publication title.
-If the respective entry has previously added to the database, a search returns:
-* paper title
-* author
-* small summary
-* bibtex entry
+Search by author or title. For each paper the tool returns title, authors, summary, and the BibTeX entry.
 
-
-*Note:* This application was created for only personal usage and its construction reflects that. If you enter
-any problems in your setup, consult the logs.
+*Note*: Personal-use tool. Single user, local PostgreSQL, no network surface.
 
 ## Installation
 
-The repo contains all information required to install the package with poetry. 
-Install poetry and run
-```bash
-poetry install
-```
-
-## Interaction
-
-Start the interaction with the following command:
+Requires Python ≥ 3.11 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-python run.py -c ${config} --section ${section_of_the_config_to_access} \
--k ${file_to_key_if_your_database_is_encrypted} 
+git clone <repo>
+cd pdb_search
+uv sync --all-extras
 ```
 
-The configuration file should be encrypted if it contains sensitive information, e.g. a password. 
-In this case, the key should be stored in a relatively safe location.
+## First Run: Migrate the Database
 
-## Search
+On a fresh install or when upgrading from an older version:
 
-The following dialog is presented to you 
-```
-Welcome! Connecting to the database, one moment...
-Connected to the database.
-What do you want to do?
-1) Search the database
-2) Add an entry
-3) Update an entry
-4) (Q)uit
-```
-Press 1 to load the search dialog:
-```
-Search interface
-Please choose a method:
-1) Search by author
-2) Search by paper title
-```
-### Search by title
-
-Enter the title name and if a paper of that name exists in the database the relevant information will be presented to you.
-
-```
-Please enter the paper_information title:
-```
-If no paper is found, you will be informed of it.
-Note that if several papers with that specific title are present in the database, you will be presented with the list of
-the respective authors and asked to choose one author (group).
-### Search by author
-
-Enter the author's name. You are then presented with a list of papers that author has (co-)authored and asked
-to select one.
-The name should have the format ```${last name}, ${first name}```.
-```
-Please enter the author's name:
-```
-## Add an entry
-
-The program takes you through the steps to add an entry to the database step by step. Note that you are asked
-whether you want to provide a file to read the bib entry from or enter the data by hand.
-
-```
-Please enter the necessary information
-Author(s), please provide a , separated list: ${list_of_author}
-Paper title: Fancy new paper
-Bibtex key: new key
-Do you want to enter the bibtex entry via a separate file?
-1) Yes
-2) No
-Your choice: 1
-Enter filename: bibfile.bib 
-summary of the paper_information: [...]
+```bash
+uv run pdbsearch migrate
 ```
 
-## Update an entry
+## Configuration
 
-The program walks you through all steps necessary to update a single entry.
-The below interaction shows an example of an update dialog. 
-```
-Which information do you want to update?
-1) paper 
-2) bib
-3) authors
-4) abort
-Your choice: 1
-Which information do you want to update?
-1) title
-2) contents
-3) abort
-Your choice: 1 
-Which entry do you want to update?
-Please enter the respective id: ${paper_id}  
-```
-In order to change an entry you have to know its id in the database. 
-You may use the [search](README.md#search) functionality to access this id.
-```
-Enter the new information: the new title
-```
-You are asked to review and verify the information you have requested to change before 
-any change is applied:
-```
-Please verify: You wish to change the 'title' of 'paper_id' to 'the new title'.
-Proceed?
-1) (Y)es
-2) (N)o
-Your choice: 1
+Set the database URL via environment variable, `.env` file, or the legacy encrypted config:
+
+```bash
+# Option 1: env var
+export PDBSEARCH_DATABASE_URL="postgresql+psycopg://user:password@localhost/mydb"
+
+# Option 2: .env file
+echo 'PDBSEARCH_DATABASE_URL=postgresql+psycopg://user:password@localhost/mydb' > .env
+
+# Option 3: legacy Fernet-encrypted INI (keeps existing database.crypt + key)
+uv run pdbsearch --config ../../database.crypt --key ../../key
 ```
 
-# Config 
+The encrypted INI must have a `[postgresql]` section with `dbname`, `user`, `password`, `host`, `port`.
 
-Your configuration should be of the form
-```
-[postgresql]
-dbname=your_dbname
-user=your_dbuser
-password=your_dbuser_password
-```
-It is recommended to use an encrypted version of this file.
+## Usage
 
+### Interactive mode
+
+```bash
+uv run pdbsearch
+```
+
+Shows a four-option menu:
+
+```
+1) Search
+2) Add
+3) Update
+4) Delete
+q) Quit
+```
+
+### Subcommands (scripted)
+
+```bash
+uv run pdbsearch search           # search submenu
+uv run pdbsearch add              # add a paper
+uv run pdbsearch update [--id N]  # update a field
+uv run pdbsearch delete [--id N]  # delete a paper
+uv run pdbsearch import --tex literature_overview.tex --bib refs.bib
+uv run pdbsearch migrate          # apply schema migrations
+```
+
+## Running Tests
+
+```bash
+uv run pytest                                         # full suite (ephemeral PG)
+uv run pytest tests/benchmarks/ -m benchmark -v      # benchmark harness
+```
+
+## Linting and Type Checking
+
+```bash
+uv run ruff check src tests
+uv run mypy src
+```
+
+## Architecture
+
+See `docs/architecture.md` for the full architecture description, data model, control flow, and configuration chain.

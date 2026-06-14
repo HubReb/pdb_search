@@ -60,9 +60,8 @@ def test_add_paper_empty_title_raises(db_url: str) -> None:
         bibtex="@article{test123}",
         authors=["Smith, John"],
     )
-    with pytest.raises(ValueError, match="title"):
-        with with_session(db_url) as session:
-            paper_service.add_paper(session, paper)
+    with pytest.raises(ValueError, match="title"), with_session(db_url) as session:
+        paper_service.add_paper(session, paper)
 
 
 def test_add_paper_empty_bibtex_id_raises(db_url: str) -> None:
@@ -74,9 +73,8 @@ def test_add_paper_empty_bibtex_id_raises(db_url: str) -> None:
         bibtex="@article{test123}",
         authors=["Smith, John"],
     )
-    with pytest.raises(ValueError, match="bibtex_id"):
-        with with_session(db_url) as session:
-            paper_service.add_paper(session, paper)
+    with pytest.raises(ValueError, match="bibtex_id"), with_session(db_url) as session:
+        paper_service.add_paper(session, paper)
 
 
 def test_add_paper_no_authors_raises(db_url: str) -> None:
@@ -88,9 +86,8 @@ def test_add_paper_no_authors_raises(db_url: str) -> None:
         bibtex="@article{test123}",
         authors=[],
     )
-    with pytest.raises(ValueError, match="author"):
-        with with_session(db_url) as session:
-            paper_service.add_paper(session, paper)
+    with pytest.raises(ValueError, match="author"), with_session(db_url) as session:
+        paper_service.add_paper(session, paper)
 
 
 def test_update_field_title(seeded_db_url: str) -> None:
@@ -145,8 +142,9 @@ def test_update_field_invalid_exhaustiveness() -> None:
     # This test documents the exhaustiveness contract.
     from typing import cast
 
-    with pytest.raises((TypeError, AssertionError)):
-        # Passing an invalid field at runtime via cast to bypass type checker
+    # Intentionally nested: pytest.raises must wrap with_session to catch the exception.
+    # noqa: SIM117 — these cannot be combined; the raises context must be outer.
+    with pytest.raises((TypeError, AssertionError)):  # noqa: SIM117
         with with_session("postgresql+psycopg://invalid") as session:
             paper_service.update_field(
                 session, 1, cast(paper_service.UpdateableField, "nonexistent_field"), "x"
@@ -169,6 +167,6 @@ def test_delete_paper(seeded_db_url: str) -> None:
 
 def test_delete_paper_not_found(seeded_db_url: str) -> None:
     """delete_paper raises ValueError for non-existent paper id."""
-    with pytest.raises(ValueError, match="No paper with id"):
+    with pytest.raises(ValueError, match="No paper with id"):  # noqa: SIM117
         with with_session(seeded_db_url) as session:
             paper_service.delete_paper(session, 99999)

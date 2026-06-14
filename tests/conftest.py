@@ -13,8 +13,6 @@ No developer-local database, no database.crypt, no key file required.
 from __future__ import annotations
 
 import os
-import sys
-from pathlib import Path
 
 import pytest
 from pytest_postgresql import factories

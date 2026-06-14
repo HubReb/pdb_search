@@ -15,6 +15,7 @@ import typer
 
 from paper_sorts.cli import add as add_cmd
 from paper_sorts.cli import delete as delete_cmd
+from paper_sorts.cli import importer as import_cmd
 from paper_sorts.cli import migrate as migrate_cmd
 from paper_sorts.cli import search as search_cmd
 from paper_sorts.cli import update as update_cmd
@@ -31,6 +32,7 @@ app.add_typer(search_cmd.app, name="search")
 app.add_typer(add_cmd.app, name="add")
 app.add_typer(update_cmd.app, name="update")
 app.add_typer(delete_cmd.app, name="delete")
+app.add_typer(import_cmd.app, name="import")
 app.add_typer(migrate_cmd.app, name="migrate")
 
 

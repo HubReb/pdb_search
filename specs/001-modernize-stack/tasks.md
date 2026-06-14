@@ -16,11 +16,11 @@
 
 **Purpose**: Replace legacy pyproject.toml / flat layout with uv + src-layout + modern toolchain.
 
-- [ ] T001 Replace pyproject.toml with PEP 621 hatchling build (uv, Python ≥ 3.11, src-layout) and run `uv sync --all-extras` to verify
-- [ ] T002 [P] Create `src/paper_sorts/` src-layout package skeleton (`__init__.py`, `cli/`, `services/`, `db/`) with empty `__init__.py` files
-- [ ] T003 [P] Add `pyproject.toml` ruff config (`[tool.ruff]`, `[tool.ruff.lint]`) targeting src/ and tests/; verify `uv run ruff check src` exits 0
-- [ ] T004 [P] Add `pyproject.toml` mypy config (`[tool.mypy]` strict on src/paper_sorts); verify `uv run mypy src` exits 0 on empty stubs
-- [ ] T005 [P] Add `pyproject.toml` pytest config (`[tool.pytest.ini_options]` testpaths=tests, asyncio_mode off); install pytest-postgresql; verify `uv run pytest --collect-only` exits 0
+- [x] T001 Replace pyproject.toml with PEP 621 hatchling build (uv, Python ≥ 3.11, src-layout) and run `uv sync --all-extras` to verify
+- [x] T002 [P] Create `src/paper_sorts/` src-layout package skeleton (`__init__.py`, `cli/`, `services/`, `db/`) with empty `__init__.py` files
+- [x] T003 [P] Add `pyproject.toml` ruff config (`[tool.ruff]`, `[tool.ruff.lint]`) targeting src/ and tests/; verify `uv run ruff check src` exits 0
+- [x] T004 [P] Add `pyproject.toml` mypy config (`[tool.mypy]` strict on src/paper_sorts); verify `uv run mypy src` exits 0 on empty stubs
+- [x] T005 [P] Add `pyproject.toml` pytest config (`[tool.pytest.ini_options]` testpaths=tests, asyncio_mode off); install pytest-postgresql; verify `uv run pytest --collect-only` exits 0
 
 ---
 
@@ -30,15 +30,15 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Create `src/paper_sorts/db/models.py` with SQLAlchemy 2.x `DeclarativeBase` and four ORM models: `Paper`, `Bib`, `Author`, `AuthorPaper` matching canonical schema (no extra FKs on `authors_papers`, `bibtex` column UNIQUE on `Bib`)
-- [ ] T007 Create `src/paper_sorts/db/session.py` with `with_session()` context-manager factory using `sessionmaker(bind=engine)` and `create_engine()` driven by Settings; commits on success, rolls back on exception
-- [ ] T008 Create `src/paper_sorts/db/repositories.py` with Pydantic DTOs (`PaperSummary`, `PaperCreate`) and repository classes `PaperRepository`, `AuthorRepository`, `BibRepository`; no sqlalchemy imports above this module
-- [ ] T009 Create `src/paper_sorts/config.py` with pydantic-settings v2 `Settings` model: `database_url`, `log_level`; env prefix `PDBSEARCH_`; custom `FernetIniSettingsSource` that decrypts Fernet-encrypted INI to read `[postgresql]` section; four-source priority chain (CLI args injected externally > env > .env > encrypted INI)
-- [ ] T010 Create `src/paper_sorts/logging_config.py` with `configure_logging(level)` calling `logging.config.dictConfig`; RichHandler to stdout + optional FileHandler; called once from `cli/app.py` at startup
-- [ ] T011 Create `alembic.ini` and `migrations/env.py` wiring Alembic to `Settings.database_url` and `src/paper_sorts/db/models.py` metadata
-- [ ] T012 Create `migrations/versions/001_initial_schema.py` — verbatim port of four-table DDL from legacy `database_connector.py` (`CREATE TABLE bib`, `papers`, `authors_id`, `authors_papers`); no extra constraints beyond originals
-- [ ] T013 Create `migrations/versions/002_handle_legacy_bibtext_id.py` — idempotent guard: if column `bibtext_id` exists in `papers`, rename it to `bibtex_id`; skip if `bibtex_id` already present
-- [ ] T014 [P] Create `src/paper_sorts/cli/prompts.py` — sole importer of `rich.prompt`; exports `ask_str(prompt, required=True)`, `ask_int(prompt, choices)`, `ask_confirm(prompt)`, `display_paper(summary)`, `display_papers_list(summaries)`; empty input re-prompts when `required=True`; `ask_confirm` accepts `y/yes/1/n/no/2` case-insensitively
+- [x] T006 Create `src/paper_sorts/db/models.py` with SQLAlchemy 2.x `DeclarativeBase` and four ORM models: `Paper`, `Bib`, `Author`, `AuthorPaper` matching canonical schema (no extra FKs on `authors_papers`, `bibtex` column UNIQUE on `Bib`)
+- [x] T007 Create `src/paper_sorts/db/session.py` with `with_session()` context-manager factory using `sessionmaker(bind=engine)` and `create_engine()` driven by Settings; commits on success, rolls back on exception
+- [x] T008 Create `src/paper_sorts/db/repositories.py` with Pydantic DTOs (`PaperSummary`, `PaperCreate`) and repository classes `PaperRepository`, `AuthorRepository`, `BibRepository`; no sqlalchemy imports above this module
+- [x] T009 Create `src/paper_sorts/config.py` with pydantic-settings v2 `Settings` model: `database_url`, `log_level`; env prefix `PDBSEARCH_`; custom `FernetIniSettingsSource` that decrypts Fernet-encrypted INI to read `[postgresql]` section; four-source priority chain (CLI args injected externally > env > .env > encrypted INI)
+- [x] T010 Create `src/paper_sorts/logging_config.py` with `configure_logging(level)` calling `logging.config.dictConfig`; RichHandler to stdout + optional FileHandler; called once from `cli/app.py` at startup
+- [x] T011 Create `alembic.ini` and `migrations/env.py` wiring Alembic to `Settings.database_url` and `src/paper_sorts/db/models.py` metadata
+- [x] T012 Create `migrations/versions/001_initial_schema.py` — verbatim port of four-table DDL from legacy `database_connector.py` (`CREATE TABLE bib`, `papers`, `authors_id`, `authors_papers`); no extra constraints beyond originals
+- [x] T013 Create `migrations/versions/002_handle_legacy_bibtext_id.py` — idempotent guard: if column `bibtext_id` exists in `papers`, rename it to `bibtex_id`; skip if `bibtex_id` already present
+- [x] T014 [P] Create `src/paper_sorts/cli/prompts.py` — sole importer of `rich.prompt`; exports `ask_str(prompt, required=True)`, `ask_int(prompt, choices)`, `ask_confirm(prompt)`, `display_paper(summary)`, `display_papers_list(summaries)`; empty input re-prompts when `required=True`; `ask_confirm` accepts `y/yes/1/n/no/2` case-insensitively
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 
@@ -50,19 +50,19 @@
 
 **Independent Test**: `uv run pdbsearch --help` exits 0; `uv run pytest tests/test_repositories.py tests/test_services.py tests/test_cli.py` all pass.
 
-- [ ] T015 [US1] Create `docs/architecture.md` documenting purpose, user journeys, data model (four tables + relationships), control flow (CLI → service → repository → DB), configuration chain, install/run instructions, known limitations (duplicate author names, no FK on authors_papers, Ctrl+C rollback semantics via context-managed session)
-- [ ] T016 [US1] [P] Create `src/paper_sorts/services/paper_service.py` with `search_by_title(session, title) -> list[PaperSummary]`, `search_by_author(session, author) -> list[PaperSummary]`, `add_paper(session, paper: PaperCreate) -> PaperSummary`, `update_field(session, paper_id, field: Literal["title","contents","bibtex","authors"], value) -> PaperSummary`, `delete_paper(session, paper_id) -> None`; pure orchestration, no SQL, no I/O; `update_field` uses `match`/`case` with `assert_never`
-- [ ] T017 [US1] [P] Create `src/paper_sorts/services/import_service.py` with `extract_papers_from_tex_bib(tex_content: str, bib_content: str) -> Iterator[PaperCreate]`; uses pybtex for BibTeX parsing, pylatexenc for LaTeX-to-text; skips missing BibTeX records with logged warning
-- [ ] T018 [US1] Create `src/paper_sorts/cli/app.py` — Typer app `app`; `main()` entry point called by `pdbsearch` script; registers subcommands; when invoked with no subcommand drops into four-option interactive menu (Search/Add/Update/Delete/Quit) via `prompts.ask_int`; calls `configure_logging` at startup; accepts `--database-url`, `--log-level`, `--config`, `--key` global options
-- [ ] T019 [US1] Create `src/paper_sorts/cli/search.py` — Typer subapp with `search_by_title_cmd` and `search_by_author_cmd`; uses `with_session()`; calls `paper_service.search_by_title/search_by_author`; disambiguation prompt for multiple matches via `prompts.ask_int`; plain-language "No papers found" on empty result; displays via `prompts.display_paper`
-- [ ] T020 [US1] Create `src/paper_sorts/cli/add.py` — Typer subapp `add_cmd`; prompts for title, authors (comma-separated), bibtex_id, contents, bibtex entry or .bib file path; calls `paper_service.add_paper`; re-prompts on empty required fields; plain-language error on duplicate bibtex_id
-- [ ] T021 [US1] Create `src/paper_sorts/cli/update.py` — Typer subapp `update_cmd`; accepts `--id`; if no id, searches first; shows current values; submenu (title/contents/bibtex/authors/Abort); prompts new value; confirmation via `prompts.ask_confirm`; aborts on `n`; calls `paper_service.update_field`
-- [ ] T022 [US1] Create `src/paper_sorts/cli/delete.py` — Typer subapp `delete_cmd`; accepts `--id`; if no id, searches first; shows paper details; confirmation via `prompts.ask_confirm`; calls `paper_service.delete_paper`; aborts on `n`
-- [ ] T023 [US1] [P] Create `tests/conftest.py` with `postgresql_proc` fixture (pg_ctl at `/usr/bin/pg_ctl`) and `ephemeral_db_url` fixture that runs Alembic migrations then yields the URL; add `tests/fixtures/seed_papers.py` with `SEED_PAPERS` list of `PaperCreate` instances covering: one unique title, two papers with same title, one paper with LaTeX-accent author name, one paper with multi-author
-- [ ] T024 [US1] [P] Create `tests/test_repositories.py` — integration tests against ephemeral DB: `test_add_and_find_by_title`, `test_add_and_find_by_author`, `test_update_title`, `test_delete_paper`, `test_duplicate_bibtex_id_rejected`, `test_bibtex_unique_constraint`; uses real SQLAlchemy session (no mocking)
-- [ ] T025 [US1] [P] Create `tests/test_services.py` — service-layer tests using the ephemeral DB session: `test_search_by_title_one_match`, `test_search_by_title_multiple`, `test_search_by_author`, `test_add_paper`, `test_update_field_title`, `test_update_field_contents`, `test_update_field_bibtex`, `test_update_field_authors`, `test_delete_paper`, `test_update_field_invalid_exhaustiveness` (assert_never path)
-- [ ] T026 [US1] [P] Create `tests/test_cli.py` — CLI layer tests via Typer `CliRunner`: `test_search_subcommand_no_results`, `test_search_subcommand_one_result`, `test_add_subcommand`, `test_update_subcommand`, `test_delete_subcommand`, `test_main_help`; patch `with_session` to inject ephemeral session
-- [ ] T027 [US1] [P] Create `tests/test_config.py` — unit tests for `Settings`: `test_env_var_overrides_default`, `test_dotenv_loaded`, `test_fernet_ini_source_missing_key_raises_clear_error`, `test_empty_input_reprompt` (for `prompts.ask_str`)
+- [x] T015 [US1] Create `docs/architecture.md` documenting purpose, user journeys, data model (four tables + relationships), control flow (CLI → service → repository → DB), configuration chain, install/run instructions, known limitations (duplicate author names, no FK on authors_papers, Ctrl+C rollback semantics via context-managed session)
+- [x] T016 [US1] [P] Create `src/paper_sorts/services/paper_service.py` with `search_by_title(session, title) -> list[PaperSummary]`, `search_by_author(session, author) -> list[PaperSummary]`, `add_paper(session, paper: PaperCreate) -> PaperSummary`, `update_field(session, paper_id, field: Literal["title","contents","bibtex","authors"], value) -> PaperSummary`, `delete_paper(session, paper_id) -> None`; pure orchestration, no SQL, no I/O; `update_field` uses `match`/`case` with `assert_never`
+- [x] T017 [US1] [P] Create `src/paper_sorts/services/import_service.py` with `extract_papers_from_tex_bib(tex_content: str, bib_content: str) -> Iterator[PaperCreate]`; uses pybtex for BibTeX parsing, pylatexenc for LaTeX-to-text; skips missing BibTeX records with logged warning
+- [x] T018 [US1] Create `src/paper_sorts/cli/app.py` — Typer app `app`; `main()` entry point called by `pdbsearch` script; registers subcommands; when invoked with no subcommand drops into four-option interactive menu (Search/Add/Update/Delete/Quit) via `prompts.ask_int`; calls `configure_logging` at startup; accepts `--database-url`, `--log-level`, `--config`, `--key` global options
+- [x] T019 [US1] Create `src/paper_sorts/cli/search.py` — Typer subapp with `search_by_title_cmd` and `search_by_author_cmd`; uses `with_session()`; calls `paper_service.search_by_title/search_by_author`; disambiguation prompt for multiple matches via `prompts.ask_int`; plain-language "No papers found" on empty result; displays via `prompts.display_paper`
+- [x] T020 [US1] Create `src/paper_sorts/cli/add.py` — Typer subapp `add_cmd`; prompts for title, authors (comma-separated), bibtex_id, contents, bibtex entry or .bib file path; calls `paper_service.add_paper`; re-prompts on empty required fields; plain-language error on duplicate bibtex_id
+- [x] T021 [US1] Create `src/paper_sorts/cli/update.py` — Typer subapp `update_cmd`; accepts `--id`; if no id, searches first; shows current values; submenu (title/contents/bibtex/authors/Abort); prompts new value; confirmation via `prompts.ask_confirm`; aborts on `n`; calls `paper_service.update_field`
+- [x] T022 [US1] Create `src/paper_sorts/cli/delete.py` — Typer subapp `delete_cmd`; accepts `--id`; if no id, searches first; shows paper details; confirmation via `prompts.ask_confirm`; calls `paper_service.delete_paper`; aborts on `n`
+- [x] T023 [US1] [P] Create `tests/conftest.py` with `postgresql_proc` fixture (pg_ctl at `/usr/bin/pg_ctl`) and `ephemeral_db_url` fixture that runs Alembic migrations then yields the URL; add `tests/fixtures/seed_papers.py` with `SEED_PAPERS` list of `PaperCreate` instances covering: one unique title, two papers with same title, one paper with LaTeX-accent author name, one paper with multi-author
+- [x] T024 [US1] [P] Create `tests/test_repositories.py` — integration tests against ephemeral DB: `test_add_and_find_by_title`, `test_add_and_find_by_author`, `test_update_title`, `test_delete_paper`, `test_duplicate_bibtex_id_rejected`, `test_bibtex_unique_constraint`; uses real SQLAlchemy session (no mocking)
+- [x] T025 [US1] [P] Create `tests/test_services.py` — service-layer tests using the ephemeral DB session: `test_search_by_title_one_match`, `test_search_by_title_multiple`, `test_search_by_author`, `test_add_paper`, `test_update_field_title`, `test_update_field_contents`, `test_update_field_bibtex`, `test_update_field_authors`, `test_delete_paper`, `test_update_field_invalid_exhaustiveness` (assert_never path)
+- [x] T026 [US1] [P] Create `tests/test_cli.py` — CLI layer tests via Typer `CliRunner`: `test_search_subcommand_no_results`, `test_search_subcommand_one_result`, `test_add_subcommand`, `test_update_subcommand`, `test_delete_subcommand`, `test_main_help`; patch `with_session` to inject ephemeral session
+- [x] T027 [US1] [P] Create `tests/test_config.py` — unit tests for `Settings`: `test_env_var_overrides_default`, `test_dotenv_loaded`, `test_fernet_ini_source_missing_key_raises_clear_error`, `test_empty_input_reprompt` (for `prompts.ask_str`)
 
 **Checkpoint**: US1 + US2 core fully functional. `uv run pytest tests/` passes.
 
@@ -74,9 +74,9 @@
 
 **Independent Test**: `git clone && uv sync --all-extras && uv run pytest` passes on a machine with no `database.crypt`.
 
-- [ ] T028 [US3] Create `tests/test_migrations.py` — test Revision 001 creates all four tables; test Revision 002 handles `bibtext_id` rename idempotently (simulate by adding the typo column before running migration); uses ephemeral DB
-- [ ] T029 [US3] Create `tests/test_doc_currency.py` — mechanical doc-currency gate: reads `README.md` and `CLAUDE.md`, asserts none of `["Poetry", "psycopg2", "UserInteraction", "PsycopgDB"]` appear (constitution Principle I gate G3)
-- [ ] T030 [US3] Run `uv run pytest --cov=src/paper_sorts --cov-report=term-missing` and verify per-layer coverage ≥ 80% for each of `db/`, `services/`, `cli/`, `config.py`; fix coverage gaps in existing tests if any layer is below threshold
+- [x] T028 [US3] Create `tests/test_migrations.py` — test Revision 001 creates all four tables; test Revision 002 handles `bibtext_id` rename idempotently (simulate by adding the typo column before running migration); uses ephemeral DB
+- [x] T029 [US3] Create `tests/test_doc_currency.py` — mechanical doc-currency gate: reads `README.md` and `CLAUDE.md`, asserts none of `["Poetry", "psycopg2", "UserInteraction", "PsycopgDB"]` appear (constitution Principle I gate G3)
+- [x] T030 [US3] Run `uv run pytest --cov=src/paper_sorts --cov-report=term-missing` and verify per-layer coverage ≥ 80% for each of `db/`, `services/`, `cli/`, `config.py`; fix coverage gaps in existing tests if any layer is below threshold
 
 **Checkpoint**: Test suite fully self-contained and per-layer coverage gates met.
 
@@ -88,8 +88,8 @@
 
 **Independent Test**: Snapshot row counts before migration, run `pdbsearch migrate`, compare row counts — must match exactly.
 
-- [ ] T031 [US4] Create `src/paper_sorts/cli/migrate.py` — Typer command `migrate_cmd`; calls `alembic upgrade head` programmatically via Alembic's Python API; prints "Migration complete." on success; plain-language error on failure, technical detail in log
-- [ ] T032 [US4] Verify migration Revision 002 (`tests/test_migrations.py::test_legacy_bibtext_id_rename`) covers both schema variants (with and without typo column); extend test if missing
+- [x] T031 [US4] Create `src/paper_sorts/cli/migrate.py` — Typer command `migrate_cmd`; calls `alembic upgrade head` programmatically via Alembic's Python API; prints "Migration complete." on success; plain-language error on failure, technical detail in log
+- [x] T032 [US4] Verify migration Revision 002 (`tests/test_migrations.py::test_legacy_bibtext_id_rename`) covers both schema variants (with and without typo column); extend test if missing
 
 **Checkpoint**: Single `pdbsearch migrate` command handles both legacy schema variants.
 
@@ -101,9 +101,9 @@
 
 **Independent Test**: Run import against fixture pair; verify paper count, author count, BibTeX entries match expected.
 
-- [ ] T033 [US5] Create `src/paper_sorts/cli/importer.py` — Typer command `import_cmd`; accepts `--tex PATH`, `--bib PATH`; calls `import_service.extract_papers_from_tex_bib`; for each yielded `PaperCreate` calls `paper_service.add_paper` in its own `with_session()` call (per-paper commit); logs WARNING on skip; prints "Imported N papers. Skipped M entries." on completion
-- [ ] T034 [US5] [P] Create `tests/fixtures/literature_overview.tex` and `tests/fixtures/bib.bib` fixture pair with at least 3 valid entries and 1 citation with no matching BibTeX record
-- [ ] T035 [US5] Create `tests/test_import.py` — integration tests: `test_bulk_import_all_valid`, `test_bulk_import_missing_bib_skipped`, `test_bulk_import_partial_failure_preserved`, `test_latex_accent_roundtrip`; uses ephemeral DB
+- [x] T033 [US5] Create `src/paper_sorts/cli/importer.py` — Typer command `import_cmd`; accepts `--tex PATH`, `--bib PATH`; calls `import_service.extract_papers_from_tex_bib`; for each yielded `PaperCreate` calls `paper_service.add_paper` in its own `with_session()` call (per-paper commit); logs WARNING on skip; prints "Imported N papers. Skipped M entries." on completion
+- [x] T034 [US5] [P] Create `tests/fixtures/literature_overview.tex` and `tests/fixtures/bib.bib` fixture pair with at least 3 valid entries and 1 citation with no matching BibTeX record
+- [x] T035 [US5] Create `tests/test_import.py` — integration tests: `test_bulk_import_all_valid`, `test_bulk_import_missing_bib_skipped`, `test_bulk_import_partial_failure_preserved`, `test_latex_accent_roundtrip`; uses ephemeral DB
 
 **Checkpoint**: Bulk import fully functional and tested.
 
@@ -113,13 +113,13 @@
 
 **Purpose**: Cleanup, legacy removal, benchmark gate, doc-currency gate, final quality checks.
 
-- [ ] T036 Remove legacy flat-layout package: delete `paper_sorts/` directory entirely (all 9 modules: `run.py`, `user_interaction.py`, `database_connector.py`, `psycopg_db.py`, `helpers.py`, `config_reader.py`, `add.py`, `search.py`, `get_data.py`) and the old `paper_sorts/__init__.py`
-- [ ] T037 Update `README.md` to document uv-based install, `pdbsearch` entry point, migration command, and test run; MUST NOT contain forbidden tokens `Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB`; update `CLAUDE.md` architecture section to reflect modern src-layout
-- [ ] T038 Create `tests/benchmarks/bench_baseline.py` — benchmark harness marked `@pytest.mark.benchmark`; records wall-clock timings for search-by-title, search-by-author, add, update, delete on seeded data against ephemeral DB; writes results to `tests/benchmarks/baseline.json`; constitution Principle IV gate G2
-- [ ] T039 Run full quality gate: `uv run ruff check src tests`, `uv run ruff format --check src tests`, `uv run mypy src` — fix all errors
-- [ ] T040 Run `uv run pytest` and verify all tests pass; run `uv run pytest tests/benchmarks/ -m benchmark` and verify benchmark executes and writes `baseline.json`
-- [ ] T041 [P] Verify doc-currency gate: `uv run pytest tests/test_doc_currency.py` passes (no forbidden tokens in README.md or CLAUDE.md)
-- [ ] T042 [P] Review `src/paper_sorts/` for any bare `input()`, `rich.prompt.Prompt.ask`, or `typer.prompt` calls outside `cli/prompts.py`; fix any violations (constitution Principle III)
+- [x] T036 Remove legacy flat-layout package: delete `paper_sorts/` directory entirely (all 9 modules: `run.py`, `user_interaction.py`, `database_connector.py`, `psycopg_db.py`, `helpers.py`, `config_reader.py`, `add.py`, `search.py`, `get_data.py`) and the old `paper_sorts/__init__.py`
+- [x] T037 Update `README.md` to document uv-based install, `pdbsearch` entry point, migration command, and test run; MUST NOT contain forbidden tokens `Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB`; update `CLAUDE.md` architecture section to reflect modern src-layout
+- [x] T038 Create `tests/benchmarks/bench_baseline.py` — benchmark harness marked `@pytest.mark.benchmark`; records wall-clock timings for search-by-title, search-by-author, add, update, delete on seeded data against ephemeral DB; writes results to `tests/benchmarks/baseline.json`; constitution Principle IV gate G2
+- [x] T039 Run full quality gate: `uv run ruff check src tests`, `uv run ruff format --check src tests`, `uv run mypy src` — fix all errors
+- [x] T040 Run `uv run pytest` and verify all tests pass; run `uv run pytest tests/benchmarks/ -m benchmark` and verify benchmark executes and writes `baseline.json`
+- [x] T041 [P] Verify doc-currency gate: `uv run pytest tests/test_doc_currency.py` passes (no forbidden tokens in README.md or CLAUDE.md)
+- [x] T042 [P] Review `src/paper_sorts/` for any bare `input()`, `rich.prompt.Prompt.ask`, or `typer.prompt` calls outside `cli/prompts.py`; fix any violations (constitution Principle III)
 
 ---
 

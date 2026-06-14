@@ -91,10 +91,9 @@ def test_duplicate_bibtex_id_rejected(db_url: str) -> None:
     with with_session(db_url) as session:
         repo = PaperRepository(session)
         repo.add(paper)
-    with pytest.raises(IntegrityError):
-        with with_session(db_url) as session:
-            repo = PaperRepository(session)
-            repo.add(paper)
+    with pytest.raises(IntegrityError), with_session(db_url) as session:
+        repo = PaperRepository(session)
+        repo.add(paper)
 
 
 def test_bibtex_unique_constraint(db_url: str) -> None:
@@ -110,10 +109,9 @@ def test_bibtex_unique_constraint(db_url: str) -> None:
     with with_session(db_url) as session:
         repo = PaperRepository(session)
         repo.add(paper1)
-    with pytest.raises(IntegrityError):
-        with with_session(db_url) as session:
-            repo = PaperRepository(session)
-            repo.add(paper2)
+    with pytest.raises(IntegrityError), with_session(db_url) as session:
+        repo = PaperRepository(session)
+        repo.add(paper2)
 
 
 def test_get_by_id_not_found(db_url: str) -> None:

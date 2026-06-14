@@ -26,16 +26,22 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    """Return the database URL from Settings or environment.
+    """Return the database URL from the Alembic config or environment.
+
+    Priority: explicit sqlalchemy.url in config (set via set_main_option or
+    alembic.ini) > PDBSEARCH_DATABASE_URL env var.
 
     Returns:
         A SQLAlchemy-compatible database URL string.
     """
-    url = os.environ.get("PDBSEARCH_DATABASE_URL")
-    if url:
-        return url
-    # Fall back to alembic.ini value
-    return config.get_main_option("sqlalchemy.url", "postgresql+psycopg://localhost/paper_sorts")
+    # Use the value explicitly set in the config (via set_main_option) first.
+    configured = config.get_main_option("sqlalchemy.url")
+    if configured and configured != "postgresql+psycopg://localhost/paper_sorts":
+        return configured
+    # Fall back to env var, then default
+    return os.environ.get(
+        "PDBSEARCH_DATABASE_URL", "postgresql+psycopg://localhost/paper_sorts"
+    )
 
 
 def run_migrations_offline() -> None:
