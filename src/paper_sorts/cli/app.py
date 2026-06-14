@@ -133,7 +133,7 @@ def search_command(ctx: typer.Context) -> None:
     engine: Engine = ctx.obj
     try:
         run_search(engine)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Search failed: %s", exc)
         print("Search failed. Check logs for details.")
         sys.exit(1)
@@ -173,8 +173,8 @@ def import_command(
     bib: Path = typer.Option(..., "--bib", help="Path to the .bib file", exists=True),
 ) -> None:
     """Bulk-import papers from a LaTeX + BibTeX file pair (per-paper commit)."""
-    from paper_sorts.services.import_service import extract_papers_from_tex_bib
     from paper_sorts.services import paper_service
+    from paper_sorts.services.import_service import extract_papers_from_tex_bib
 
     engine: Engine = ctx.obj
     inserted = 0
@@ -186,7 +186,7 @@ def import_command(
     except FileNotFoundError as exc:
         print(f"File not found: {exc}")
         sys.exit(1)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Failed to parse input files: {exc}")
         logger.error("import parsing failed: %s", exc)
         sys.exit(1)
@@ -205,7 +205,7 @@ def import_command(
             skipped += 1
             logger.warning("Skipping '%s': %s", p.title, exc)
             print(f"  Skipped: {p.title} — {exc}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             failed += 1
             logger.error("Failed to import '%s': %s", p.title, exc)
             print(f"  Failed: {p.title} — check logs")
@@ -238,6 +238,7 @@ def migrate_command(
                 print(f"Cannot determine database URL: {exc}")
                 sys.exit(1)
 
+    old_db_url = os.environ.get("PDBSEARCH_DATABASE_URL")
     os.environ["PDBSEARCH_DATABASE_URL"] = url
 
     try:
@@ -258,7 +259,13 @@ def migrate_command(
         alembic_cmd.upgrade(alembic_cfg, "head")
         print("Migrations applied successfully.")
         logger.info("Alembic upgrade head completed")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Migration failed: {exc}")
         logger.error("Migration failed: %s", exc)
         sys.exit(1)
+    finally:
+        # Clean up env var set for Alembic — don't pollute callers
+        if old_db_url is None:
+            os.environ.pop("PDBSEARCH_DATABASE_URL", None)
+        else:
+            os.environ["PDBSEARCH_DATABASE_URL"] = old_db_url

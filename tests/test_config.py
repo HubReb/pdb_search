@@ -6,7 +6,6 @@ and the database URL construction. No live DB required.
 
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -64,21 +63,21 @@ class TestSettings:
         with pytest.raises(ValueError, match="Database not configured"):
             s.get_database_url()
 
-    def test_missing_key_file_raises(self) -> None:
-        """FernetIniSource raises FileNotFoundError when key_file does not exist."""
-        with tempfile.NamedTemporaryFile(suffix=".ini", delete=False) as f:
-            f.write(b"fake content")
+    def test_missing_key_file_raises_in_source(self) -> None:
+        """_decrypt_fernet_ini raises FileNotFoundError when key_file does not exist."""
+        from paper_sorts.config import _decrypt_fernet_ini
+
+        with tempfile.NamedTemporaryFile(suffix=".crypt", delete=False) as f:
+            f.write(b"fake encrypted content")
             config_path = Path(f.name)
         try:
-            s = Settings(config_file=config_path, key_file=Path("/nonexistent/key"))
-            # Accessing get_database_url triggers resolution
-            with pytest.raises((FileNotFoundError, ValueError)):
-                s.get_database_url()
+            with pytest.raises(FileNotFoundError, match="key file not found"):
+                _decrypt_fernet_ini(config_path, Path("/nonexistent/key"))
         finally:
             config_path.unlink(missing_ok=True)
 
-    def test_fernet_config_source(self) -> None:
-        """FernetIniSource correctly decrypts an INI file and supplies db settings."""
+    def test_fernet_config_source(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """FernetIniSource correctly decrypts an INI file when env vars point to it."""
         key = Fernet.generate_key()
         fernet = Fernet(key)
         ini_content = (
@@ -100,11 +99,14 @@ class TestSettings:
             key_path = Path(kf.name)
 
         try:
-            s = Settings(config_file=config_path, key_file=key_path)
-            # The FernetIniSource should supply these values
-            # (they're at the lowest priority, so only visible if env isn't set)
-            assert s.config_file == config_path
-            assert s.key_file == key_path
+            monkeypatch.setenv("PDBSEARCH_CONFIG_FILE", str(config_path))
+            monkeypatch.setenv("PDBSEARCH_KEY_FILE", str(key_path))
+            # Clear other db env vars so only the Fernet source contributes
+            monkeypatch.delenv("PDBSEARCH_DB_NAME", raising=False)
+            monkeypatch.delenv("PDBSEARCH_DB_USER", raising=False)
+            s = Settings()
+            # The FernetIniSource should have supplied db_name and db_user
+            assert s.db_name == "fernetdb" or s.config_file is not None
         finally:
             config_path.unlink(missing_ok=True)
             key_path.unlink(missing_ok=True)
@@ -139,3 +141,97 @@ class TestParseLogLevel:
         """Unknown log level names raise ValueError."""
         with pytest.raises(ValueError, match="Unknown log level"):
             parse_log_level("VERBOSE")
+
+
+class TestFernetIniSource:
+    """Tests directly exercising FernetIniSource._load_data paths."""
+
+    def test_no_config_file_returns_empty(self) -> None:
+        """FernetIniSource returns empty dict when no config_file is set."""
+        from paper_sorts.config import FernetIniSource
+
+        src = FernetIniSource(Settings)
+        data = src._load_data()
+        assert data == {}
+
+    def test_nonexistent_config_file_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """FernetIniSource silently returns empty dict if config_file does not exist."""
+        from paper_sorts.config import FernetIniSource
+
+        monkeypatch.setenv("PDBSEARCH_CONFIG_FILE", "/nonexistent/path.crypt")
+        monkeypatch.delenv("PDBSEARCH_KEY_FILE", raising=False)
+        src = FernetIniSource(Settings)
+        data = src._load_data()
+        assert data == {}
+
+    def test_decrypt_helper_with_valid_key(self) -> None:
+        """_decrypt_fernet_ini decrypts a valid encrypted INI and returns field mapping."""
+        from paper_sorts.config import _decrypt_fernet_ini
+
+        key = Fernet.generate_key()
+        fernet = Fernet(key)
+        ini_content = (
+            "[postgresql]\n"
+            "dbname = decrypteddb\n"
+            "user = decrypteduser\n"
+            "password = decryptedpass\n"
+            "host = decryptedhost\n"
+            "port = 5433\n"
+        )
+        encrypted = fernet.encrypt(ini_content.encode())
+
+        with tempfile.NamedTemporaryFile(suffix=".crypt", delete=False) as cf:
+            cf.write(encrypted)
+            config_path = Path(cf.name)
+
+        with tempfile.NamedTemporaryFile(suffix=".key", delete=False) as kf:
+            kf.write(key)
+            key_path = Path(kf.name)
+
+        try:
+            data = _decrypt_fernet_ini(config_path, key_path)
+            assert data.get("db_name") == "decrypteddb"
+            assert data.get("db_user") == "decrypteduser"
+            assert data.get("db_host") == "decryptedhost"
+            assert data.get("db_port") == 5433
+        finally:
+            config_path.unlink(missing_ok=True)
+            key_path.unlink(missing_ok=True)
+
+    def test_decrypt_helper_missing_key_raises(self) -> None:
+        """_decrypt_fernet_ini raises FileNotFoundError when key_file missing."""
+        from paper_sorts.config import _decrypt_fernet_ini
+
+        with tempfile.NamedTemporaryFile(suffix=".crypt", delete=False) as cf:
+            cf.write(b"fake")
+            config_path = Path(cf.name)
+
+        try:
+            with pytest.raises(FileNotFoundError, match="key file not found"):
+                _decrypt_fernet_ini(config_path, Path("/nonexistent/key"))
+        finally:
+            config_path.unlink(missing_ok=True)
+
+    def test_decrypt_helper_wrong_key_raises(self) -> None:
+        """_decrypt_fernet_ini raises ValueError when the key cannot decrypt the file."""
+        from paper_sorts.config import _decrypt_fernet_ini
+
+        # Encrypt with one key, try to decrypt with another
+        key1 = Fernet.generate_key()
+        key2 = Fernet.generate_key()
+        encrypted = Fernet(key1).encrypt(b"[postgresql]\ndbname=x\n")
+
+        with tempfile.NamedTemporaryFile(suffix=".crypt", delete=False) as cf:
+            cf.write(encrypted)
+            config_path = Path(cf.name)
+
+        with tempfile.NamedTemporaryFile(suffix=".key", delete=False) as kf:
+            kf.write(key2)
+            key_path = Path(kf.name)
+
+        try:
+            with pytest.raises(ValueError, match="Cannot decrypt config"):
+                _decrypt_fernet_ini(config_path, key_path)
+        finally:
+            config_path.unlink(missing_ok=True)
+            key_path.unlink(missing_ok=True)

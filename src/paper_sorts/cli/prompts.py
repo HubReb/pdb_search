@@ -89,7 +89,7 @@ def ask_choice(
     :return: 0-based index of chosen item, or ABORT sentinel if user chose abort
     :rtype: int | str
     """
-    display_items = list(items) + [f"({abort_label[0]}){abort_label[1:]}"]
+    display_items = [*items, f"({abort_label[0]}){abort_label[1:]}"]
     abort_index = len(display_items)  # 1-indexed position of abort option
 
     while True:

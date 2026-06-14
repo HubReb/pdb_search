@@ -79,7 +79,7 @@ def run_add(engine: Engine) -> bool:
         print(f"Could not add paper: {exc}")
         logger.error("add_paper failed: %s", exc)
         return False
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print("Could not add paper. Check logs for details.")
         logger.error("add_paper unexpected error: %s", exc)
         return False

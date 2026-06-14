@@ -1,0 +1,25 @@
+% Sample LaTeX literature overview fixture for import tests.
+% Format mirrors the original literature_overview.tex that get_data.py was built for:
+% each item has the paper title after * and a \cite{key} in the same line,
+% followed by a description line.
+%
+% Three papers are cited; only two have matching .bib entries (Sample2024First, Sample2024Second).
+% MissingBib2024 is expected to be skipped with a warning.
+
+\documentclass{article}
+\begin{document}
+
+\section{Literature Overview}
+
+\begin{itemize}
+  \item * \cite{Sample2024First} A First Sample Paper for Import Testing:
+  A first sample paper for import testing.
+
+  \item * \cite{Sample2024Second} A Second Sample Paper for Import Testing:
+  A second sample paper to verify multi-entry import.
+
+  \item * \cite{MissingBib2024} A Paper With No BibTeX Entry:
+  This paper has no matching BibTeX entry and should be skipped.
+\end{itemize}
+
+\end{document}

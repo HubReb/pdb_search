@@ -47,13 +47,11 @@ def run_delete(engine: Engine) -> bool:
         print("Paper not found.")
         return False
 
-    if len(results) == 1:
-        paper = results[0]
-    else:
-        paper = prompts.ask_paper_from_list(results)
-        if paper is None:
-            return False
+    chosen = results[0] if len(results) == 1 else prompts.ask_paper_from_list(results)
+    if chosen is None:
+        return False
 
+    paper = chosen
     # Step 2: display the paper
     prompts.pretty_print_paper(paper)
 
@@ -76,7 +74,7 @@ def run_delete(engine: Engine) -> bool:
         print(f"Could not delete: {exc}")
         logger.error("delete_paper failed: %s", exc)
         return False
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print("Could not delete. Check logs for details.")
         logger.error("delete_paper unexpected error: %s", exc)
         return False

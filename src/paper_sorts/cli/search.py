@@ -50,14 +50,11 @@ def run_search(engine: Engine) -> None:
             logger.info("search_by_title(%r): no results", title)
             return
 
-    if len(results) == 1:
-        paper = results[0]
-    else:
-        paper = prompts.ask_paper_from_list(results)
-        if paper is None:
-            return
+    chosen = results[0] if len(results) == 1 else prompts.ask_paper_from_list(results)
+    if chosen is None:
+        return
 
-    prompts.pretty_print_paper(paper)
+    prompts.pretty_print_paper(chosen)
 
 
 @app.command("search")
@@ -68,7 +65,7 @@ def search_command(
     engine: Engine = ctx.obj
     try:
         run_search(engine)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error("Search failed: %s", exc)
         print("Search failed. Check logs for details.")
         sys.exit(1)

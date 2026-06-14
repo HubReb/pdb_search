@@ -14,7 +14,7 @@ Public API:
 from __future__ import annotations
 
 import logging
-from typing import Literal, assert_never
+from typing import Literal
 
 from sqlalchemy.orm import Session
 
@@ -159,11 +159,11 @@ def update_field(
                     try:
                         author_id_str, new_name = value.split(":", 1)
                         author_id = int(author_id_str)
-                    except ValueError:
+                    except ValueError as exc:
                         raise ValueError(
                             "For author updates, value must be 'author_id:new_name'. "
                             f"Got: {value!r}"
-                        )
+                        ) from exc
                     author_repo.update_author_name(author_id, new_name)
                     logger.info(
                         "update_field: updated author %d name to %r", author_id, new_name

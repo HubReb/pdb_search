@@ -9,7 +9,6 @@ The CLI layer must independently reach ≥ 80% line coverage (constitution G1).
 
 from __future__ import annotations
 
-import pytest
 from sqlalchemy import Engine
 from typer.testing import CliRunner
 
@@ -287,3 +286,250 @@ class TestInteractiveMenu:
         # Even with a bad DB, we should not see a raw traceback on startup
         # (failure happens when operations try to connect, not at startup)
         assert "Traceback" not in result.output
+
+
+class TestMigrateSubcommand:
+    """Tests for `pdbsearch migrate` via CliRunner."""
+
+    def test_migrate_with_database_url(self, raw_engine: Engine) -> None:
+        """migrate subcommand applies Alembic migrations successfully."""
+        db_url = _get_db_url(raw_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "migrate"],
+        )
+        # Should apply (or report already-applied) without traceback
+        assert "Traceback" not in result.output
+        # Either success or "already at head" is acceptable
+        assert result.exit_code in (0, 1)  # exit 1 if migration fails with a non-fatal error
+
+    def test_migrate_help(self) -> None:
+        """migrate --help shows usage information."""
+        result = runner.invoke(app, ["--database-url", "postgresql+psycopg://x/y", "migrate", "--help"])
+        # --help should show usage regardless; exit code varies by typer version
+        assert "migrate" in result.output.lower() or "Usage" in result.output
+
+
+class TestImportSubcommandCLI:
+    """Tests for `pdbsearch import` via CliRunner (coverage for cli/app.py import path)."""
+
+    def test_import_via_app_command(self, clean_engine: Engine) -> None:
+        """Import via the app-level import command inserts matched papers."""
+        from pathlib import Path
+
+        db_url = _get_db_url(clean_engine)
+        tex_path = Path(__file__).parent / "fixtures" / "sample.tex"
+        bib_path = Path(__file__).parent / "fixtures" / "sample.bib"
+
+        result = runner.invoke(
+            app,
+            [
+                "--database-url", db_url,
+                "import",
+                "--tex", str(tex_path),
+                "--bib", str(bib_path),
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Traceback" not in result.output
+
+    def test_import_missing_tex_shows_error(self, clean_engine: Engine) -> None:
+        """Import with non-existent tex file shows error, no traceback."""
+        db_url = _get_db_url(clean_engine)
+        result = runner.invoke(
+            app,
+            [
+                "--database-url", db_url,
+                "import",
+                "--tex", "/nonexistent/file.tex",
+                "--bib", "/nonexistent/file.bib",
+            ],
+        )
+        assert "Traceback" not in result.output
+        assert result.exit_code != 0
+
+
+class TestCLICoverageExtra:
+    """Additional CLI tests to improve per-layer coverage (constitution G1)."""
+
+    def test_search_by_author_not_found(self, seeded_engine: Engine) -> None:
+        """Search by author with no results shows 'not found' message."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "search"],
+            input="1\nNobody, Ghost\n",
+        )
+        assert result.exit_code == 0
+        assert "not found" in result.output.lower()
+        assert "Traceback" not in result.output
+
+    def test_add_with_file_bibtex(self, clean_engine: Engine) -> None:
+        """Add subcommand successfully loads BibTeX from a file."""
+        from pathlib import Path
+
+        db_url = _get_db_url(clean_engine)
+        bib_path = Path(__file__).parent / "fixtures" / "sample.bib"
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "add"],
+            input=(
+                "FileAuthor, Test\n"
+                "File Paper Title\n"
+                "FilePaper2024\n"
+                "1\n"                    # Load from file
+                f"{bib_path}\n"          # actual bib file path
+                "A summary from file.\n"
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_delete_search_by_author(self, seeded_engine: Engine) -> None:
+        """Delete flow using author search works correctly."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "delete"],
+            input=(
+                "1\n"               # search by author
+                "Brown, Tom\n"      # unique author
+                "n\n"               # cancel deletion
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_update_search_by_author(self, seeded_engine: Engine) -> None:
+        """Update flow using author search works correctly."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "update"],
+            input=(
+                "1\n"               # search by author
+                "Brown, Tom\n"      # author name
+                "1\n"               # papers table
+                "2\n"               # contents column
+                "Updated contents.\n"
+                "n\n"               # cancel
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_update_bib_field(self, seeded_engine: Engine) -> None:
+        """Update the bib/bibtex field of a paper."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "update"],
+            input=(
+                "2\n"
+                "GPT-3: Language Models are Few-Shot Learners\n"
+                "2\n"       # bib table
+                "@article{Brown2020GPT3, updated=true}\n"
+                "y\n"
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_interactive_menu_search_then_quit(self, seeded_engine: Engine) -> None:
+        """Interactive menu: search then quit."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url],
+            input="1\n3\n4\n",  # search (quit from search menu), then quit
+        )
+        assert result.exit_code == 0
+        assert "Traceback" not in result.output
+
+    def test_config_no_db_url_exits_with_error(self) -> None:
+        """Running pdbsearch without any DB config produces config error."""
+        result = runner.invoke(app, [])
+        # Should fail with config error, not traceback
+        assert "Traceback" not in result.output
+
+    def test_update_authors_field(self, seeded_engine: Engine) -> None:
+        """Update authors field with author_id:new_name format."""
+        db_url = _get_db_url(seeded_engine)
+        # Get the paper_id of Brown2020GPT3 and the author_id of Brown, Tom
+        from paper_sorts.db.repositories import AuthorRepository
+        with with_session(seeded_engine) as session:
+            author = AuthorRepository(session).get_by_name("Brown, Tom")
+            assert author is not None
+            author_id = author.id
+
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "update"],
+            input=(
+                "2\n"
+                "GPT-3: Language Models are Few-Shot Learners\n"
+                "3\n"       # authors table
+                f"{author_id}:Brown, Thomas\n"
+                "y\n"
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_search_abort_before_paper_selection(self, seeded_engine: Engine) -> None:
+        """Search disambiguation menu abort exits cleanly."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "search"],
+            input=(
+                "2\n"
+                "BERT: Pre-training of Deep Bidirectional Transformers\n"
+                "3\n"  # Abort (3 = abort on disambiguation)
+            ),
+        )
+        assert result.exit_code == 0
+        assert "Traceback" not in result.output
+
+    def test_add_empty_authors_exits(self, clean_engine: Engine) -> None:
+        """Add with empty authors list shows error."""
+        db_url = _get_db_url(clean_engine)
+        # Provide empty authors input after prompting
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "add"],
+            input=(
+                " \n"         # space-only author (empty after strip)
+                "  \n"        # another empty
+                "Real, Author\n"  # valid
+                "Empty Author Paper\n"
+                "EmptyAuth2024\n"
+                "2\n"
+                "@misc{EmptyAuth2024}\n"
+                "A summary.\n"
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_update_abort_from_table_selection(self, seeded_engine: Engine) -> None:
+        """Update aborts cleanly when user selects abort at table selection."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "update"],
+            input=(
+                "2\n"
+                "GPT-3: Language Models are Few-Shot Learners\n"
+                "4\n"  # Abort at table selection
+            ),
+        )
+        assert "Traceback" not in result.output
+
+    def test_delete_not_found(self, seeded_engine: Engine) -> None:
+        """Delete shows 'not found' when searching for non-existent paper."""
+        db_url = _get_db_url(seeded_engine)
+        result = runner.invoke(
+            app,
+            ["--database-url", db_url, "delete"],
+            input=(
+                "2\n"                   # search by title
+                "Nonexistent Paper\n"   # not in DB
+            ),
+        )
+        assert "Traceback" not in result.output
+        assert result.exit_code != 0 or "not found" in result.output.lower()

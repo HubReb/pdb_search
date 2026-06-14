@@ -16,7 +16,7 @@ Repositories:
 from __future__ import annotations
 
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 from pydantic import BaseModel
 from sqlalchemy import select

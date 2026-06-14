@@ -4,12 +4,13 @@ Loads settings from four sources in priority order (highest first):
 1. CLI flags (--database-url, --log-level, --config, --key)
 2. Environment variables with PDBSEARCH_ prefix
 3. .env file in the working directory
-4. Fernet-encrypted INI file (--config + --key)
+4. Fernet-encrypted INI file (configured via config_file + key_file after other sources resolve)
 """
 
 from __future__ import annotations
 
 import logging
+import os
 from configparser import ConfigParser
 from pathlib import Path
 from typing import Any
@@ -19,104 +20,135 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 
+def _decrypt_fernet_ini(config_path: Path, key_path: Path) -> dict[str, Any]:
+    """Decrypt a Fernet-encrypted INI file and return parsed PostgreSQL settings.
+
+    :param config_path: path to the encrypted INI file
+    :type config_path: Path
+    :param key_path: path to the Fernet key file
+    :type key_path: Path
+    :return: dict of field names to values from the [postgresql] section
+    :rtype: dict[str, Any]
+    :raises FileNotFoundError: if key_path does not exist
+    :raises ValueError: if decryption fails
+    """
+    if not key_path.exists():
+        raise FileNotFoundError(
+            f"Cannot decrypt config: key file not found. "
+            f"Check --key path. (looked for: {key_path})"
+        )
+    try:
+        encrypted = config_path.read_bytes()
+        key_bytes = key_path.read_bytes()
+        fernet = Fernet(key_bytes)
+        decrypted = fernet.decrypt(encrypted).decode("utf-8")
+    except InvalidToken as exc:
+        raise ValueError(
+            "Cannot decrypt config: the key file could not decrypt the config file. "
+            "Verify --config and --key point to the correct files."
+        ) from exc
+
+    parser = ConfigParser()
+    parser.read_string(decrypted)
+
+    result: dict[str, Any] = {}
+    section = "postgresql"
+    if parser.has_section(section):
+        mapping = dict(parser.items(section))
+        if "dbname" in mapping:
+            result["db_name"] = mapping["dbname"]
+        if "user" in mapping:
+            result["db_user"] = mapping["user"]
+        if "password" in mapping:
+            result["db_password"] = mapping["password"]
+        if "host" in mapping:
+            result["db_host"] = mapping["host"]
+        if "port" in mapping:
+            result["db_port"] = int(mapping["port"])
+    return result
+
+
 class FernetIniSource(PydanticBaseSettingsSource):
     """Custom pydantic-settings source for a Fernet-encrypted INI config file.
 
-    Reads the config_file and key_file fields from already-resolved settings,
-    decrypts the file, and returns database connection parameters.
+    Reads config_file and key_file from PDBSEARCH_CONFIG_FILE and PDBSEARCH_KEY_FILE
+    environment variables (or from the Settings __init__ kwargs via env resolution).
 
-    :raises FileNotFoundError: if config_file exists but key_file is missing
+    :raises FileNotFoundError: if config_file is specified but key_file is missing
     :raises ValueError: if the key file cannot decrypt the config file
     """
 
-    def __init__(self, settings_cls: type[BaseSettings]) -> None:
-        """Initialise the Fernet INI source.
+    def get_field_value(
+        self,
+        field: Any,
+        field_name: str,
+    ) -> tuple[Any, str, bool]:
+        """Return the field value from the Fernet INI source.
 
-        :param settings_cls: the Settings class being constructed
-        :type settings_cls: type[BaseSettings]
+        :param field: FieldInfo for the field being resolved
+        :param field_name: name of the field
+        :return: tuple of (value, field_key, value_is_complex)
+        :rtype: tuple[Any, str, bool]
         """
-        super().__init__(settings_cls)
+        data = self._load_data()
+        if field_name in data:
+            return data[field_name], field_name, False
+        return None, field_name, False
 
-    def get_fields_value(self) -> dict[str, Any]:
-        """Read and decrypt the INI file; return a dict of field values.
+    def _load_data(self) -> dict[str, Any]:
+        """Load and decrypt the INI file, returning a dict of field values.
 
-        :return: mapping of field names to their values from the encrypted INI
+        Reads PDBSEARCH_CONFIG_FILE and PDBSEARCH_KEY_FILE env vars directly
+        (since they may not be resolved yet by the Settings source chain).
+
+        :return: mapping of Settings field names to values
         :rtype: dict[str, Any]
-        :raises FileNotFoundError: if key_file is not specified or does not exist
-        :raises ValueError: if decryption fails (wrong key or corrupt file)
+        :raises FileNotFoundError: if key_file is not found
+        :raises ValueError: if decryption fails
         """
-        # Pull config_file / key_file from env / defaults already resolved at a lower priority.
-        # We read them directly from the environment/init_kwargs passed at construction time.
-        init_data = self.init_kwargs  # type: ignore[attr-defined]
-        config_file: Path | None = init_data.get("config_file")
-        key_file: Path | None = init_data.get("key_file")
+        # Read config_file from env or Settings init kwargs
+        # Try env var first, then init kwargs stored in the settings class
+        config_file_str = os.environ.get("PDBSEARCH_CONFIG_FILE")
+        key_file_str = os.environ.get("PDBSEARCH_KEY_FILE")
 
-        if config_file is None:
+        # Also check Settings init_kwargs if available (passed via Settings(config_file=...))
+        try:
+            init_kw: dict[str, Any] = dict(self.init_kwargs)  # type: ignore[attr-defined]
+            if "config_file" in init_kw and init_kw["config_file"] is not None:
+                config_file_str = str(init_kw["config_file"])
+            if "key_file" in init_kw and init_kw["key_file"] is not None:
+                key_file_str = str(init_kw["key_file"])
+        except AttributeError:
+            pass
+
+        if config_file_str is None:
             return {}
 
-        config_path = Path(config_file)
+        config_path = Path(config_file_str)
         if not config_path.exists():
             return {}
 
-        if key_file is None or not Path(key_file).exists():
+        key_path = Path(key_file_str) if key_file_str else None
+        if key_path is None:
             raise FileNotFoundError(
-                f"Cannot decrypt config: key file not found. Check --key path. "
-                f"(looked for: {key_file})"
+                "Cannot decrypt config: no key file specified. Use --key or "
+                "set PDBSEARCH_KEY_FILE."
             )
 
-        try:
-            encrypted = config_path.read_bytes()
-            key_bytes = Path(key_file).read_bytes()
-            fernet = Fernet(key_bytes)
-            decrypted = fernet.decrypt(encrypted).decode("utf-8")
-        except InvalidToken as exc:
-            raise ValueError(
-                "Cannot decrypt config: the key file could not decrypt the config file. "
-                "Verify --config and --key point to the correct files."
-            ) from exc
-
-        parser = ConfigParser()
-        parser.read_string(decrypted)
-
-        result: dict[str, Any] = {}
-        section = "postgresql"
-        if parser.has_section(section):
-            mapping = dict(parser.items(section))
-            # Map INI keys to Settings field names
-            if "dbname" in mapping:
-                result["db_name"] = mapping["dbname"]
-            if "user" in mapping:
-                result["db_user"] = mapping["user"]
-            if "password" in mapping:
-                result["db_password"] = mapping["password"]
-            if "host" in mapping:
-                result["db_host"] = mapping["host"]
-            if "port" in mapping:
-                result["db_port"] = int(mapping["port"])
-        return result
+        return _decrypt_fernet_ini(config_path, key_path)
 
     def __call__(self) -> dict[str, Any]:
-        """Return field values from the Fernet INI source.
+        """Return all field values from the Fernet INI source.
 
         :return: mapping of field names to values from the encrypted INI file
         :rtype: dict[str, Any]
         """
         try:
-            return self.get_fields_value()
+            return self._load_data()
         except (FileNotFoundError, ValueError):
             raise
-        except Exception:  # noqa: BLE001
+        except Exception:
             return {}
-
-    def field_is_required(self, field_name: str, *args: Any, **kwargs: Any) -> bool:  # type: ignore[override]
-        """Return False — all fields from this source are optional.
-
-        :param field_name: name of the field
-        :type field_name: str
-        :return: always False (no field is required from this source)
-        :rtype: bool
-        """
-        return False
 
 
 class Settings(BaseSettings):
@@ -178,7 +210,7 @@ class Settings(BaseSettings):
         :param init_settings: settings from __init__ kwargs
         :param env_settings: settings from environment variables
         :param dotenv_settings: settings from .env file
-        :param file_secret_settings: settings from file secrets
+        :param file_secret_settings: settings from file secrets (unused)
         :return: tuple of sources in priority order
         :rtype: tuple[PydanticBaseSettingsSource, ...]
         """

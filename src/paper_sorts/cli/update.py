@@ -13,7 +13,6 @@ import typer
 from sqlalchemy import Engine
 
 from paper_sorts.cli import prompts
-from paper_sorts.cli.search import run_search
 from paper_sorts.db.session import with_session
 from paper_sorts.services import paper_service
 
@@ -48,13 +47,11 @@ def run_update(engine: Engine) -> bool:
         print("Paper not found.")
         return False
 
-    if len(results) == 1:
-        paper = results[0]
-    else:
-        paper = prompts.ask_paper_from_list(results)
-        if paper is None:
-            return False
+    chosen = results[0] if len(results) == 1 else prompts.ask_paper_from_list(results)
+    if chosen is None:
+        return False
 
+    paper = chosen
     prompts.pretty_print_paper(paper)
 
     # Step 2: choose table/column to update
@@ -103,7 +100,7 @@ def run_update(engine: Engine) -> bool:
         print(f"Could not update: {exc}")
         logger.error("update_field failed: %s", exc)
         return False
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print("Could not update. Check logs for details.")
         logger.error("update_field unexpected error: %s", exc)
         return False
