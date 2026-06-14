@@ -16,7 +16,12 @@ from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+from pydantic.fields import FieldInfo
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 
 class FernetIniSettingsSource(PydanticBaseSettingsSource):
@@ -84,12 +89,25 @@ class FernetIniSettingsSource(PydanticBaseSettingsSource):
         url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{dbname}"
         return {"database_url": url}
 
-    def get_fields_values(
+    def get_field_value(
         self,
-        model: type[BaseSettings],  # noqa: ARG002
-    ) -> dict[str, Any]:
-        """Return field values from the decrypted INI source."""
-        return self._decrypt()
+        field: FieldInfo,
+        field_name: str,
+    ) -> tuple[Any, str, bool]:
+        """Return the value for *field_name* from the decrypted INI source.
+
+        Required by the :class:`PydanticBaseSettingsSource` ABC.
+
+        :param field: pydantic FieldInfo descriptor.
+        :param field_name: name of the field being resolved.
+        :returns: ``(value, field_key, value_is_complex)`` tuple as required by
+            pydantic-settings; returns ``(None, field_name, False)`` when no
+            value is available for this field from the encrypted source.
+        """
+        data = self._decrypt()
+        if field_name in data:
+            return data[field_name], field_name, False
+        return None, field_name, False
 
     def __call__(self) -> dict[str, Any]:
         return self._decrypt()
@@ -158,7 +176,6 @@ class Settings(BaseSettings):
         # values of config/key as found in the lower-priority sources. Because
         # pydantic-settings evaluates sources left-to-right and merges, we must
         # extract config/key defaults ourselves for the Fernet source.
-        instance = object.__new__(cls)
         config_path = "../../database.crypt"
         key_path = "../../key"
         section = "postgresql"

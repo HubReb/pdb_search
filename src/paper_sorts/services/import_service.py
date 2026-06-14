@@ -45,16 +45,25 @@ def _parse_tex(tex_path: str | Path) -> dict[str, dict[str, str]]:
     text_lines = LatexNodes2Text().latex_to_text(raw).split("\n")
     text_lines = [line for line in text_lines if line.strip()]
 
-    papers: dict[str, dict[str, str]] = defaultdict(lambda: defaultdict(str))  # type: ignore[assignment]
+    papers: dict[str, dict[str, str]] = defaultdict(lambda: defaultdict(str))  # noqa: PGH003
     title: str | None = None
     bibtex_key: str | None = None
 
     for line in text_lines:
         if "*" in line and "<cit.>" in line:  # title line
-            title = line.split("<cit.>")[1].rstrip(":").strip()
-            if title == ":":
-                title = line.split("<cit.>")[0].split("*")[1].strip()
+            # Try split[1] first (legacy format: "Title <cit.>: Description" per line)
+            after_cit = line.split("<cit.>")[1].rstrip(":").strip()
+            before_cit = line.split("<cit.>")[0]
+            if after_cit and after_cit != ":":
+                # Legacy single-line format: title follows cit somehow; fall back
+                # to extracting from before cit.
+                title = before_cit.split("*")[-1].strip().rstrip(":")
+            else:
+                # Normal format: "* *Title <cit.>:" — title is before <cit.>
+                title = before_cit.split("*")[-1].strip().rstrip(":")
+
             # Extract cite key from raw LaTeX
+            bibtex_key = None
             for latex_line in raw.split("\n"):
                 if title in latex_line and r"\cite{" in latex_line:
                     after_cite = latex_line.split(r"\cite{")[1]

@@ -40,12 +40,12 @@ packages = ["src/paper_sorts"]
 
 [tool.ruff]
 target-version = "py311"
-line-length = 88
+line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "ANN", "B", "SIM"]
-ignore = ["ANN101", "ANN102"]
+ignore = ["ANN101", "ANN102", "ANN401", "B008"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -65,3 +65,8 @@ omit = ["*/__init__.py"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]

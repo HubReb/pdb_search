@@ -12,12 +12,10 @@ When invoked with no subcommand, drops into the four-option interactive menu.
 from __future__ import annotations
 
 import logging
-import sys
-from typing import Optional
 
 import typer
 
-from paper_sorts import __version__
+from paper_sorts import __version__, logging_config
 from paper_sorts.cli import add as add_module
 from paper_sorts.cli import delete as delete_module
 from paper_sorts.cli import importer as importer_module
@@ -26,7 +24,6 @@ from paper_sorts.cli import search as search_module
 from paper_sorts.cli import update as update_module
 from paper_sorts.cli.prompts import ask_choice
 from paper_sorts.config import Settings
-from paper_sorts import logging_config
 
 log = logging.getLogger(__name__)
 
@@ -51,23 +48,23 @@ def _version_callback(value: bool) -> None:
 @app.callback()
 def main(
     ctx: typer.Context,
-    database_url: Optional[str] = typer.Option(
+    database_url: str | None = typer.Option(
         None, "--database-url", envvar="PDBSEARCH_DATABASE_URL",
         help="PostgreSQL DSN (overrides all config sources)."
     ),
-    log_level: Optional[str] = typer.Option(
+    log_level: str | None = typer.Option(
         None, "--log-level", envvar="PDBSEARCH_LOG_LEVEL",
         help="Logging level: DEBUG, INFO, WARNING, ERROR."
     ),
-    config: Optional[str] = typer.Option(
+    config: str | None = typer.Option(
         None, "--config", "-c",
         help="Path to encrypted config file."
     ),
-    key: Optional[str] = typer.Option(
+    key: str | None = typer.Option(
         None, "--key", "-k",
         help="Path to Fernet key file."
     ),
-    version: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(
         None, "--version", callback=_version_callback, is_eager=True,
         help="Show version and exit."
     ),
@@ -85,7 +82,7 @@ def main(
         overrides["key"] = key
 
     try:
-        settings = Settings(**overrides)  # type: ignore[arg-type]
+        settings = Settings(**overrides)
     except Exception as exc:
         typer.echo(f"Configuration error: {exc}", err=True)
         raise typer.Exit(code=1) from exc

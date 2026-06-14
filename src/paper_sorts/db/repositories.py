@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 
 from paper_sorts.db.models import Author, AuthorPaper, Bib, Paper
 
@@ -156,11 +155,11 @@ class AuthorRepository:
         """
         existing = session.scalar(select(Author).where(Author.author == name))
         if existing is not None:
-            return existing.id  # type: ignore[return-value]
+            return existing.id
         author = Author(author=name)
         session.add(author)
         session.flush()
-        return author.id  # type: ignore[return-value]
+        return author.id
 
     @staticmethod
     def link_author_to_paper(session: Session, author_id: int, paper_id: int) -> None:
@@ -318,7 +317,7 @@ class PaperRepository:
         session.flush()
         for name in data.authors:
             author_id = AuthorRepository.get_or_create_author(session, name)
-            AuthorRepository.link_author_to_paper(session, author_id, paper.id)  # type: ignore[arg-type]
+            AuthorRepository.link_author_to_paper(session, author_id, paper.id)
         return paper
 
     @staticmethod
@@ -348,7 +347,7 @@ class PaperRepository:
         paper = session.scalar(select(Paper).where(Paper.bibtex_id == bibtex_id))
         if paper is None:
             raise ValueError(f"Paper with BibTeX key '{bibtex_id}' not found.")
-        paper_id: int = paper.id  # type: ignore[assignment]
+        paper_id: int = paper.id
         AuthorRepository.delete_links_for_paper(session, paper_id)
         session.delete(paper)
         session.flush()
@@ -387,9 +386,9 @@ class PaperRepository:
         :returns: fully populated :class:`PaperSummary`.
         """
         bib = BibRepository.get_bib(session, paper.bibtex_id or "")
-        authors = AuthorRepository.get_authors_for_paper(session, paper.id or 0)  # type: ignore[arg-type]
+        authors = AuthorRepository.get_authors_for_paper(session, paper.id or 0)
         return PaperSummary(
-            id=paper.id or 0,  # type: ignore[arg-type]
+            id=paper.id or 0,
             title=paper.title or "",
             contents=paper.contents or "",
             bibtex_id=paper.bibtex_id or "",

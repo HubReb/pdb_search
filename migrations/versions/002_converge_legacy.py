@@ -33,9 +33,11 @@ _CHECK_COLUMN = """
 
 def _column_exists(table: str, column: str) -> bool:
     """Return True if *column* exists in *table*."""
+    from sqlalchemy import text
+
     conn = op.get_bind()
     result = conn.execute(
-        op.get_context().dialect.text(  # type: ignore[union-attr]
+        text(
             "SELECT column_name FROM information_schema.columns "
             "WHERE table_name = :table AND column_name = :column"
         ),
@@ -56,7 +58,7 @@ def upgrade() -> None:
         if _column_exists("bib", "bibtext"):
             op.execute("ALTER TABLE bib RENAME COLUMN bibtext TO bibtex")
             op.execute(
-                "ALTER TABLE bib ADD CONSTRAINT IF NOT EXISTS uq_bib_bibtex UNIQUE (bibtex)"
+                "ALTER TABLE bib ADD CONSTRAINT uq_bib_bibtex UNIQUE (bibtex)"
             )
 
     # Fix papers table: bibtext_id FK typo -> bibtex_id

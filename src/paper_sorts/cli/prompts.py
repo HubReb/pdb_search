@@ -69,10 +69,8 @@ def ask_choice(title: str, options: list[str], include_quit: bool = True) -> int
 
         if include_quit and index == len(all_options):
             return None
-        if 1 <= index < len(all_options) + (0 if not include_quit else 0):
-            # valid selection within the non-quit range
-            if not include_quit or index < len(all_options):
-                return index
+        if 1 <= index <= len(all_options) - (1 if include_quit else 0):
+            return index
         _console.print(
             f"[yellow]Please choose a number between 1 and {len(all_options)}.[/yellow]"
         )
