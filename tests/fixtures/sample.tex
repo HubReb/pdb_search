@@ -1,0 +1,21 @@
+% Sample LaTeX literature overview for import service tests.
+%
+% Format matching the legacy parser heuristic:
+% Lines with '*' and '\cite{key}' followed by <cit.> (after latex2text conversion)
+% mark a paper entry. The description follows on the next non-empty line.
+
+\documentclass{article}
+\begin{document}
+
+\begin{itemize}
+  \item * First Sample Paper \cite{Sample2024A}:
+    A study on sample data processing methods for testing purposes.
+
+  \item * Second Sample Paper \cite{Sample2024B}:
+    An analysis of second sample methods for integration testing.
+
+  \item * Paper With No Bib Entry \cite{NoBib2024}:
+    This citation has no matching .bib entry and should be skipped.
+\end{itemize}
+
+\end{document}
