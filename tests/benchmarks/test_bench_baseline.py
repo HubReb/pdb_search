@@ -11,9 +11,7 @@ Constitution Principle IV — Baseline-benchmark gate:
   Or for recorded baseline: uv run pytest tests/benchmarks/ --benchmark-json=tests/benchmarks/baseline.json
 """
 
-import json
 import pathlib
-import time
 
 import pytest
 from sqlalchemy.orm import Session
