@@ -177,6 +177,21 @@ class PaperRepository:
             self._link_author(name, new_paper.id)
         return new_paper.id
 
+    def update_column(self, paper_id: int, column: str, value: str) -> None:
+        """Set an editable ``papers`` column (``title`` or ``contents``).
+
+        :param paper_id: ``papers.id`` of the row to update.
+        :param column: ``title`` or ``contents``.
+        :param value: the new value.
+        :raises ValueError: if the column is not editable or the paper is absent.
+        """
+        if column not in {"title", "contents"}:
+            raise ValueError(f"Column {column} is not present in table papers")
+        paper = self.session.get(Paper, paper_id)
+        if paper is None:
+            raise ValueError(f"Paper {paper_id} not found")
+        setattr(paper, column, value)
+
     def delete(self, paper_id: int) -> None:
         """Delete a paper and its bib, links, and now-orphaned authors.
 
