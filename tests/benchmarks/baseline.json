@@ -1,0 +1,23 @@
+{
+  "note": "Initial baseline \u2014 populated by running tests/benchmarks/bench_baseline.py",
+  "search_by_title": {
+    "seconds": 0.006107,
+    "bound": 5.0
+  },
+  "search_by_author": {
+    "seconds": 0.006469,
+    "bound": 5.0
+  },
+  "add_paper": {
+    "seconds": 0.007542,
+    "bound": 5.0
+  },
+  "update_field": {
+    "seconds": 0.007428,
+    "bound": 5.0
+  },
+  "delete_paper": {
+    "seconds": 0.007231,
+    "bound": 5.0
+  }
+}

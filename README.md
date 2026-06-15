@@ -1,136 +1,107 @@
-# Off-line Paper Database searcher 
+# Off-line Paper Database Searcher
 
-A small, bare-bones application to add publication metadata to a postgresql database for later querying in case no online connection
-is available to enable querying one of the freely available online resources, e.g. traveling by train.
+A small, bare-bones CLI for storing and querying academic publication metadata in a local
+PostgreSQL database — useful when no internet connection is available (e.g. traveling by train).
 
-The database can be searched by either author or publication title.
-If the respective entry has previously added to the database, a search returns:
-* paper title
-* author
-* small summary
-* bibtex entry
+Search by author or publication title. Each entry stores:
 
+- Paper title
+- Author(s)
+- One-sentence summary
+- Full BibTeX entry
 
-*Note:* This application was created for only personal usage and its construction reflects that. If you enter
-any problems in your setup, consult the logs.
+*Note*: This is a personal-use tool. Multi-user, network-exposed, or concurrent-user modes
+are out of scope.
 
 ## Installation
 
-The repo contains all information required to install the package with poetry. 
-Install poetry and run
-```bash
-poetry install
-```
-
-## Interaction
-
-Start the interaction with the following command:
+Requires Python ≥ 3.11 and [uv](https://docs.astral.sh/uv/):
 
 ```bash
-python run.py -c ${config} --section ${section_of_the_config_to_access} \
--k ${file_to_key_if_your_database_is_encrypted} 
+uv sync --all-extras
 ```
 
-The configuration file should be encrypted if it contains sensitive information, e.g. a password. 
-In this case, the key should be stored in a relatively safe location.
+## First-time setup
+
+```bash
+# Apply schema migrations (creates tables)
+uv run pdbsearch migrate
+
+# (Optional) bulk import from a LaTeX literature overview
+uv run pdbsearch import --tex literature_overview.tex --bib bib.bib
+```
+
+## Configuration
+
+Priority order (highest first): CLI flags → `PDBSEARCH_*` env vars → `.env` file → Fernet-encrypted INI.
+
+**Simplest — environment variable:**
+```bash
+export PDBSEARCH_DATABASE_URL="postgresql+psycopg://user:pass@localhost/mydb"
+uv run pdbsearch
+```
+
+**Using a `.env` file:**
+```
+PDBSEARCH_DATABASE_URL=postgresql+psycopg://user:pass@localhost/mydb
+PDBSEARCH_LOG_LEVEL=INFO
+```
+
+**Using the legacy encrypted config (backward compatible):**
+```bash
+uv run pdbsearch --config ../../database.crypt --key ../../key
+```
+
+## Interactive mode
+
+Run `uv run pdbsearch` with no subcommand to enter the four-option menu:
+
+```
+What do you want to do?
+  1) Search the database
+  2) Add an entry
+  3) Update an entry
+  4) (Q)uit
+Your choice:
+```
+
+## Direct subcommands
+
+```bash
+uv run pdbsearch search   # search by author or title
+uv run pdbsearch add      # add a new entry
+uv run pdbsearch update   # update an existing entry
+uv run pdbsearch delete   # delete an entry
+uv run pdbsearch import --tex FILE --bib FILE  # bulk import
+uv run pdbsearch migrate  # apply schema migrations
+```
 
 ## Search
 
-The following dialog is presented to you 
-```
-Welcome! Connecting to the database, one moment...
-Connected to the database.
-What do you want to do?
-1) Search the database
-2) Add an entry
-3) Update an entry
-4) (Q)uit
-```
-Press 1 to load the search dialog:
-```
-Search interface
-Please choose a method:
-1) Search by author
-2) Search by paper title
-```
-### Search by title
+### By title
 
-Enter the title name and if a paper of that name exists in the database the relevant information will be presented to you.
+Enter the exact paper title. If multiple papers share the title, you are asked to pick one.
 
-```
-Please enter the paper_information title:
-```
-If no paper is found, you will be informed of it.
-Note that if several papers with that specific title are present in the database, you will be presented with the list of
-the respective authors and asked to choose one author (group).
-### Search by author
+### By author
 
-Enter the author's name. You are then presented with a list of papers that author has (co-)authored and asked
-to select one.
-The name should have the format ```${last name}, ${first name}```.
-```
-Please enter the author's name:
-```
+Enter the author name in `Last, First` form. All papers by that author are listed; you pick one.
+
 ## Add an entry
 
-The program takes you through the steps to add an entry to the database step by step. Note that you are asked
-whether you want to provide a file to read the bib entry from or enter the data by hand.
-
-```
-Please enter the necessary information
-Author(s), please provide a , separated list: ${list_of_author}
-Paper title: Fancy new paper
-Bibtex key: new key
-Do you want to enter the bibtex entry via a separate file?
-1) Yes
-2) No
-Your choice: 1
-Enter filename: bibfile.bib 
-summary of the paper_information: [...]
-```
+The add dialog prompts for authors (comma-separated), title, BibTeX key, and either
+an inline BibTeX string or a path to a `.bib` file, then a one-sentence summary.
 
 ## Update an entry
 
-The program walks you through all steps necessary to update a single entry.
-The below interaction shows an example of an update dialog. 
-```
-Which information do you want to update?
-1) paper 
-2) bib
-3) authors
-4) abort
-Your choice: 1
-Which information do you want to update?
-1) title
-2) contents
-3) abort
-Your choice: 1 
-Which entry do you want to update?
-Please enter the respective id: ${paper_id}  
-```
-In order to change an entry you have to know its id in the database. 
-You may use the [search](README.md#search) functionality to access this id.
-```
-Enter the new information: the new title
-```
-You are asked to review and verify the information you have requested to change before 
-any change is applied:
-```
-Please verify: You wish to change the 'title' of 'paper_id' to 'the new title'.
-Proceed?
-1) (Y)es
-2) (N)o
-Your choice: 1
+The update dialog prompts for: table (`papers` / `bib` / `authors`) → column → current
+identifier → new value → confirmation (`y`/`n`).
+
+## Testing
+
+```bash
+uv run pytest                        # full suite (no personal database needed)
+uv run pytest --cov=src/paper_sorts  # with per-layer coverage
 ```
 
-# Config 
-
-Your configuration should be of the form
-```
-[postgresql]
-dbname=your_dbname
-user=your_dbuser
-password=your_dbuser_password
-```
-It is recommended to use an encrypted version of this file.
-
+Tests use an ephemeral PostgreSQL instance created automatically by `pytest-postgresql`.
+No `database.crypt` or `key` file required.

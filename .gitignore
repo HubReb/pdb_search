@@ -1,0 +1,39 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.eggs/
+src/*.egg-info/
+
+# uv
+uv.lock
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.log
+
+# Alembic
+*.pyc
+
+# Environment / secrets
+.env
+*.crypt
+key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.tmp
+.DS_Store
+Thumbs.db
+
+# mypy
+.mypy_cache/
