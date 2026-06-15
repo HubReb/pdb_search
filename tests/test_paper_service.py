@@ -62,3 +62,34 @@ def test_add_and_delete_round_trip(engine: Engine) -> None:
     assert paper_service.search_by_author(engine, "First, Auth")[0].paper_id == paper_id
     paper_service.delete_paper(engine, paper_id)
     assert paper_service.search_by_author(engine, "First, Auth") == []
+
+
+def test_update_bibtex_via_service(engine: Engine) -> None:
+    _add_one(engine)
+    paper_service.update_field(engine, "bib", "bibtex", "Svc2026", "@a{Svc2026, note={new}}")
+    results = paper_service.search_by_title(engine, "Original Title")
+    assert results[0].bibtex == "@a{Svc2026, note={new}}"
+
+
+def test_update_bib_rejects_wrong_column(engine: Engine) -> None:
+    _add_one(engine)
+    with pytest.raises(ValueError, match="not present in table bibtex"):
+        paper_service.update_field(engine, "bib", "title", "Svc2026", "x")
+
+
+def test_update_author_via_service(engine: Engine) -> None:
+    paper_id = _add_one(engine)
+    paper_service.update_field(engine, "authors_id", "author", "First, Auth", "Renamed, Auth")
+    assert paper_service.search_by_author(engine, "Renamed, Auth")[0].paper_id == paper_id
+    assert paper_service.search_by_author(engine, "First, Auth") == []
+
+
+def test_update_author_rejects_wrong_column(engine: Engine) -> None:
+    _add_one(engine)
+    with pytest.raises(ValueError, match="not present in table authors_id"):
+        paper_service.update_field(engine, "authors_id", "name", "First, Auth", "x")
+
+
+def test_update_paper_malformed_id(engine: Engine) -> None:
+    with pytest.raises(ValueError, match="not a numeric id"):
+        paper_service.update_field(engine, "papers", "title", "not-a-number", "x")

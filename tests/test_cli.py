@@ -74,6 +74,53 @@ def test_delete_subcommand_with_confirm(
     assert "deleted" in result.output.lower()
 
 
+def test_update_subcommand_title(
+    monkeypatch: pytest.MonkeyPatch, seeded_engine: Engine, ephemeral_db_url: str
+) -> None:
+    # Look up an existing paper id, then drive: table=papers(1), column=title(1),
+    # id, new value, confirm yes.
+    from paper_sorts.db.session import with_session
+    from paper_sorts.services import paper_service
+
+    found = paper_service.search_by_title(
+        seeded_engine, "Large-scale Self- and Semi-Supervised learning for speech translation"
+    )
+    paper_id = found[0].paper_id
+    _feed(monkeypatch, ["1", "1", str(paper_id), "Brand New Title", "1"])
+    result = runner.invoke(app_module.app, ["--database-url", ephemeral_db_url, "update"])
+    assert result.exit_code == 0
+    with with_session(seeded_engine):
+        assert paper_service.search_by_title(seeded_engine, "Brand New Title")
+
+
+def test_update_subcommand_abort(
+    monkeypatch: pytest.MonkeyPatch, seeded_engine: Engine, ephemeral_db_url: str
+) -> None:
+    # Abort at the first table menu (option 4 = abort) makes no change.
+    _feed(monkeypatch, ["4"])
+    result = runner.invoke(app_module.app, ["--database-url", ephemeral_db_url, "update"])
+    assert result.exit_code == 0
+
+
+def test_add_via_bib_file(
+    monkeypatch: pytest.MonkeyPatch, engine: Engine, ephemeral_db_url: str, tmp_path: object
+) -> None:
+    from pathlib import Path
+
+    bib_path = Path(str(tmp_path)) / "one.bib"
+    bib_path.write_text(
+        "@article{File2026, title={From a File}, author={Doe, Jane}}", encoding="utf-8"
+    )
+    # With --bib-file, the bib source comes from the file (no Yes/No menu).
+    _feed(monkeypatch, ["Doe, Jane", "From a File", "File2026", "A summary."])
+    result = runner.invoke(
+        app_module.app,
+        ["--database-url", ephemeral_db_url, "add", "--bib-file", str(bib_path)],
+    )
+    assert result.exit_code == 0
+    assert "Added entry" in result.output
+
+
 def test_no_subcommand_menu_quit(
     monkeypatch: pytest.MonkeyPatch, engine: Engine, ephemeral_db_url: str
 ) -> None:
