@@ -11,6 +11,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
 
+from paper_sorts.cli.migrate import run_migrate
 from tests.conftest import _alembic_config
 
 
@@ -35,6 +36,23 @@ def test_fresh_upgrade_creates_four_tables(ephemeral_db_url: str) -> None:
     assert "bibtex_id" in {
         c["name"] for c in inspect(create_engine(ephemeral_db_url)).get_columns("papers")
     }
+
+
+def test_run_migrate_command_on_fresh_db(ephemeral_db_url: str) -> None:
+    """The migrate command succeeds on a fresh database and creates the schema."""
+    assert run_migrate(ephemeral_db_url) is True
+    engine = create_engine(ephemeral_db_url, future=True)
+    try:
+        tables = set(inspect(engine).get_table_names())
+    finally:
+        engine.dispose()
+    assert {"papers", "bib", "authors_id", "authors_papers"} <= tables
+
+
+def test_run_migrate_command_is_idempotent(ephemeral_db_url: str) -> None:
+    """Running the migrate command twice both succeed (idempotent)."""
+    assert run_migrate(ephemeral_db_url) is True
+    assert run_migrate(ephemeral_db_url) is True
 
 
 def test_rerun_is_idempotent(ephemeral_db_url: str) -> None:
