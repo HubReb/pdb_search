@@ -1,6 +1,34 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.3.0 → 1.4.0
+Bump rationale: MINOR — the Development Workflow & Quality Gates section is
+synced to the modern stack the four principles already describe (the principles
+were amended to v1.3.0 text; the Workflow section still named the legacy
+tools). No principle is removed or relaxed. Required by FR-016 / SC-007 of
+001-modernize-stack.
+
+Modified sections:
+  Development Workflow & Quality Gates —
+    "MUST pass `pylint paper_sorts` and the unittest suite" →
+    "MUST pass `ruff check`, `ruff format --check`, and the `pytest` suite"
+    (ephemeral PostgreSQL via pytest-postgresql, no live dev DB);
+    schema-change bullet referencing `DatabaseConnector.create_tables()` →
+    "MUST land as an Alembic migration under `migrations/versions/` + affected
+    fixtures/assertions".
+
+Modified principles: none (text unchanged from v1.3.0).
+
+Templates / docs reviewed for propagation:
+  ✅ specs/001-modernize-stack/plan.md — Constitution Check already flags this
+    amendment; no further edit needed.
+  ✅ .specify/templates/* — no embedded pylint/unittest/create_tables
+    references; no edit needed.
+
+Deferred / TODO: None.
+
+---
+
 Version change: 1.1.0 → 1.3.0
 Bump rationale: MINOR — five testable predicates redefined to layer/role
 names; uv replaces Poetry; psycopg v3 replaces psycopg2; Python ≥ 3.11.
@@ -235,8 +263,10 @@ fictional target.
 
 ## Development Workflow & Quality Gates
 
-- Every change MUST pass `pylint paper_sorts` and the unittest suite (where
-  the live development database is available) before being merged.
+- Every change MUST pass `ruff check`, `ruff format --check`, and the `pytest`
+  suite before being merged. The suite runs against an ephemeral PostgreSQL
+  provisioned by `pytest-postgresql` (Principle II), so it does not depend on
+  a live development database.
 - Every change that modifies a function signature MUST update the
   corresponding type hints and docstring in the same commit. Reviewers MUST
   reject changes that desynchronise these.
@@ -244,9 +274,10 @@ fictional target.
   section that lists which of the four principles the feature touches and
   flags any required waivers. Waivers MUST appear in the plan's Complexity
   Tracking table with a concrete justification.
-- Schema changes (new table, renamed column, changed FK) MUST update
-  `DatabaseConnector.create_tables()`, any affected test fixtures, and any
-  assertions referencing column names — all in the same change.
+- Schema changes (new table, renamed column, changed FK) MUST land as an
+  Alembic migration under `migrations/versions/` and MUST update any affected
+  test fixtures and any assertions referencing column names — all in the same
+  change.
 
 ## Governance
 
@@ -267,4 +298,4 @@ fictional target.
   practice (false positives in review, blocking legitimate work), amend it
   rather than ignore it.
 
-**Version**: 1.3.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-27
+**Version**: 1.4.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-06-16

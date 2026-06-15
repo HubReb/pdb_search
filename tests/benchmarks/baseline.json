@@ -1,0 +1,3 @@
+{
+  "note": "Placeholder. Record real timings locally via tests/benchmarks/bench_baseline.py (remove the skip). SC-006 is a non-regression criterion vs. a recorded baseline on the same hardware, not an absolute bound."
+}
