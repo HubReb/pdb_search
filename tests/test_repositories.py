@@ -7,6 +7,7 @@ are exercised directly — never mocked (constitution Principle II).
 
 from __future__ import annotations
 
+import pytest
 from sqlalchemy import Engine
 
 from paper_sorts.db.repositories import (
@@ -15,7 +16,6 @@ from paper_sorts.db.repositories import (
     PaperRepository,
 )
 from paper_sorts.db.session import with_session
-
 from tests.fixtures.seed_papers import SEED_PAPERS
 
 
@@ -87,8 +87,6 @@ def test_add_and_retrieve(engine: Engine) -> None:
 
 def test_update_bibtex_unique_violation(seeded_engine: Engine) -> None:
     """Updating a bibtex to an existing value raises (UNIQUE constraint)."""
-    import pytest
-
     existing = SEED_PAPERS[1].bibtex
     with with_session(seeded_engine) as session:
         repo = BibRepository(session)

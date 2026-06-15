@@ -27,11 +27,9 @@ from paper_sorts.db.repositories import (
     PaperRepository,
 )
 from paper_sorts.db.session import create_db_engine, with_session
-
 from tests.fixtures.seed_papers import SEED_PAPERS
 
 _PG_CTL = shutil.which("pg_ctl") or "/usr/bin/pg_ctl"
-_PG_BIN = str(Path(_PG_CTL).parent)
 
 postgresql_proc = factories.postgresql_proc(executable=_PG_CTL)
 

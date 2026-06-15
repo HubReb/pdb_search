@@ -73,9 +73,7 @@ class BibRepository:
         :return: ``True`` if present, else ``False``.
         """
         return (
-            self.session.execute(
-                select(Bib.bibtex_id).where(Bib.bibtex_id == bibtex_id)
-            ).first()
+            self.session.execute(select(Bib.bibtex_id).where(Bib.bibtex_id == bibtex_id)).first()
             is not None
         )
 
@@ -95,9 +93,7 @@ class BibRepository:
         :param new_bibtex: the new BibTeX source string.
         :raises ValueError: if the new source already exists (UNIQUE constraint).
         """
-        clash = self.session.execute(
-            select(Bib.bibtex_id).where(Bib.bibtex == new_bibtex)
-        ).first()
+        clash = self.session.execute(select(Bib.bibtex_id).where(Bib.bibtex == new_bibtex)).first()
         if clash is not None:
             raise ValueError("bibtex is unique - value already exists!")
         bib = self.session.get(Bib, bibtex_id)
@@ -190,9 +186,7 @@ class AuthorRepository:
         :param author_id: the author whose links are de-duplicated.
         """
         rows = self.session.execute(
-            select(AuthorPaper.id, AuthorPaper.paper_id).where(
-                AuthorPaper.author_id == author_id
-            )
+            select(AuthorPaper.id, AuthorPaper.paper_id).where(AuthorPaper.author_id == author_id)
         ).all()
         seen: set[int | None] = set()
         for link_id, paper_id in rows:
@@ -246,11 +240,15 @@ class PaperRepository:
         summaries: list[PaperSummary] = []
         for paper in papers:
             assert paper.id is not None
-            authors = self.session.execute(
-                select(AuthorId.author)
-                .join(AuthorPaper, AuthorPaper.author_id == AuthorId.id)
-                .where(AuthorPaper.paper_id == paper.id)
-            ).scalars().all()
+            authors = (
+                self.session.execute(
+                    select(AuthorId.author)
+                    .join(AuthorPaper, AuthorPaper.author_id == AuthorId.id)
+                    .where(AuthorPaper.paper_id == paper.id)
+                )
+                .scalars()
+                .all()
+            )
             bibtex = ""
             if paper.bibtex_id is not None:
                 bib = self.session.get(Bib, paper.bibtex_id)

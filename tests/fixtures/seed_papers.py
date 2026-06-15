@@ -41,7 +41,7 @@ SEED_PAPERS: list[SeedPaper] = [
         bibtex_id="Lee2022DirectS2ST",
         bibtex=(
             "@article{Lee2022DirectS2ST,\n"
-            '  title = {Direct speech-to-speech translation with discrete units},\n'
+            "  title = {Direct speech-to-speech translation with discrete units},\n"
             "  author = {Lee, Ann and Chen, Peng-Jen and Pino, J.},\n"
             "  year = {2022},\n"
             "}"
@@ -54,7 +54,7 @@ SEED_PAPERS: list[SeedPaper] = [
         bibtex_id="Wang2021LargeScaleSA",
         bibtex=(
             "@article{Wang2021LargeScaleSA,\n"
-            '  title = {Large-scale Self- and Semi-Supervised learning for speech translation},\n'
+            "  title = {Large-scale Self- and Semi-Supervised learning for speech translation},\n"
             "  author = {Wang, Changhan and Pino, J.},\n"
             "  year = {2021},\n"
             "}"
@@ -68,7 +68,7 @@ SEED_PAPERS: list[SeedPaper] = [
         bibtex=(
             "@article{Mueller2020Accents,\n"
             '  title = {Sch{\\"o}ne Gr{\\"u}{\\ss}e: accents \\& escapes},\n'
-            "  author = {M{\\\"u}ller, Hans and {Pino}, J.},\n"
+            '  author = {M{\\"u}ller, Hans and {Pino}, J.},\n'
             "  year = {2020},\n"
             "}"
         ),

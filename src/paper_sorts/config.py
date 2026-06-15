@@ -71,9 +71,7 @@ class Settings(BaseSettings):
     :ivar log_level: the logging level name (e.g. ``"INFO"``).
     """
 
-    model_config = SettingsConfigDict(
-        env_prefix="PDBSEARCH_", env_file=".env", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_prefix="PDBSEARCH_", env_file=".env", extra="ignore")
 
     database_url: str = ""
     log_level: str = "INFO"
