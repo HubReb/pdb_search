@@ -16,9 +16,7 @@ def run_add(service: PaperService) -> None:
 
     :param service: the paper service to add through.
     """
-    author_line = prompts.ask_text(
-        "Author(s) — provide a comma-separated 'Last, First' list"
-    )
+    author_line = prompts.ask_text("Author(s) — provide a comma-separated 'Last, First' list")
     title = prompts.ask_text("Paper title")
     bibtex_key = prompts.ask_text("BibTeX key")
     via_file = prompts.ask_choice(

@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken
-from pydantic import Field
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -71,9 +70,7 @@ def load_encrypted_url(config_path: str, key_path: str, section: str = "postgres
         fernet = Fernet(key_file.read_bytes())
         decrypted = fernet.decrypt(config_file.read_bytes()).decode("utf-8")
     except (InvalidToken, ValueError) as exc:
-        raise ConfigurationError(
-            "could not decrypt config — is the key file correct?"
-        ) from exc
+        raise ConfigurationError("could not decrypt config — is the key file correct?") from exc
     parser = ConfigParser()
     parser.read_string(decrypted)
     if not parser.has_section(section):

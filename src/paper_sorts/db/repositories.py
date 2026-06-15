@@ -201,9 +201,7 @@ class AuthorRepository:
             )
         )
         remaining = self._session.scalar(
-            select(func.count())
-            .select_from(AuthorPaper)
-            .where(AuthorPaper.author_id == author_id)
+            select(func.count()).select_from(AuthorPaper).where(AuthorPaper.author_id == author_id)
         )
         if not remaining:
             self._session.execute(delete(AuthorId).where(AuthorId.id == author_id))

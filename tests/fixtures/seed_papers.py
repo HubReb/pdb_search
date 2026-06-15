@@ -45,12 +45,12 @@ SEED_PAPERS: list[PaperCreate] = [
     # Shared-title pair (disambiguation by author).
     PaperCreate(
         title="On Calibration",
-        authors=["Mueller, J\\\"org"],
+        authors=['Mueller, J\\"org'],
         summary="First paper sharing the title 'On Calibration'.",
         bibtex_id="Mueller2020Calibration",
         bibtex=(
             "@article{Mueller2020Calibration,\n"
-            '  title = {On Calibration},\n'
+            "  title = {On Calibration},\n"
             '  author = {Mueller, J\\"org},\n'
             "  note = {accents \\& escapes survive},\n"
             "  year = {2020}\n"

@@ -24,8 +24,7 @@ def run_delete(service: PaperService) -> None:
         return
     authors = " and ".join(chosen.authors)
     if not prompts.confirm(
-        f"You wish to delete '{chosen.title}' by {authors} "
-        f"(key '{chosen.bibtex_id}'). Proceed?"
+        f"You wish to delete '{chosen.title}' by {authors} (key '{chosen.bibtex_id}'). Proceed?"
     ):
         prompts.info("Stopping delete process...")
         return
