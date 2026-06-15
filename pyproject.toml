@@ -1,21 +1,69 @@
-[tool.poetry]
-name = "paper-sorts"
-version = "0.1.0"
-description = ""
-authors = ["HubReb"]
-readme = "README.md"
-packages = [{include = "paper_sorts"}]
-
-[tool.poetry.dependencies]
-python = "^3.10"
-pylint = "^2.15.6"
-psycopg = {extras = ["binary"], version = "^3.1.4"}
-pybtex = "^0.24.0"
-pylatexenc = "2.10"
-psycopg2-binary = "^2.9.6"
-cryptography = "^41.0.3"
-
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "paper-sorts"
+version = "0.2.0"
+description = "Off-line paper-database searcher: a CLI for local publication metadata."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "HubReb" }]
+dependencies = [
+    "sqlalchemy>=2.0,<3",
+    "psycopg[binary]>=3.1",
+    "alembic>=1.13",
+    "typer>=0.12",
+    "pydantic>=2.6,<3",
+    "pydantic-settings>=2.2,<3",
+    "pybtex>=0.24",
+    "pylatexenc>=2.10",
+    "cryptography>=42",
+    "rich>=13",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-postgresql>=6.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+pdbsearch = "paper_sorts.cli.app:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paper_sorts"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W", "D"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+"migrations/*" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["pybtex.*", "pylatexenc.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
