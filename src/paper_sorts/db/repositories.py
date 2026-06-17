@@ -150,7 +150,7 @@ class PaperRepository:
             select(Author.id).where(Author.author == name)
         ).first()
         if existing is not None:
-            return existing[0]
+            return int(existing[0])
         author = Author(author=name)
         self._session.add(author)
         self._session.flush()

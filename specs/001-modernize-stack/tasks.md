@@ -38,8 +38,8 @@ output to legacy against the seed data (`test_cli.py` via `CliRunner`).
 
 - [X] T013 [US2] Implement `PaperRepository` (`search_by_title`, `search_by_author` parameterised joins returning `PaperSummary`; `add`; `update_title`/`update_contents`; `delete` removing links + orphaned authors + paper + bib), `AuthorRepository.rename`, `BibRepository.update_bibtex` in `src/paper_sorts/db/repositories.py`
 - [X] T014 [P] [US2] Persistence-layer tests (real DB, no mocking): search by title (1 match / multi-match), search by author, add+retrieve, update title/contents/bibtex/author, delete with author orphan cleanup; reference `SEED_PAPERS` in `tests/test_repositories.py`
-- [ ] T015 [US2] Implement `services/paper_service.py` (`search_by_title`, `search_by_author`, `add_paper`, `update_field` with `match`/`case` over `Literal[...]` table + `assert_never`, `delete_paper`) raising typed domain errors in `src/paper_sorts/services/paper_service.py`
-- [ ] T016 [P] [US2] Service-layer tests for paper_service (incl. update_field rejecting ID columns and `authors_papers`; duplicate-bibtex error) in `tests/test_paper_service.py`
+- [X] T015 [US2] Implement `services/paper_service.py` (`search_by_title`, `search_by_author`, `add_paper`, `update_field` with `match`/`case` over `Literal[...]` table + `assert_never`, `delete_paper`) raising typed domain errors in `src/paper_sorts/services/paper_service.py`
+- [X] T016 [P] [US2] Service-layer tests for paper_service (incl. update_field rejecting ID columns and `authors_papers`; duplicate-bibtex error) in `tests/test_paper_service.py`
 - [ ] T017 [US2] Implement `cli/search.py` interactive flow (author/title sub-menu, disambiguation, legacy pretty-print output, plain not-found message) in `src/paper_sorts/cli/search.py`
 - [ ] T018 [US2] Implement `cli/add.py` (authors/title/key/file-or-inline-bib/summary prompts via prompts.py; atomic persist) in `src/paper_sorts/cli/add.py`
 - [ ] T019 [US2] Implement `cli/update.py` (table menu → column menu → id → value → confirmation summary) in `src/paper_sorts/cli/update.py`
