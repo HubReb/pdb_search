@@ -14,21 +14,21 @@ Conventions: all paths absolute from repo root `/home/rebekka/projects/pdb_searc
 
 ## Phase 1: Setup
 
-- [ ] T001 Write `pyproject.toml` (PEP 621 `[project]`, Python ≥3.11, `hatchling` build backend, `[project.scripts] pdbsearch`, src-layout package discovery, runtime deps SQLAlchemy 2.x / psycopg[binary] v3 / alembic / typer / pydantic-settings / cryptography / pybtex / pylatexenc, dev extras pytest / pytest-postgresql / pytest-cov / mypy / ruff, `[tool.ruff]`, `[tool.pytest.ini_options]`, `[tool.coverage]`, `[tool.mypy]` strict on src) at `pyproject.toml`
-- [ ] T002 Create src-layout package skeleton: `src/paper_sorts/__init__.py`, `src/paper_sorts/cli/__init__.py`, `src/paper_sorts/services/__init__.py`, `src/paper_sorts/db/__init__.py`
-- [ ] T003 Run `uv sync --all-extras` and confirm the environment resolves (lockfile `uv.lock` written)
-- [ ] T004 [P] Write `alembic.ini` and `migrations/env.py` + `migrations/script.py.mako` wired to read the DB URL from `paper_sorts.config` and target `paper_sorts.db.models` metadata
+- [X] T001 Write `pyproject.toml` (PEP 621 `[project]`, Python ≥3.11, `hatchling` build backend, `[project.scripts] pdbsearch`, src-layout package discovery, runtime deps SQLAlchemy 2.x / psycopg[binary] v3 / alembic / typer / pydantic-settings / cryptography / pybtex / pylatexenc, dev extras pytest / pytest-postgresql / pytest-cov / mypy / ruff, `[tool.ruff]`, `[tool.pytest.ini_options]`, `[tool.coverage]`, `[tool.mypy]` strict on src) at `pyproject.toml`
+- [X] T002 Create src-layout package skeleton: `src/paper_sorts/__init__.py`, `src/paper_sorts/cli/__init__.py`, `src/paper_sorts/services/__init__.py`, `src/paper_sorts/db/__init__.py`
+- [X] T003 Run `uv sync --all-extras` and confirm the environment resolves (lockfile `uv.lock` written)
+- [X] T004 [P] Write `alembic.ini` and `migrations/env.py` + `migrations/script.py.mako` wired to read the DB URL from `paper_sorts.config` and target `paper_sorts.db.models` metadata
 
 ## Phase 2: Foundational (blocking prerequisites)
 
-- [ ] T005 Implement the four ORM models (`Paper`, `Bib`, `Author`, `AuthorPaper`) with SQLAlchemy 2.x typed declarative + relationships, preserving the schema contract (no NOT NULL outside PKs, no DDL FK on `authors_papers`, no extra indexes) in `src/paper_sorts/db/models.py`
-- [ ] T006 Define pydantic DTOs `PaperSummary` and `PaperCreate` per data-model.md in `src/paper_sorts/db/repositories.py`
-- [ ] T007 Implement `db/session.py`: engine factory + `with_session(engine)` context manager (commit on success, rollback on exception, deterministic close) in `src/paper_sorts/db/session.py`
-- [ ] T008 Implement `paper_sorts.config.Settings` (pydantic-settings v2) with the four-source priority chain (CLI flags > `PDBSEARCH_*` env > `.env` > Fernet-encrypted INI custom source) and a `ConfigError` for missing-key/decrypt-failure in `src/paper_sorts/config.py`
-- [ ] T009 [P] Implement `logging_config.py`: single `dictConfig` (RichHandler to stdout + optional FileHandler), `setup_logging(level, file)` in `src/paper_sorts/logging_config.py`
-- [ ] T010 Implement `cli/prompts.py` (the ONLY module importing `rich.prompt`): `ask_text` (non-empty re-prompt), `ask_choice` (1-indexed menu, mandatory abort, re-prompt on out-of-range), `confirm` (accepts `1`/`2`/`y`/`n`/`yes`/`no`) in `src/paper_sorts/cli/prompts.py`
-- [ ] T011 Alembic revision `001_initial_schema`: verbatim port of the original canonical-`bibtex_id` DDL (four tables) in `migrations/versions/001_initial_schema.py`
-- [ ] T012 Set up `tests/conftest.py` (`postgresql_proc`, `ephemeral_db_url`, an engine fixture, and a `seeded_session`/`seeded_engine` that runs Alembic to head and loads the seed) and the co-located seed dataset `tests/fixtures/seed_papers.py` (`SEED_PAPERS`, reproducing legacy fingerprints `Pino, J.` / `Wang2021LargeScaleSA` / the multi-author speech-to-speech row)
+- [X] T005 Implement the four ORM models (`Paper`, `Bib`, `Author`, `AuthorPaper`) with SQLAlchemy 2.x typed declarative + relationships, preserving the schema contract (no NOT NULL outside PKs, no DDL FK on `authors_papers`, no extra indexes) in `src/paper_sorts/db/models.py`
+- [X] T006 Define pydantic DTOs `PaperSummary` and `PaperCreate` per data-model.md in `src/paper_sorts/db/repositories.py`
+- [X] T007 Implement `db/session.py`: engine factory + `with_session(engine)` context manager (commit on success, rollback on exception, deterministic close) in `src/paper_sorts/db/session.py`
+- [X] T008 Implement `paper_sorts.config.Settings` (pydantic-settings v2) with the four-source priority chain (CLI flags > `PDBSEARCH_*` env > `.env` > Fernet-encrypted INI custom source) and a `ConfigError` for missing-key/decrypt-failure in `src/paper_sorts/config.py`
+- [X] T009 [P] Implement `logging_config.py`: single `dictConfig` (RichHandler to stdout + optional FileHandler), `setup_logging(level, file)` in `src/paper_sorts/logging_config.py`
+- [X] T010 Implement `cli/prompts.py` (the ONLY module importing `rich.prompt`): `ask_text` (non-empty re-prompt), `ask_choice` (1-indexed menu, mandatory abort, re-prompt on out-of-range), `confirm` (accepts `1`/`2`/`y`/`n`/`yes`/`no`) in `src/paper_sorts/cli/prompts.py`
+- [X] T011 Alembic revision `001_initial_schema`: verbatim port of the original canonical-`bibtex_id` DDL (four tables) in `migrations/versions/001_initial_schema.py`
+- [X] T012 Set up `tests/conftest.py` (`postgresql_proc`, `ephemeral_db_url`, an engine fixture, and a `seeded_session`/`seeded_engine` that runs Alembic to head and loads the seed) and the co-located seed dataset `tests/fixtures/seed_papers.py` (`SEED_PAPERS`, reproducing legacy fingerprints `Pino, J.` / `Wang2021LargeScaleSA` / the multi-author speech-to-speech row)
 
 ## Phase 3: User Story 2 — Modernized codebase, same behavior (P1, MVP) 🎯
 
@@ -36,8 +36,8 @@ Conventions: all paths absolute from repo root `/home/rebekka/projects/pdb_searc
 **Independent test**: scripted dialog through every CLI path produces equivalent
 output to legacy against the seed data (`test_cli.py` via `CliRunner`).
 
-- [ ] T013 [US2] Implement `PaperRepository` (`search_by_title`, `search_by_author` parameterised joins returning `PaperSummary`; `add`; `update_title`/`update_contents`; `delete` removing links + orphaned authors + paper + bib), `AuthorRepository.rename`, `BibRepository.update_bibtex` in `src/paper_sorts/db/repositories.py`
-- [ ] T014 [P] [US2] Persistence-layer tests (real DB, no mocking): search by title (1 match / multi-match), search by author, add+retrieve, update title/contents/bibtex/author, delete with author orphan cleanup; reference `SEED_PAPERS` in `tests/test_repositories.py`
+- [X] T013 [US2] Implement `PaperRepository` (`search_by_title`, `search_by_author` parameterised joins returning `PaperSummary`; `add`; `update_title`/`update_contents`; `delete` removing links + orphaned authors + paper + bib), `AuthorRepository.rename`, `BibRepository.update_bibtex` in `src/paper_sorts/db/repositories.py`
+- [X] T014 [P] [US2] Persistence-layer tests (real DB, no mocking): search by title (1 match / multi-match), search by author, add+retrieve, update title/contents/bibtex/author, delete with author orphan cleanup; reference `SEED_PAPERS` in `tests/test_repositories.py`
 - [ ] T015 [US2] Implement `services/paper_service.py` (`search_by_title`, `search_by_author`, `add_paper`, `update_field` with `match`/`case` over `Literal[...]` table + `assert_never`, `delete_paper`) raising typed domain errors in `src/paper_sorts/services/paper_service.py`
 - [ ] T016 [P] [US2] Service-layer tests for paper_service (incl. update_field rejecting ID columns and `authors_papers`; duplicate-bibtex error) in `tests/test_paper_service.py`
 - [ ] T017 [US2] Implement `cli/search.py` interactive flow (author/title sub-menu, disambiguation, legacy pretty-print output, plain not-found message) in `src/paper_sorts/cli/search.py`
