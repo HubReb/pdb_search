@@ -39,23 +39,17 @@ def run_update(engine: Engine) -> bool:
         column = "title" if column_choice == 0 else "contents"
     elif table_choice == 1:
         table = "bib"
-        console.print(
-            "Only the bibtex can be updated - the bibtex identifier cannot be changed."
-        )
+        console.print("Only the bibtex can be updated - the bibtex identifier cannot be changed.")
         column = "bibtex"
     else:
         table = "authors_id"
         console.print("Only an author name can be updated.")
         column = "author"
 
-    identifier = ask_nonempty(
-        "Which entry do you want to update? Enter its id/key/name"
-    )
+    identifier = ask_nonempty("Which entry do you want to update? Enter its id/key/name")
     value = ask_nonempty("Enter the new information")
 
-    if not confirm(
-        f"You wish to change '{column}' of entry '{identifier}' to '{value}'."
-    ):
+    if not confirm(f"You wish to change '{column}' of entry '{identifier}' to '{value}'."):
         console.print("Stopping update process...")
         return False
 

@@ -118,12 +118,12 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Purpose**: US1 architecture doc, legacy removal (FR-012), constitution amendment (FR-016/SC-007), doc-currency gate (G3), baseline benchmark (G2), final gates.
 
-- [ ] T035 [US1] Write `docs/architecture.md` — reverse-engineered description of the legacy (pre-modernization) stack: purpose, user journeys, four-table data model + relationships, control flow (CLI → domain → DB), config approach, install/run, rollback semantics, known limitations/quirks (FR-001 / SC-001).
+- [x] T035 [US1] Write `docs/architecture.md` — reverse-engineered description of the legacy (pre-modernization) stack: purpose, user journeys, four-table data model + relationships, control flow (CLI → domain → DB), config approach, install/run, rollback semantics, known limitations/quirks (FR-001 / SC-001).
 - [x] T036 Remove the legacy flat layout (`paper_sorts/add.py`, `search.py`, `get_data.py`, `database_connector.py`, `user_interaction.py`, `psycopg_db.py`, `config_reader.py`, `helpers.py`, `run.py`, `paper_sorts/__init__.py`) and the legacy `tests/test_database_connector.py` / `tests/test_user_interaction.py` once US2 coverage subsumes them (FR-012).
-- [ ] T037 Update `README.md` and `CLAUDE.md` to the modern stack — remove every forbidden legacy token (`Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB`); add `tests/test_doc_currency.py` asserting a case-sensitive search finds none of them in those two files (G3, merge-blocking).
-- [ ] T038 Amend the constitution via `/speckit-constitution` — reconcile the stale *Development Workflow & Quality Gates* lines (`pylint paper_sorts`, `unittest`, `create_tables()`) to ruff/mypy/pytest + Alembic; record rationale in the sync-impact header (FR-016 / SC-007).
-- [ ] T039 Implement `tests/benchmarks/bench_baseline.py` — an executing (not permanently skipped) baseline harness timing the five interactive ops (search by title/author, add, update, delete) on `seeded_db`, recording a baseline; document the bench command (G2, merge-blocking).
-- [ ] T040 Final gate sweep: `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy src`, `uv run pytest` (with per-layer coverage) all green; confirm SC-005 LOC reduction ≥ 30%.
+- [x] T037 Update `README.md` and `CLAUDE.md` to the modern stack — remove every forbidden legacy token (`Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB`); add `tests/test_doc_currency.py` asserting a case-sensitive search finds none of them in those two files (G3, merge-blocking).
+- [x] T038 Amend the constitution via `/speckit-constitution` — reconcile the stale *Development Workflow & Quality Gates* lines (`pylint paper_sorts`, `unittest`, `create_tables()`) to ruff/mypy/pytest + Alembic; record rationale in the sync-impact header (FR-016 / SC-007).
+- [x] T039 Implement `tests/benchmarks/bench_baseline.py` — an executing (not permanently skipped) baseline harness timing the five interactive ops (search by title/author, add, update, delete) on `seeded_db`, recording a baseline; document the bench command (G2, merge-blocking).
+- [x] T040 Final gate sweep: `uv run ruff check .`, `uv run ruff format --check .`, `uv run mypy src`, `uv run pytest` (with per-layer coverage) all green; confirm SC-005 LOC reduction ≥ 30%.
 
 ---
 

@@ -69,7 +69,7 @@ SEED_PAPERS: list[SeedPaper] = [
         bibtex_id="Schroeder2020Accents",
         bibtex="@article{Schroeder2020Accents,\n"
         '  title={On the use of {\\"o} and \\& in metadata},\n'
-        "  author={Schr{\\\"o}der, M.},\n"
+        '  author={Schr{\\"o}der, M.},\n'
         "  year={2020}\n}",
         authors=["Schröder, M."],
     ),

@@ -96,10 +96,7 @@ def engine(ephemeral_db_url: str) -> Iterator[Engine]:
     eng = create_db_engine(ephemeral_db_url)
     with eng.begin() as conn:
         conn.execute(
-            text(
-                "TRUNCATE authors_papers, authors_id, papers, bib "
-                "RESTART IDENTITY CASCADE"
-            )
+            text("TRUNCATE authors_papers, authors_id, papers, bib RESTART IDENTITY CASCADE")
         )
     yield eng
     eng.dispose()
@@ -117,22 +114,16 @@ def _insert_seed(engine: Engine, papers: list[SeedPaper]) -> None:
         for sp in papers:
             session.add(Bib(bibtex_id=sp.bibtex_id, bibtex=sp.bibtex))
             session.flush()
-            paper = Paper(
-                title=sp.title, contents=sp.contents, bibtex_id=sp.bibtex_id
-            )
+            paper = Paper(title=sp.title, contents=sp.contents, bibtex_id=sp.bibtex_id)
             session.add(paper)
             session.flush()
             for name in sp.authors:
-                existing = (
-                    session.query(AuthorId).filter(AuthorId.author == name).first()
-                )
+                existing = session.query(AuthorId).filter(AuthorId.author == name).first()
                 if existing is None:
                     existing = AuthorId(author=name)
                     session.add(existing)
                     session.flush()
-                session.add(
-                    AuthorPaper(author_id=existing.id, paper_id=paper.id)
-                )
+                session.add(AuthorPaper(author_id=existing.id, paper_id=paper.id))
 
 
 @pytest.fixture

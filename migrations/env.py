@@ -26,9 +26,7 @@ def _database_url() -> str:
     :returns: the configured database URL.
     :raises RuntimeError: if no URL is available from any source.
     """
-    url = config.attributes.get("sqlalchemy.url") or config.get_main_option(
-        "sqlalchemy.url"
-    )
+    url = config.attributes.get("sqlalchemy.url") or config.get_main_option("sqlalchemy.url")
     if not url:
         url = os.environ.get("PDBSEARCH_DATABASE_URL")
     if not url:

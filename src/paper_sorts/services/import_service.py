@@ -25,11 +25,7 @@ def _parse_tex(tex_path: str) -> dict[str, dict[str, str]]:
     """
     with open(tex_path, encoding="utf-8") as handle:
         data = handle.read()
-    lines = [
-        line
-        for line in LatexNodes2Text().latex_to_text(data).split("\n")
-        if line != ""
-    ]
+    lines = [line for line in LatexNodes2Text().latex_to_text(data).split("\n") if line != ""]
     papers: dict[str, dict[str, str]] = defaultdict(lambda: defaultdict(str))
     title: str | None = None
     bibtex_key: str | None = None

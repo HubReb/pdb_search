@@ -22,10 +22,7 @@ def _write_encrypted_ini(tmp_path: Path) -> tuple[Path, Path]:
     :returns: ``(config_path, key_path)``.
     """
     key = Fernet.generate_key()
-    ini = (
-        "[postgresql]\n"
-        "host=db.example\nport=5432\nuser=alice\npassword=secret\ndbname=papers\n"
-    )
+    ini = "[postgresql]\nhost=db.example\nport=5432\nuser=alice\npassword=secret\ndbname=papers\n"
     config_path = tmp_path / "database.crypt"
     key_path = tmp_path / "key"
     config_path.write_bytes(Fernet(key).encrypt(ini.encode("utf-8")))
@@ -54,9 +51,7 @@ def test_encrypted_ini_builds_url(tmp_path: Path) -> None:
     assert url == "postgresql+psycopg://alice:secret@db.example:5432/papers"
 
 
-def test_encrypted_ini_is_lowest_priority(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_encrypted_ini_is_lowest_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """The encrypted source supplies the URL only when no higher source does."""
     monkeypatch.delenv("PDBSEARCH_DATABASE_URL", raising=False)
     config_path, key_path = _write_encrypted_ini(tmp_path)

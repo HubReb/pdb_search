@@ -49,9 +49,7 @@ def _build_legacy_schema(engine: Engine) -> None:
         )
         conn.execute(text("CREATE TABLE authors_id (id SERIAL PRIMARY KEY, author TEXT)"))
         conn.execute(
-            text(
-                "CREATE TABLE authors_papers (id SERIAL PRIMARY KEY, author_id INT, paper_id INT)"
-            )
+            text("CREATE TABLE authors_papers (id SERIAL PRIMARY KEY, author_id INT, paper_id INT)")
         )
         conn.execute(text("INSERT INTO bib VALUES ('k1', 'b1'), ('k2', 'b2')"))
         conn.execute(
@@ -61,9 +59,7 @@ def _build_legacy_schema(engine: Engine) -> None:
             )
         )
         conn.execute(text("INSERT INTO authors_id (author) VALUES ('A, X'), ('B, Y')"))
-        conn.execute(
-            text("INSERT INTO authors_papers (author_id, paper_id) VALUES (1, 1), (2, 2)")
-        )
+        conn.execute(text("INSERT INTO authors_papers (author_id, paper_id) VALUES (1, 1), (2, 2)"))
 
 
 def _counts(engine: Engine) -> dict[str, int]:

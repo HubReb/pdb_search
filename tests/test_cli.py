@@ -30,9 +30,7 @@ def script(monkeypatch: pytest.MonkeyPatch):  # type: ignore[no-untyped-def]
 
     def _install(answers: list[str]) -> None:
         it: Iterator[str] = iter(answers)
-        monkeypatch.setattr(
-            prompts.Prompt, "ask", staticmethod(lambda *a, **k: next(it))
-        )
+        monkeypatch.setattr(prompts.Prompt, "ask", staticmethod(lambda *a, **k: next(it)))
 
     return _install
 
@@ -97,9 +95,7 @@ def test_update_title_with_confirmation(engine: Engine, script) -> None:  # type
     """Updating a title with confirmation persists the change."""
     _seed_one(engine, script)
     with with_session(engine) as session:
-        pid = session.execute(
-            text("SELECT id FROM papers WHERE bibtex_id='clikey'")
-        ).scalar_one()
+        pid = session.execute(text("SELECT id FROM papers WHERE bibtex_id='clikey'")).scalar_one()
     script(["1", "1", str(pid), "Renamed CLI Paper", "y"])
     result = _invoke(engine, ["update"])
     assert result.exit_code == 0
@@ -113,9 +109,7 @@ def test_update_abort_writes_nothing(engine: Engine, script) -> None:  # type: i
     """Declining the confirmation leaves the title unchanged."""
     _seed_one(engine, script)
     with with_session(engine) as session:
-        pid = session.execute(
-            text("SELECT id FROM papers WHERE bibtex_id='clikey'")
-        ).scalar_one()
+        pid = session.execute(text("SELECT id FROM papers WHERE bibtex_id='clikey'")).scalar_one()
     script(["1", "1", str(pid), "Should Not Stick", "n"])
     result = _invoke(engine, ["update"])
     assert "Stopping update process" in result.output
@@ -238,9 +232,15 @@ def test_menu_routes_search_add_update(engine: Engine, script) -> None:  # type:
     script(
         [
             "2",  # menu: Add
-            "Menu, M.", "Menu Paper", "menukey", "2", "@misc{menukey}", "via menu",
+            "Menu, M.",
+            "Menu Paper",
+            "menukey",
+            "2",
+            "@misc{menukey}",
+            "via menu",
             "1",  # menu: Search
-            "2", "Menu Paper",  # search by title
+            "2",
+            "Menu Paper",  # search by title
             "4",  # menu: Quit
         ]
     )

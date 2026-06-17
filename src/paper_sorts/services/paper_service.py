@@ -94,15 +94,11 @@ class PaperService:
                     repo.update_paper_field(int(identifier), column, value)
                 case "bib":
                     if column != "bibtex":
-                        raise ValueError(
-                            f"Column {column!r} is not present in table bib"
-                        )
+                        raise ValueError(f"Column {column!r} is not present in table bib")
                     repo.bib.update_bibtex(identifier, value)
                 case "authors_id":
                     if column != "author":
-                        raise ValueError(
-                            f"Column {column!r} is not present in table authors_id"
-                        )
+                        raise ValueError(f"Column {column!r} is not present in table authors_id")
                     repo.authors.rename_author(identifier, value)
                 case _:  # pragma: no cover - exhaustiveness guard
                     assert_never(table)

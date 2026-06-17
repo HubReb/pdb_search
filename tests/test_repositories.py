@@ -125,14 +125,10 @@ def test_update_bibtex_uniqueness(engine: Engine) -> None:
     with with_session(engine) as session:
         repo = PaperRepository(session)
         repo.add_paper(
-            PaperCreate(
-                title="P1", contents="c", bibtex_id="b1", bibtex="one", authors=["A, B"]
-            )
+            PaperCreate(title="P1", contents="c", bibtex_id="b1", bibtex="one", authors=["A, B"])
         )
         repo.add_paper(
-            PaperCreate(
-                title="P2", contents="c", bibtex_id="b2", bibtex="two", authors=["C, D"]
-            )
+            PaperCreate(title="P2", contents="c", bibtex_id="b2", bibtex="two", authors=["C, D"])
         )
     with with_session(engine) as session:
         PaperRepository(session).bib.update_bibtex("b1", "updated-one")
@@ -146,14 +142,10 @@ def test_rename_author_merges_onto_existing(engine: Engine) -> None:
     with with_session(engine) as session:
         repo = PaperRepository(session)
         repo.add_paper(
-            PaperCreate(
-                title="P1", contents="c", bibtex_id="b1", bibtex="one", authors=["Old, O"]
-            )
+            PaperCreate(title="P1", contents="c", bibtex_id="b1", bibtex="one", authors=["Old, O"])
         )
         repo.add_paper(
-            PaperCreate(
-                title="P2", contents="c", bibtex_id="b2", bibtex="two", authors=["New, N"]
-            )
+            PaperCreate(title="P2", contents="c", bibtex_id="b2", bibtex="two", authors=["New, N"])
         )
     with with_session(engine) as session:
         PaperRepository(session).authors.rename_author("Old, O", "New, N")

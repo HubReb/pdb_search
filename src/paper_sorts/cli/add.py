@@ -20,15 +20,11 @@ def run_add(engine: Engine) -> bool:
     :param engine: the engine bound to the configured database.
     :returns: ``True`` on success, ``False`` on a handled failure.
     """
-    authors_raw = ask_nonempty(
-        "Author(s) — ';'-separated list of 'Last, First' names"
-    )
+    authors_raw = ask_nonempty("Author(s) — ';'-separated list of 'Last, First' names")
     title = ask_nonempty("Paper title")
     bibtex_key = ask_nonempty("bibtex key")
 
-    bib_choice = ask_choice(
-        "Enter the bibtex entry via a separate file?", ["Yes", "No"]
-    )
+    bib_choice = ask_choice("Enter the bibtex entry via a separate file?", ["Yes", "No"])
     if bib_choice is None:
         console.print("Add aborted.")
         return False

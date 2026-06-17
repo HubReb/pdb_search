@@ -75,9 +75,7 @@ class AuthorRepository:
         :param name: the author's ``"Last, First"`` name.
         :param paper_id: the paper to link to.
         """
-        author = self.session.scalars(
-            select(AuthorId).where(AuthorId.author == name)
-        ).first()
+        author = self.session.scalars(select(AuthorId).where(AuthorId.author == name)).first()
         if author is None:
             author = AuthorId(author=name)
             self.session.add(author)
@@ -91,9 +89,7 @@ class AuthorRepository:
         :param paper_id: the paper whose links to remove.
         """
         for name in author_names:
-            author = self.session.scalars(
-                select(AuthorId).where(AuthorId.author == name)
-            ).first()
+            author = self.session.scalars(select(AuthorId).where(AuthorId.author == name)).first()
             if author is None:
                 continue
             link = self.session.scalars(
@@ -114,14 +110,10 @@ class AuthorRepository:
         :param new_name: the new author name.
         :raises NotFoundError: if no author has ``old_name``.
         """
-        old = self.session.scalars(
-            select(AuthorId).where(AuthorId.author == old_name)
-        ).first()
+        old = self.session.scalars(select(AuthorId).where(AuthorId.author == old_name)).first()
         if old is None:
             raise NotFoundError(f"Author {old_name!r} not found")
-        existing = self.session.scalars(
-            select(AuthorId).where(AuthorId.author == new_name)
-        ).first()
+        existing = self.session.scalars(select(AuthorId).where(AuthorId.author == new_name)).first()
         if existing is not None and existing.id != old.id:
             for link in self.session.scalars(
                 select(AuthorPaper).where(AuthorPaper.author_id == old.id)
@@ -166,9 +158,7 @@ class BibRepository:
         :raises DuplicateError: if another entry already has ``new_bibtex``.
         :raises NotFoundError: if no entry has ``bibtex_id``.
         """
-        clash = self.session.scalars(
-            select(Bib).where(Bib.bibtex == new_bibtex)
-        ).first()
+        clash = self.session.scalars(select(Bib).where(Bib.bibtex == new_bibtex)).first()
         if clash is not None:
             raise DuplicateError("bibtex is unique - value already exists!")
         entry = self.session.get(Bib, bibtex_id)
@@ -197,11 +187,15 @@ class PaperRepository:
         """
         summaries: list[PaperSummary] = []
         for paper in papers:
-            names = self.session.execute(
-                select(AuthorId.author)
-                .join(AuthorPaper, AuthorPaper.author_id == AuthorId.id)
-                .where(AuthorPaper.paper_id == paper.id)
-            ).scalars().all()
+            names = (
+                self.session.execute(
+                    select(AuthorId.author)
+                    .join(AuthorPaper, AuthorPaper.author_id == AuthorId.id)
+                    .where(AuthorPaper.paper_id == paper.id)
+                )
+                .scalars()
+                .all()
+            )
             bib = self.session.get(Bib, paper.bibtex_id) if paper.bibtex_id else None
             summaries.append(
                 PaperSummary(
@@ -221,9 +215,7 @@ class PaperRepository:
         :param title: the title to search for.
         :returns: summaries for each matching paper (empty if none).
         """
-        papers = list(
-            self.session.scalars(select(Paper).where(Paper.title == title)).all()
-        )
+        papers = list(self.session.scalars(select(Paper).where(Paper.title == title)).all())
         return self._summaries_for(papers)
 
     def search_by_author(self, author: str) -> list[PaperSummary]:
@@ -253,9 +245,7 @@ class PaperRepository:
             raise DuplicateError(f"Entry {data.bibtex_id!r} already exists")
         self.session.add(Bib(bibtex_id=data.bibtex_id, bibtex=data.bibtex))
         self.session.flush()
-        paper = Paper(
-            title=data.title, contents=data.contents, bibtex_id=data.bibtex_id
-        )
+        paper = Paper(title=data.title, contents=data.contents, bibtex_id=data.bibtex_id)
         self.session.add(paper)
         self.session.flush()
         for name in data.authors:
@@ -269,14 +259,16 @@ class PaperRepository:
         :param bibtex_id: the BibTeX key of the paper to delete.
         :raises NotFoundError: if no paper has ``bibtex_id``.
         """
-        paper = self.session.scalars(
-            select(Paper).where(Paper.bibtex_id == bibtex_id)
-        ).first()
+        paper = self.session.scalars(select(Paper).where(Paper.bibtex_id == bibtex_id)).first()
         if paper is None:
             raise NotFoundError(f"Paper with bibtex {bibtex_id!r} not found")
-        author_ids = self.session.execute(
-            select(AuthorPaper.author_id).where(AuthorPaper.paper_id == paper.id)
-        ).scalars().all()
+        author_ids = (
+            self.session.execute(
+                select(AuthorPaper.author_id).where(AuthorPaper.paper_id == paper.id)
+            )
+            .scalars()
+            .all()
+        )
         for link in self.session.scalars(
             select(AuthorPaper).where(AuthorPaper.paper_id == paper.id)
         ):

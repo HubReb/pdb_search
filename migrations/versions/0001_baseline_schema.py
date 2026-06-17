@@ -11,6 +11,7 @@ Revises:
 Create Date: 2026-06-17
 
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -37,9 +38,7 @@ def upgrade() -> None:
         sa.Column("title", sa.Text()),
         sa.Column("contents", sa.Text()),
         sa.Column("bibtex_id", sa.Text()),
-        sa.ForeignKeyConstraint(
-            ["bibtex_id"], ["bib.bibtex_id"], name="fk_bibtex_id"
-        ),
+        sa.ForeignKeyConstraint(["bibtex_id"], ["bib.bibtex_id"], name="fk_bibtex_id"),
     )
     op.create_table(
         "authors_id",

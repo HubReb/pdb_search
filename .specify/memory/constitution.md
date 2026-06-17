@@ -1,6 +1,26 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.3.0-b2-hardened → 1.3.1-b2-hardened  [EXPERIMENT BRANCH]
+Bump rationale: PATCH — reconcile the stale *Development Workflow & Quality
+  Gates* section with the modern stack as part of 001-modernize-stack
+  (FR-016 / SC-007). No principle is removed or relaxed; this is a
+  non-semantic wording fix landing alongside the code that makes the
+  superseded tooling references current:
+    - "MUST pass `pylint paper_sorts` and the unittest suite" →
+      "MUST pass `ruff check`, `ruff format --check`, `mypy src`, and the
+      `pytest` suite (ephemeral PostgreSQL via `pytest-postgresql`)".
+    - Schema-change clause "MUST update `DatabaseConnector.create_tables()`" →
+      "MUST land as Alembic migrations under `migrations/versions/` and update
+      the ORM models in `src/paper_sorts/db/models.py`".
+  These were the only remaining references to the now-deleted legacy stack;
+  with them fixed, no silent deviation remains (SC-007).
+Templates / docs reviewed for propagation:
+  ✅ CLAUDE.md / README.md — rewritten to the modern stack (doc-currency gate).
+  ✅ specs/001-modernize-stack/* — drafted against the modern vocabulary.
+
+---
+
 Version change: 1.3.0 → 1.3.0-b2-hardened  [EXPERIMENT BRANCH — NOT THE REAL v1.4.0 LINE]
 Bump rationale: EXPERIMENTAL hardening for offload experiment B2. Three
   mechanical gates added to close the exact dimensions a hands-off Sonnet
@@ -292,8 +312,9 @@ fictional target.
 
 ## Development Workflow & Quality Gates
 
-- Every change MUST pass `pylint paper_sorts` and the unittest suite (where
-  the live development database is available) before being merged.
+- Every change MUST pass `ruff check`, `ruff format --check`, `mypy src`, and
+  the `pytest` suite (which provisions its own ephemeral PostgreSQL via
+  `pytest-postgresql`) before being merged.
 - Every change that modifies a function signature MUST update the
   corresponding type hints and docstring in the same commit. Reviewers MUST
   reject changes that desynchronise these.
@@ -301,8 +322,9 @@ fictional target.
   section that lists which of the four principles the feature touches and
   flags any required waivers. Waivers MUST appear in the plan's Complexity
   Tracking table with a concrete justification.
-- Schema changes (new table, renamed column, changed FK) MUST update
-  `DatabaseConnector.create_tables()`, any affected test fixtures, and any
+- Schema changes (new table, renamed column, changed FK) MUST land as Alembic
+  migrations under `migrations/versions/` and update the ORM models in
+  `src/paper_sorts/db/models.py`, any affected test fixtures, and any
   assertions referencing column names — all in the same change.
 
 ## Governance
@@ -324,4 +346,4 @@ fictional target.
   practice (false positives in review, blocking legitimate work), amend it
   rather than ignore it.
 
-**Version**: 1.3.0-b2-hardened (EXPERIMENT WORKTREE ONLY) | **Ratified**: 2026-04-26 | **Last Amended**: 2026-06-14
+**Version**: 1.3.1-b2-hardened (EXPERIMENT WORKTREE ONLY) | **Ratified**: 2026-04-26 | **Last Amended**: 2026-06-17
