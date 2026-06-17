@@ -107,6 +107,40 @@ def test_add_empty_reprompt(seeded_db_url: str) -> None:
     assert "Added" in add.output
 
 
+def test_add_from_file(seeded_db_url: str, tmp_path: object) -> None:
+    """add reading the BibTeX entry from a file persists the paper."""
+    import pathlib
+
+    bibfile = pathlib.Path(str(tmp_path)) / "entry.bib"
+    bibfile.write_text("@article{File2026Key, title={From file}}", encoding="utf-8")
+    add = runner.invoke(
+        app,
+        _g(seeded_db_url, "add"),
+        input=(
+            "File, Author\n"
+            "From file paper\n"
+            "File2026Key\n"
+            "1\n"  # yes, from a file
+            "/no/such/file\n"  # re-prompt on bad path
+            f"{bibfile}\n"
+            "summary\n"
+        ),
+    )
+    assert add.exit_code == 0, add.output
+    assert "Added" in add.output
+
+
+def test_add_abort_at_bib_choice(seeded_db_url: str) -> None:
+    """Aborting at the file-or-inline choice cancels the add."""
+    add = runner.invoke(
+        app,
+        _g(seeded_db_url, "add"),
+        input="Ab, Author\nAbort title\nAbort2026Key\n3\n",  # 3 = abort
+    )
+    assert add.exit_code == 0
+    assert "aborted" in add.output.lower()
+
+
 def test_add_duplicate_is_plain(seeded_db_url: str) -> None:
     """Adding a duplicate BibTeX key shows a plain message, not a traceback."""
     add = runner.invoke(
@@ -159,6 +193,56 @@ def test_update_abort(seeded_db_url: str) -> None:
     assert upd.exit_code == 0
 
 
+def test_update_papers_column_abort(seeded_db_url: str) -> None:
+    """Aborting at the papers column sub-menu makes no change."""
+    upd = runner.invoke(app, _g(seeded_db_url, "update"), input="1\n3\n")
+    assert upd.exit_code == 0
+
+
+def test_update_bibtex(seeded_db_url: str) -> None:
+    """update on the bib table edits the BibTeX source."""
+    upd = runner.invoke(
+        app,
+        _g(seeded_db_url, "update"),
+        input="2\nWang2021LargeScaleSA\n@article{Wang2021LargeScaleSA, note={cli}}\ny\n",
+    )
+    assert upd.exit_code == 0, upd.output
+    assert "Update applied" in upd.output
+
+
+def test_update_author(seeded_db_url: str) -> None:
+    """update on the authors table renames an author by id."""
+    upd = runner.invoke(
+        app,
+        _g(seeded_db_url, "update"),
+        input="3\n1\nRenamed, Author\ny\n",
+    )
+    assert upd.exit_code == 0, upd.output
+    assert "Update applied" in upd.output
+
+
+def test_update_bad_identifier_is_plain(seeded_db_url: str) -> None:
+    """A non-integer paper id yields a plain message, not a traceback."""
+    upd = runner.invoke(
+        app,
+        _g(seeded_db_url, "update"),
+        input="1\n1\nnot-a-number\nNew\ny\n",
+    )
+    assert upd.exit_code == 0
+    assert "not valid" in upd.output
+
+
+def test_update_missing_paper_is_plain(seeded_db_url: str) -> None:
+    """Updating a non-existent paper id yields a plain message."""
+    upd = runner.invoke(
+        app,
+        _g(seeded_db_url, "update"),
+        input="1\n1\n99999\nNew\ny\n",
+    )
+    assert upd.exit_code == 0
+    assert "Could not apply" in upd.output
+
+
 def test_delete_confirm_yes(seeded_db_url: str) -> None:
     """delete with confirm=yes removes the paper and its bib row."""
     result = runner.invoke(
@@ -179,6 +263,19 @@ def test_delete_confirm_no(seeded_db_url: str) -> None:
     )
     assert result.exit_code == 0
     assert "Nothing deleted" in result.output
+
+
+def test_delete_not_found(seeded_db_url: str) -> None:
+    """Deleting a non-existent title yields a plain message."""
+    result = runner.invoke(app, _g(seeded_db_url, "delete"), input="No such paper\n")
+    assert result.exit_code == 0
+    assert "No papers found" in result.output
+
+
+def test_delete_disambiguation_abort(seeded_db_url: str) -> None:
+    """Aborting the delete disambiguation makes no change."""
+    result = runner.invoke(app, _g(seeded_db_url, "delete"), input="Attention is all you need\n3\n")
+    assert result.exit_code == 0
 
 
 def test_menu_quit(seeded_db_url: str) -> None:

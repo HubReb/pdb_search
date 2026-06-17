@@ -52,8 +52,8 @@ output to legacy against the seed data (`test_cli.py` via `CliRunner`).
 **Goal**: suite runs on a fresh checkout with no developer-local DB.
 **Independent test**: `uv run pytest` passes with no `database.crypt`/`key`.
 
-- [ ] T023 [P] [US3] Config-layer tests: four-source priority resolution, `PDBSEARCH_*` env, `.env`, Fernet-encrypted source round-trip, missing-key → `ConfigError` in `tests/test_config.py`
-- [ ] T024 [US3] Verify full suite is self-contained (no path to `../../database.crypt`/`key`); add a coverage configuration that reports per-layer and confirm `uv run pytest` green on a clean tree
+- [X] T023 [P] [US3] Config-layer tests: four-source priority resolution, `PDBSEARCH_*` env, `.env`, Fernet-encrypted source round-trip, missing-key → `ConfigError` in `tests/test_config.py`
+- [X] T024 [US3] Verify full suite is self-contained (no path to `../../database.crypt`/`key`); add a coverage configuration that reports per-layer and confirm `uv run pytest` green on a clean tree
 
 ## Phase 5: User Story 4 — One-shot migration (P2)
 
@@ -63,7 +63,7 @@ row counts identical; rerun is a no-op.
 
 - [X] T025 [US4] Alembic revision `002_converge_legacy`: idempotent rename of legacy `bibtext_id`→`bibtex_id` on `papers`/`bib` guarded on `information_schema` (no-op on canonical/fresh) in `migrations/versions/002_converge_legacy.py`
 - [X] T026 [US4] Implement `cli/migrate.py` (`pdbsearch migrate`): inspect schema, bring to head idempotently, report row counts unchanged in `src/paper_sorts/cli/migrate.py`
-- [ ] T027 [P] [US4] Migration tests (real DB): build a legacy-`bibtext_id` schema with rows → migrate → assert canonical + identical paper/author/authorship/bib counts; build canonical → migrate is no-op; rerun idempotent in `tests/test_migrate.py`
+- [X] T027 [P] [US4] Migration tests (real DB): build a legacy-`bibtext_id` schema with rows → migrate → assert canonical + identical paper/author/authorship/bib counts; build canonical → migrate is no-op; rerun idempotent in `tests/test_migrate.py`
 
 ## Phase 6: User Story 5 — Bulk import preserved (P3)
 
@@ -72,7 +72,7 @@ row counts identical; rerun is a no-op.
 
 - [X] T028 [US5] Implement `services/import_service.extract_papers_from_tex_bib(tex, bib) -> Iterator[PaperCreate]` (pybtex + pylatexenc; skip+log keys with no `.bib` match) in `src/paper_sorts/services/import_service.py`
 - [X] T029 [US5] Implement `cli/importer.py` (`pdbsearch import --tex --bib`, per-paper commit, dupes skipped via BibTeX-key uniqueness) in `src/paper_sorts/cli/importer.py`
-- [ ] T030 [P] [US5] Import-service tests + a `.tex`/`.bib` fixture pair: N entries imported, unmatched key skipped, partial-failure preserves earlier papers in `tests/test_import_service.py` (+ fixtures under `tests/fixtures/`)
+- [X] T030 [P] [US5] Import-service tests + a `.tex`/`.bib` fixture pair: N entries imported, unmatched key skipped, partial-failure preserves earlier papers in `tests/test_import_service.py` (+ fixtures under `tests/fixtures/`)
 
 ## Phase 7: User Story 1 — Reverse-engineered architecture doc (P1)
 

@@ -50,7 +50,7 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [tool.coverage.run]
-source = ["paper_sorts"]
+source = ["src/paper_sorts"]
 branch = false
 
 [tool.coverage.report]
