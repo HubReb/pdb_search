@@ -121,3 +121,34 @@ def test_legacy_convergence_preserves_rows_and_is_idempotent(
     assert _counts(eng) == before
     assert "bibtex_id" in _table_columns(eng, "bib")
     eng.dispose()
+
+
+def test_migrate_subcommand_is_idempotent(legacy_db_url: str) -> None:
+    """The ``pdbsearch migrate`` subcommand converges a legacy DB and reruns clean.
+
+    Exercises the CLI migrate path end-to-end (US4 via the public surface).
+    """
+    from typer.testing import CliRunner
+
+    from paper_sorts.cli.app import app
+    from paper_sorts.db.session import create_db_engine
+
+    eng = create_db_engine(legacy_db_url)
+    _build_legacy_schema(eng)
+    # Tables already exist from legacy DDL; stamp the baseline so upgrade runs 0002.
+    from alembic import command
+    from alembic.config import Config
+
+    cfg = Config("alembic.ini")
+    cfg.attributes["sqlalchemy.url"] = legacy_db_url
+    command.stamp(cfg, "0001")
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["--database-url", legacy_db_url, "migrate"])
+    assert result.exit_code == 0, result.output
+    assert "up to date" in result.output
+    assert "bibtex_id" in _table_columns(eng, "bib")
+
+    rerun = runner.invoke(app, ["--database-url", legacy_db_url, "migrate"])
+    assert rerun.exit_code == 0
+    eng.dispose()

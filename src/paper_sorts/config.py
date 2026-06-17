@@ -47,7 +47,9 @@ def _build_database_url(section: dict[str, str]) -> str:
     return f"postgresql+psycopg://{credentials}{host}:{port}/{dbname}"
 
 
-def load_encrypted_database_url(config_path: Path, key_path: Path, section: str = "postgresql") -> str:
+def load_encrypted_database_url(
+    config_path: Path, key_path: Path, section: str = "postgresql"
+) -> str:
     """Decrypt a Fernet-encrypted INI and return its database URL.
 
     :param config_path: path to the encrypted INI file.

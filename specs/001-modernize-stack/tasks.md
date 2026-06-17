@@ -55,20 +55,20 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Independent Test**: scripted dialog through every path against `seeded_db` produces equivalent-or-improved output; abort/`n` writes nothing.
 
-- [ ] T014 [P] [US2] Define DTOs `PaperSummary` and `PaperCreate` (pydantic) in `src/paper_sorts/db/repositories.py`.
-- [ ] T015 [US2] Implement `PaperRepository` in `src/paper_sorts/db/repositories.py` — `search_by_title`, `search_by_author` (parameterised joins over the four tables, returning `PaperSummary`), `get_bibtex`, `add_paper(PaperCreate)` (single transaction), `delete_paper`, plus title/contents/bibtex update primitives.
-- [ ] T016 [US2] Implement `AuthorRepository`/`BibRepository` (or author/bib methods) in `src/paper_sorts/db/repositories.py` — author upsert + link, author rename/merge, drop-author-with-no-papers, bibtex uniqueness check.
-- [ ] T017 [P] [US2] Implement `src/paper_sorts/services/paper_service.py` — `search_by_title`, `search_by_author`, `add_paper`, `delete_paper`, and `update_field(table: Literal["papers","bib","authors_id"], …)` dispatching via `match`/`case` with `assert_never(table)`; rejects `authors_papers` and `*_id` columns. Pure orchestration over DTOs/repos; no SQL, no rich.
-- [ ] T018 [P] [US2] Implement `src/paper_sorts/cli/prompts.py` — the only module permitted to import `rich.prompt`; helpers for non-empty text prompt (empty → re-prompt), 1-indexed numbered choice with abort, and y/n+1/2 confirmation.
-- [ ] T019 [US2] Implement `src/paper_sorts/cli/search.py` — author/title sub-menu, disambiguation on multiple matches, Rich rendering matching `pretty_print_results` (title/authors/summary/bib).
-- [ ] T020 [US2] Implement `src/paper_sorts/cli/add.py` — prompts for authors/title/key/bib(inline or file)/summary; build `PaperCreate`; call service; plain success/failure message.
-- [ ] T021 [US2] Implement `src/paper_sorts/cli/update.py` — table→column menus, identifier + new value prompts, confirmation summarising the change; surface `ValueError` as a plain message.
-- [ ] T022 [US2] Implement `src/paper_sorts/cli/delete.py` — identify + summarise + confirm + delete (paper, bib, links, orphan authors).
-- [ ] T023 [US2] Implement `src/paper_sorts/cli/app.py` — Typer app wiring `search/add/update/delete` subcommands, global config options (`--database-url/--log-level/--config/--key`), `configure_logging` at startup, and the bare-invocation four-option menu (`migrate`/`import` registered but absent from the menu).
-- [ ] T024 [P] [US2] Add `tests/test_repositories.py` — real-DB CRUD/search/update/delete against `seeded_db` (persistence layer ≥ 80%, G1).
-- [ ] T025 [P] [US2] Add `tests/test_paper_service.py` — service-layer behaviour incl. `update_field` rejection paths (service layer ≥ 80%, G1).
-- [ ] T026 [P] [US2] Add `tests/test_prompts.py` — empty-input re-prompt, malformed choice re-prompt, confirmation parsing (config/prompts unit coverage).
-- [ ] T027 [US2] Add `tests/test_cli.py` — end-to-end Typer `CliRunner` over every subcommand and the bare menu, asserting parity output and that abort/`n` writes nothing (interface layer ≥ 80% via E2E, G1).
+- [x] T014 [P] [US2] Define DTOs `PaperSummary` and `PaperCreate` (pydantic) in `src/paper_sorts/db/repositories.py`.
+- [x] T015 [US2] Implement `PaperRepository` in `src/paper_sorts/db/repositories.py` — `search_by_title`, `search_by_author` (parameterised joins over the four tables, returning `PaperSummary`), `get_bibtex`, `add_paper(PaperCreate)` (single transaction), `delete_paper`, plus title/contents/bibtex update primitives.
+- [x] T016 [US2] Implement `AuthorRepository`/`BibRepository` (or author/bib methods) in `src/paper_sorts/db/repositories.py` — author upsert + link, author rename/merge, drop-author-with-no-papers, bibtex uniqueness check.
+- [x] T017 [P] [US2] Implement `src/paper_sorts/services/paper_service.py` — `search_by_title`, `search_by_author`, `add_paper`, `delete_paper`, and `update_field(table: Literal["papers","bib","authors_id"], …)` dispatching via `match`/`case` with `assert_never(table)`; rejects `authors_papers` and `*_id` columns. Pure orchestration over DTOs/repos; no SQL, no rich.
+- [x] T018 [P] [US2] Implement `src/paper_sorts/cli/prompts.py` — the only module permitted to import `rich.prompt`; helpers for non-empty text prompt (empty → re-prompt), 1-indexed numbered choice with abort, and y/n+1/2 confirmation.
+- [x] T019 [US2] Implement `src/paper_sorts/cli/search.py` — author/title sub-menu, disambiguation on multiple matches, Rich rendering matching `pretty_print_results` (title/authors/summary/bib).
+- [x] T020 [US2] Implement `src/paper_sorts/cli/add.py` — prompts for authors/title/key/bib(inline or file)/summary; build `PaperCreate`; call service; plain success/failure message.
+- [x] T021 [US2] Implement `src/paper_sorts/cli/update.py` — table→column menus, identifier + new value prompts, confirmation summarising the change; surface `ValueError` as a plain message.
+- [x] T022 [US2] Implement `src/paper_sorts/cli/delete.py` — identify + summarise + confirm + delete (paper, bib, links, orphan authors).
+- [x] T023 [US2] Implement `src/paper_sorts/cli/app.py` — Typer app wiring `search/add/update/delete` subcommands, global config options (`--database-url/--log-level/--config/--key`), `configure_logging` at startup, and the bare-invocation four-option menu (`migrate`/`import` registered but absent from the menu).
+- [x] T024 [P] [US2] Add `tests/test_repositories.py` — real-DB CRUD/search/update/delete against `seeded_db` (persistence layer ≥ 80%, G1).
+- [x] T025 [P] [US2] Add `tests/test_paper_service.py` — service-layer behaviour incl. `update_field` rejection paths (service layer ≥ 80%, G1).
+- [x] T026 [P] [US2] Add `tests/test_prompts.py` — empty-input re-prompt, malformed choice re-prompt, confirmation parsing (config/prompts unit coverage).
+- [x] T027 [US2] Add `tests/test_cli.py` — end-to-end Typer `CliRunner` over every subcommand and the bare menu, asserting parity output and that abort/`n` writes nothing (interface layer ≥ 80% via E2E, G1).
 
 **Checkpoint**: US2 independently testable; all legacy flows reproduced and green. **This is the MVP.**
 
@@ -80,8 +80,8 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Independent Test**: clone on a machine without the personal DB → install + test passes.
 
-- [ ] T028 [US3] Verify and document the no-local-state guarantee: assert no test imports `ConfigReader`/`database.crypt`/`key`; ensure every row-asserting test references `SEED_PAPERS` (Principle II). Add a guard test if useful.
-- [ ] T029 [P] [US3] Confirm `pytest-cov` per-layer reporting and add a coverage configuration (`--cov=src/paper_sorts`) so db/services/cli/config are each measurable ≥ 80% (G1).
+- [x] T028 [US3] Verify and document the no-local-state guarantee: assert no test imports `ConfigReader`/`database.crypt`/`key`; ensure every row-asserting test references `SEED_PAPERS` (Principle II). Add a guard test if useful.
+- [x] T029 [P] [US3] Confirm `pytest-cov` per-layer reporting and add a coverage configuration (`--cov=src/paper_sorts`) so db/services/cli/config are each measurable ≥ 80% (G1).
 
 **Checkpoint**: suite is self-contained and deterministic across reruns.
 
@@ -93,8 +93,8 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Independent Test**: snapshot a legacy DB, migrate, compare counts exactly; rerun is a no-op.
 
-- [ ] T030 [US4] Implement `src/paper_sorts/cli/migrate.py` — subcommand running Alembic to head against the configured DB; plain-language success/failure.
-- [ ] T031 [US4] Extend `tests/test_migrations.py` (or add a CLI migrate test) exercising the migrate subcommand via `CliRunner` against a legacy `bibtext_id` DB and asserting parity + idempotent rerun.
+- [x] T030 [US4] Implement `src/paper_sorts/cli/migrate.py` — subcommand running Alembic to head against the configured DB; plain-language success/failure.
+- [x] T031 [US4] Extend `tests/test_migrations.py` (or add a CLI migrate test) exercising the migrate subcommand via `CliRunner` against a legacy `bibtext_id` DB and asserting parity + idempotent rerun.
 
 **Checkpoint**: migration command delivers US4 end-to-end.
 
@@ -106,9 +106,9 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Independent Test**: import a fixture `.tex`+`.bib` with N entries → N papers/authors/bib present.
 
-- [ ] T032 [US5] Implement `src/paper_sorts/services/import_service.py` — `extract_papers_from_tex_bib(tex, bib) -> Iterator[PaperCreate]` (pybtex + pylatexenc), skipping citation keys with no `.bib` match.
-- [ ] T033 [US5] Implement `src/paper_sorts/cli/importer.py` — `import` subcommand iterating the extractor, committing per paper (US5 AS3), logging a warning on skip, skipping existing bibtex keys on rerun.
-- [ ] T034 [P] [US5] Add `tests/test_import_service.py` with a fixture `.tex`+`.bib` pair — assert N papers/authors/bib inserted, unmatched key skipped, rerun does not duplicate.
+- [x] T032 [US5] Implement `src/paper_sorts/services/import_service.py` — `extract_papers_from_tex_bib(tex, bib) -> Iterator[PaperCreate]` (pybtex + pylatexenc), skipping citation keys with no `.bib` match.
+- [x] T033 [US5] Implement `src/paper_sorts/cli/importer.py` — `import` subcommand iterating the extractor, committing per paper (US5 AS3), logging a warning on skip, skipping existing bibtex keys on rerun.
+- [x] T034 [P] [US5] Add `tests/test_import_service.py` with a fixture `.tex`+`.bib` pair — assert N papers/authors/bib inserted, unmatched key skipped, rerun does not duplicate.
 
 **Checkpoint**: bulk import delivered.
 

@@ -32,7 +32,7 @@ Your choice:
 
 ## `pdbsearch add`
 
-- Prompts: authors (comma-separated `Last, First` list), paper title, bibtex key, then "enter bibtex via file?" (`1) Yes 2) No`) → filename or inline bib entry, then summary.
+- Prompts: authors (`;`-separated list of `Last, First` names — a `;` delimiter keeps each `Last, First` intact, an improvement over the legacy `, `-split quirk), paper title, bibtex key, then "enter bibtex via file?" (`1) Yes 2) No`) → filename or inline bib entry, then summary.
 - Empty input on any required prompt re-prompts (legacy `get_user_input`).
 - Persists Paper + Bib + Author links in one transaction. Duplicate bibtex key → plain error, no partial write.
 - Retrievable afterward by both author and title (US2 AS3).
