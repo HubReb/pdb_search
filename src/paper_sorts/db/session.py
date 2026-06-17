@@ -13,6 +13,12 @@ from contextlib import contextmanager
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
+#: Public alias for the persistence engine type, re-exported so that the
+#: service and CLI layers can annotate the engine they pass around without
+#: importing ``sqlalchemy`` themselves (Principle I: only ``db/`` imports the
+#: ORM/driver).
+DbEngine = Engine
+
 
 def create_db_engine(database_url: str) -> Engine:
     """Create a SQLAlchemy engine for the given database URL.

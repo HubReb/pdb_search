@@ -10,10 +10,10 @@ from __future__ import annotations
 import logging
 
 from rich.console import Console
-from sqlalchemy import Engine
 
 from paper_sorts.cli.prompts import ABORT, ask_choice, ask_text
 from paper_sorts.db.repositories import PaperSummary
+from paper_sorts.db.session import DbEngine
 from paper_sorts.services import paper_service
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def _pick(results: list[PaperSummary]) -> PaperSummary | None:
     return results[choice]
 
 
-def run_search(engine: Engine) -> None:
+def run_search(engine: DbEngine) -> None:
     """Drive the interactive search dialog.
 
     :param engine: the database engine.

@@ -10,8 +10,6 @@ from __future__ import annotations
 
 from typing import Literal, assert_never
 
-from sqlalchemy import Engine
-
 from paper_sorts.db.repositories import (
     AuthorRepository,
     BibRepository,
@@ -20,7 +18,7 @@ from paper_sorts.db.repositories import (
     PaperRepository,
     PaperSummary,
 )
-from paper_sorts.db.session import with_session
+from paper_sorts.db.session import DbEngine, with_session
 
 #: The tables whose rows can be targeted by :func:`update_field`.
 UpdatableTable = Literal["papers", "bib", "authors_id", "authors_papers"]
@@ -30,7 +28,7 @@ class UnknownColumnError(Exception):
     """Raised when a column is not editable for the requested table."""
 
 
-def search_by_title(engine: Engine, title: str) -> list[PaperSummary]:
+def search_by_title(engine: DbEngine, title: str) -> list[PaperSummary]:
     """Return every paper whose title matches exactly.
 
     :param engine: the database engine.
@@ -41,7 +39,7 @@ def search_by_title(engine: Engine, title: str) -> list[PaperSummary]:
         return PaperRepository(session).search_by_title(title)
 
 
-def search_by_author(engine: Engine, author: str) -> list[PaperSummary]:
+def search_by_author(engine: DbEngine, author: str) -> list[PaperSummary]:
     """Return every paper credited to the given author.
 
     :param engine: the database engine.
@@ -52,7 +50,7 @@ def search_by_author(engine: Engine, author: str) -> list[PaperSummary]:
         return PaperRepository(session).search_by_author(author)
 
 
-def add_paper(engine: Engine, paper: PaperCreate) -> None:
+def add_paper(engine: DbEngine, paper: PaperCreate) -> None:
     """Persist a paper atomically (bib row, paper row, author links).
 
     :param engine: the database engine.
@@ -64,7 +62,7 @@ def add_paper(engine: Engine, paper: PaperCreate) -> None:
 
 
 def update_field(
-    engine: Engine,
+    engine: DbEngine,
     table: UpdatableTable,
     column: str,
     value: str,
@@ -115,7 +113,7 @@ def update_field(
                 assert_never(table)
 
 
-def delete_paper(engine: Engine, paper_id: int) -> None:
+def delete_paper(engine: DbEngine, paper_id: int) -> None:
     """Delete a paper, its author links, orphaned authors, and bib row.
 
     :param engine: the database engine.

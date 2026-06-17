@@ -11,10 +11,10 @@ from __future__ import annotations
 import logging
 
 from rich.console import Console
-from sqlalchemy import Engine
 
 from paper_sorts.cli.prompts import ABORT, ask_choice, ask_text, confirm
 from paper_sorts.db.repositories import DuplicateBibtexError, PaperNotFoundError
+from paper_sorts.db.session import DbEngine
 from paper_sorts.services import paper_service
 from paper_sorts.services.paper_service import UnknownColumnError, UpdatableTable
 
@@ -33,7 +33,7 @@ def _choose_papers_column() -> str | None:
     return ["title", "contents"][choice]
 
 
-def run_update(engine: Engine) -> None:
+def run_update(engine: DbEngine) -> None:
     """Drive the interactive update dialog.
 
     :param engine: the database engine.

@@ -47,6 +47,7 @@ select = ["E", "F", "I", "UP", "B", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+python_files = ["test_*.py", "bench_*.py"]
 addopts = "-q"
 
 [tool.coverage.run]

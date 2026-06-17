@@ -10,17 +10,17 @@ from __future__ import annotations
 import logging
 
 from rich.console import Console
-from sqlalchemy import Engine
 
 from paper_sorts.cli.prompts import ask_choice, ask_text, confirm
 from paper_sorts.db.repositories import PaperNotFoundError, PaperSummary
+from paper_sorts.db.session import DbEngine
 from paper_sorts.services import paper_service
 
 _logger = logging.getLogger(__name__)
 _console = Console()
 
 
-def _identify(engine: Engine) -> PaperSummary | None:
+def _identify(engine: DbEngine) -> PaperSummary | None:
     """Locate the paper to delete by title.
 
     :param engine: the database engine.
@@ -40,7 +40,7 @@ def _identify(engine: Engine) -> PaperSummary | None:
     return results[choice]
 
 
-def run_delete(engine: Engine) -> None:
+def run_delete(engine: DbEngine) -> None:
     """Drive the interactive delete dialog.
 
     :param engine: the database engine.

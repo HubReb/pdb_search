@@ -11,10 +11,10 @@ import logging
 from pathlib import Path
 
 from rich.console import Console
-from sqlalchemy import Engine
 
 from paper_sorts.cli.prompts import ABORT, ask_choice, ask_text
 from paper_sorts.db.repositories import DuplicateBibtexError, PaperCreate
+from paper_sorts.db.session import DbEngine
 from paper_sorts.services import paper_service
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def _read_bibtex() -> str | None:
     return ask_text("Enter the BibTeX entry")
 
 
-def run_add(engine: Engine) -> None:
+def run_add(engine: DbEngine) -> None:
     """Drive the interactive add dialog.
 
     :param engine: the database engine.

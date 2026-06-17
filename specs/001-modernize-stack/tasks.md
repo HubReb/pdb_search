@@ -80,18 +80,18 @@ row counts identical; rerun is a no-op.
 **Independent test**: a fresh Python dev can answer "what does it do / data model
 / where to add a field" from the doc alone.
 
-- [ ] T031 [P] [US1] Write `docs/architecture.md`: purpose, user journeys, four-table data model + relationships, control flow (CLI dialog → service → persistence), config approach, install/run, rollback semantics, known limitations/quirks (duplicate-author identity, `bibtext_id` typo schema) in `docs/architecture.md`
+- [X] T031 [P] [US1] Write `docs/architecture.md`: purpose, user journeys, four-table data model + relationships, control flow (CLI dialog → service → persistence), config approach, install/run, rollback semantics, known limitations/quirks (duplicate-author identity, `bibtext_id` typo schema) in `docs/architecture.md`
 
 ## Phase 8: Polish & Cross-Cutting (gates, docs, legacy removal)
 
-- [ ] T032 Remove legacy flat-layout modules `paper_sorts/add.py`, `paper_sorts/search.py`, `paper_sorts/get_data.py`, and the rest of the legacy `paper_sorts/` package + legacy `tests/test_*.py` once covered (FR-012)
-- [ ] T033 Rewrite `README.md` for the modern stack — MUST NOT contain forbidden tokens `Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB` (G3) in `README.md`
-- [ ] T034 Rewrite `CLAUDE.md` for the modern stack (architecture, commands, schema, tests, SpecKit pointer to plan) — MUST NOT contain the G3 forbidden tokens in `CLAUDE.md`
-- [ ] T035 [P] Implement the doc-currency test (G3): a case-sensitive search asserting `README.md`/`CLAUDE.md` contain none of `Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB` in `tests/test_doc_currency.py`
-- [ ] T036 Implement the executing baseline benchmark (G2): `tests/benchmarks/bench_baseline.py` times the five interactive ops against the seeded DB and writes/asserts `tests/benchmarks/baseline.json` — must run (not `@pytest.mark.skip`); add `tests/benchmarks/__init__.py`
-- [ ] T037 Amend the constitution via `/speckit-constitution` (FR-016/SC-007): Development Workflow & Quality Gates `pylint paper_sorts`+unittest → `ruff check src tests`+`pytest`; `DatabaseConnector.create_tables()` → Alembic migrations under `migrations/versions/` (PATCH bump)
-- [ ] T038 Per-layer coverage gate (G1): run `uv run pytest --cov` and confirm each of `db/`, `services/`, `cli/`, `config.py` independently ≥80%; add tests where any layer is short
-- [ ] T039 Final green gate: `uv run ruff check src tests`, `uv run ruff format --check src tests`, `uv run mypy src`, `uv run pytest` all pass; verify SC-005 line-count reduction ≥30% vs legacy ~2300
+- [X] T032 Remove legacy flat-layout modules `paper_sorts/add.py`, `paper_sorts/search.py`, `paper_sorts/get_data.py`, and the rest of the legacy `paper_sorts/` package + legacy `tests/test_*.py` once covered (FR-012)
+- [X] T033 Rewrite `README.md` for the modern stack — MUST NOT contain forbidden tokens `Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB` (G3) in `README.md`
+- [X] T034 Rewrite `CLAUDE.md` for the modern stack (architecture, commands, schema, tests, SpecKit pointer to plan) — MUST NOT contain the G3 forbidden tokens in `CLAUDE.md`
+- [X] T035 [P] Implement the doc-currency test (G3): a case-sensitive search asserting `README.md`/`CLAUDE.md` contain none of `Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB` in `tests/test_doc_currency.py`
+- [X] T036 Implement the executing baseline benchmark (G2): `tests/benchmarks/bench_baseline.py` times the five interactive ops against the seeded DB and writes/asserts `tests/benchmarks/baseline.json` — must run (not `@pytest.mark.skip`); add `tests/benchmarks/__init__.py`
+- [X] T037 Amend the constitution via `/speckit-constitution` (FR-016/SC-007): Development Workflow & Quality Gates `pylint paper_sorts`+unittest → `ruff check src tests`+`pytest`; `DatabaseConnector.create_tables()` → Alembic migrations under `migrations/versions/` (PATCH bump)
+- [X] T038 Per-layer coverage gate (G1): run `uv run pytest --cov` and confirm each of `db/`, `services/`, `cli/`, `config.py` independently ≥80%; add tests where any layer is short
+- [X] T039 Final green gate: `uv run ruff check src tests`, `uv run ruff format --check src tests`, `uv run mypy src`, `uv run pytest` all pass; verify SC-005 line-count reduction ≥30% vs legacy ~2300
 
 ---
 

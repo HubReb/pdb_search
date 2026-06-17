@@ -12,9 +12,9 @@ import logging
 from pathlib import Path
 
 from rich.console import Console
-from sqlalchemy import Engine
 
 from paper_sorts.db.repositories import DuplicateBibtexError
+from paper_sorts.db.session import DbEngine
 from paper_sorts.services import paper_service
 from paper_sorts.services.import_service import extract_papers_from_tex_bib
 
@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 _console = Console()
 
 
-def run_import(engine: Engine, tex_path: str, bib_path: str) -> None:
+def run_import(engine: DbEngine, tex_path: str, bib_path: str) -> None:
     """Import every cited paper from the given ``.tex`` and ``.bib`` files.
 
     :param engine: the database engine.

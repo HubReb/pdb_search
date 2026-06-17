@@ -16,7 +16,6 @@ import logging
 
 import typer
 from rich.console import Console
-from sqlalchemy import Engine
 
 from paper_sorts.cli import add as add_cmd
 from paper_sorts.cli import delete as delete_cmd
@@ -26,7 +25,7 @@ from paper_sorts.cli import search as search_cmd
 from paper_sorts.cli import update as update_cmd
 from paper_sorts.cli.prompts import ABORT, ask_choice
 from paper_sorts.config import ConfigError, Settings
-from paper_sorts.db.session import create_db_engine
+from paper_sorts.db.session import DbEngine, create_db_engine
 from paper_sorts.logging_config import setup_logging
 
 _logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ app = typer.Typer(
 )
 
 
-def _resolve_engine(ctx: typer.Context) -> Engine:
+def _resolve_engine(ctx: typer.Context) -> DbEngine:
     """Build the database engine from the resolved settings on the context.
 
     :param ctx: the Typer context carrying the resolved :class:`Settings`.

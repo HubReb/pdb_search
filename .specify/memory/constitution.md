@@ -1,6 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.3.0-b2-hardened → 1.3.1-b2-hardened  [EXPERIMENT WORKTREE ONLY]
+Bump rationale: PATCH — wording-alignment of the Development Workflow & Quality
+  Gates section with the already-modern principle bodies (FR-016 / SC-007 of
+  001-modernize-stack). No principle body changed; no semantics altered.
+Modified sections:
+  Development Workflow & Quality Gates —
+    "pylint paper_sorts" + unittest suite → "ruff check src tests" + pytest
+      (ephemeral PostgreSQL via pytest-postgresql).
+    Schema changes MUST update DatabaseConnector.create_tables() (a deleted
+      legacy method) → schema changes MUST land as Alembic migrations under
+      migrations/versions/.
+Templates / docs reviewed for propagation:
+  ✅ README.md / CLAUDE.md — already describe ruff + pytest + Alembic (G3 clean).
+  ✅ specs/001-modernize-stack/* — plan.md FR-016 amendments match this wording.
+Deferred / TODO: None.
+
+---
+
 Version change: 1.3.0 → 1.3.0-b2-hardened  [EXPERIMENT BRANCH — NOT THE REAL v1.4.0 LINE]
 Bump rationale: EXPERIMENTAL hardening for offload experiment B2. Three
   mechanical gates added to close the exact dimensions a hands-off Sonnet
@@ -292,8 +310,8 @@ fictional target.
 
 ## Development Workflow & Quality Gates
 
-- Every change MUST pass `pylint paper_sorts` and the unittest suite (where
-  the live development database is available) before being merged.
+- Every change MUST pass `ruff check src tests` and the `pytest` suite
+  (ephemeral PostgreSQL via pytest-postgresql) before being merged.
 - Every change that modifies a function signature MUST update the
   corresponding type hints and docstring in the same commit. Reviewers MUST
   reject changes that desynchronise these.
@@ -301,9 +319,10 @@ fictional target.
   section that lists which of the four principles the feature touches and
   flags any required waivers. Waivers MUST appear in the plan's Complexity
   Tracking table with a concrete justification.
-- Schema changes (new table, renamed column, changed FK) MUST update
-  `DatabaseConnector.create_tables()`, any affected test fixtures, and any
-  assertions referencing column names — all in the same change.
+- Schema changes (new table, renamed column, changed FK) MUST land as
+  versioned Alembic migrations under `migrations/versions/`, together with any
+  affected test fixtures and any assertions referencing column names — all in
+  the same change.
 
 ## Governance
 
@@ -324,4 +343,4 @@ fictional target.
   practice (false positives in review, blocking legitimate work), amend it
   rather than ignore it.
 
-**Version**: 1.3.0-b2-hardened (EXPERIMENT WORKTREE ONLY) | **Ratified**: 2026-04-26 | **Last Amended**: 2026-06-14
+**Version**: 1.3.1-b2-hardened (EXPERIMENT WORKTREE ONLY) | **Ratified**: 2026-04-26 | **Last Amended**: 2026-06-17
