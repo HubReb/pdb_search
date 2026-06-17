@@ -144,10 +144,7 @@ def test_delete_removes_paper_and_orphan_author(seeded_engine: Engine) -> None:
         assert {r.bibtex_id for r in remaining} == {"Vaswani2017Attention"}
         # Jane Doe had only that paper -> orphan removed
         assert session.get(Bib, "Doe2020Attention") is None
-        assert (
-            session.execute(select(Author).where(Author.author == "Doe, Jane")).first()
-            is None
-        )
+        assert session.execute(select(Author).where(Author.author == "Doe, Jane")).first() is None
         # Shared author survives via the other paper
         assert session.execute(
             select(Paper).where(Paper.bibtex_id == "Vaswani2017Attention")

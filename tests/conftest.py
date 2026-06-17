@@ -99,6 +99,27 @@ def seeded_engine(migrated_engine: Engine) -> Engine:
 
 
 @pytest.fixture
+def seeded_db_url(ephemeral_db_url: str) -> str:
+    """Migrate and seed a fresh database, returning its URL.
+
+    Used by interface-layer tests that drive the CLI through ``--database-url``.
+
+    :param ephemeral_db_url: URL of a fresh empty database.
+    :return: the URL of a migrated, seeded database.
+    """
+    command.upgrade(_alembic_config(ephemeral_db_url), "head")
+    engine = create_db_engine(ephemeral_db_url)
+    try:
+        with with_session(engine) as session:
+            repo = PaperRepository(session)
+            for paper in SEED_PAPERS:
+                repo.add(paper)
+    finally:
+        engine.dispose()
+    return ephemeral_db_url
+
+
+@pytest.fixture
 def legacy_engine(ephemeral_db_url: str) -> Iterator[Engine]:
     """Yield an engine on a database in the legacy ``bibtext_id`` (sic) schema.
 
@@ -119,10 +140,7 @@ def legacy_engine(ephemeral_db_url: str) -> Iterator[Engine]:
         )
         conn.execute(text("CREATE TABLE authors_id (id SERIAL PRIMARY KEY, author TEXT)"))
         conn.execute(
-            text(
-                "CREATE TABLE authors_papers (id SERIAL PRIMARY KEY, "
-                "author_id INT, paper_id INT)"
-            )
+            text("CREATE TABLE authors_papers (id SERIAL PRIMARY KEY, author_id INT, paper_id INT)")
         )
         conn.execute(
             text("INSERT INTO bib (bibtext_id, bibtext) VALUES ('Legacy2019', '@x{Legacy2019}')")
@@ -134,8 +152,6 @@ def legacy_engine(ephemeral_db_url: str) -> Iterator[Engine]:
             )
         )
         conn.execute(text("INSERT INTO authors_id (author) VALUES ('Old, Author')"))
-        conn.execute(
-            text("INSERT INTO authors_papers (author_id, paper_id) VALUES (1, 1)")
-        )
+        conn.execute(text("INSERT INTO authors_papers (author_id, paper_id) VALUES (1, 1)"))
     yield engine
     engine.dispose()

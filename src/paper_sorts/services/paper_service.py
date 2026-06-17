@@ -98,14 +98,10 @@ def update_field(
                 elif column == "contents":
                     repo.update_contents(paper_id, value)
                 else:
-                    raise UnknownColumnError(
-                        f"Column {column!r} is not editable on table 'papers'"
-                    )
+                    raise UnknownColumnError(f"Column {column!r} is not editable on table 'papers'")
             case "bib":
                 if column != "bibtex":
-                    raise UnknownColumnError(
-                        f"Column {column!r} is not editable on table 'bib'"
-                    )
+                    raise UnknownColumnError(f"Column {column!r} is not editable on table 'bib'")
                 BibRepository(session).update_bibtex(identifier, value)
             case "authors_id":
                 if column != "author":

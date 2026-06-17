@@ -146,9 +146,7 @@ class PaperRepository:
         :param name: author name.
         :return: the author's id.
         """
-        existing = self._session.execute(
-            select(Author.id).where(Author.author == name)
-        ).first()
+        existing = self._session.execute(select(Author.id).where(Author.author == name)).first()
         if existing is not None:
             return int(existing[0])
         author = Author(author=name)
@@ -171,9 +169,7 @@ class PaperRepository:
             raise DuplicateBibtexError("BibTeX source already exists")
 
         self._session.add(Bib(bibtex_id=paper.bibtex_id, bibtex=paper.bibtex))
-        new_paper = Paper(
-            title=paper.title, contents=paper.contents, bibtex_id=paper.bibtex_id
-        )
+        new_paper = Paper(title=paper.title, contents=paper.contents, bibtex_id=paper.bibtex_id)
         self._session.add(new_paper)
         self._session.flush()
         for name in paper.authors:
@@ -219,9 +215,7 @@ class PaperRepository:
                 select(AuthorPaper.author_id).where(AuthorPaper.paper_id == paper_id)
             ).all()
         ]
-        self._session.execute(
-            delete(AuthorPaper).where(AuthorPaper.paper_id == paper_id)
-        )
+        self._session.execute(delete(AuthorPaper).where(AuthorPaper.paper_id == paper_id))
         for author_id in author_ids:
             remaining = self._session.execute(
                 select(func.count())

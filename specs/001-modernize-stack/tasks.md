@@ -40,12 +40,12 @@ output to legacy against the seed data (`test_cli.py` via `CliRunner`).
 - [X] T014 [P] [US2] Persistence-layer tests (real DB, no mocking): search by title (1 match / multi-match), search by author, add+retrieve, update title/contents/bibtex/author, delete with author orphan cleanup; reference `SEED_PAPERS` in `tests/test_repositories.py`
 - [X] T015 [US2] Implement `services/paper_service.py` (`search_by_title`, `search_by_author`, `add_paper`, `update_field` with `match`/`case` over `Literal[...]` table + `assert_never`, `delete_paper`) raising typed domain errors in `src/paper_sorts/services/paper_service.py`
 - [X] T016 [P] [US2] Service-layer tests for paper_service (incl. update_field rejecting ID columns and `authors_papers`; duplicate-bibtex error) in `tests/test_paper_service.py`
-- [ ] T017 [US2] Implement `cli/search.py` interactive flow (author/title sub-menu, disambiguation, legacy pretty-print output, plain not-found message) in `src/paper_sorts/cli/search.py`
-- [ ] T018 [US2] Implement `cli/add.py` (authors/title/key/file-or-inline-bib/summary prompts via prompts.py; atomic persist) in `src/paper_sorts/cli/add.py`
-- [ ] T019 [US2] Implement `cli/update.py` (table menu → column menu → id → value → confirmation summary) in `src/paper_sorts/cli/update.py`
-- [ ] T020 [US2] Implement `cli/delete.py` (identify → summarise → confirm → delete) in `src/paper_sorts/cli/delete.py`
-- [ ] T021 [US2] Implement `cli/app.py`: Typer app wiring all subcommands, global config options (`--database-url`/`--log-level`/`--config`/`--key`), `setup_logging` at startup, and the no-subcommand four-option top-level menu (Search/Add/Update/Quit) in `src/paper_sorts/cli/app.py`
-- [ ] T022 [P] [US2] Interface-layer tests (G1): `CliRunner` exercising `search`, `add`, `update`, `delete` (+ `import`, `migrate` smoke) and the no-subcommand menu; abort/quit/empty-reprompt/confirm-no paths in `tests/test_cli.py`
+- [X] T017 [US2] Implement `cli/search.py` interactive flow (author/title sub-menu, disambiguation, legacy pretty-print output, plain not-found message) in `src/paper_sorts/cli/search.py`
+- [X] T018 [US2] Implement `cli/add.py` (authors/title/key/file-or-inline-bib/summary prompts via prompts.py; atomic persist) in `src/paper_sorts/cli/add.py`
+- [X] T019 [US2] Implement `cli/update.py` (table menu → column menu → id → value → confirmation summary) in `src/paper_sorts/cli/update.py`
+- [X] T020 [US2] Implement `cli/delete.py` (identify → summarise → confirm → delete) in `src/paper_sorts/cli/delete.py`
+- [X] T021 [US2] Implement `cli/app.py`: Typer app wiring all subcommands, global config options (`--database-url`/`--log-level`/`--config`/`--key`), `setup_logging` at startup, and the no-subcommand four-option top-level menu (Search/Add/Update/Quit) in `src/paper_sorts/cli/app.py`
+- [X] T022 [P] [US2] Interface-layer tests (G1): `CliRunner` exercising `search`, `add`, `update`, `delete` (+ `import`, `migrate` smoke) and the no-subcommand menu; abort/quit/empty-reprompt/confirm-no paths in `tests/test_cli.py`
 
 ## Phase 4: User Story 3 — Reproducible test suite (P2)
 
@@ -61,8 +61,8 @@ output to legacy against the seed data (`test_cli.py` via `CliRunner`).
 **Independent test**: seed a `bibtext_id` (sic) DB and a `bibtex_id` DB; migrate;
 row counts identical; rerun is a no-op.
 
-- [ ] T025 [US4] Alembic revision `002_converge_legacy`: idempotent rename of legacy `bibtext_id`→`bibtex_id` on `papers`/`bib` guarded on `information_schema` (no-op on canonical/fresh) in `migrations/versions/002_converge_legacy.py`
-- [ ] T026 [US4] Implement `cli/migrate.py` (`pdbsearch migrate`): inspect schema, bring to head idempotently, report row counts unchanged in `src/paper_sorts/cli/migrate.py`
+- [X] T025 [US4] Alembic revision `002_converge_legacy`: idempotent rename of legacy `bibtext_id`→`bibtex_id` on `papers`/`bib` guarded on `information_schema` (no-op on canonical/fresh) in `migrations/versions/002_converge_legacy.py`
+- [X] T026 [US4] Implement `cli/migrate.py` (`pdbsearch migrate`): inspect schema, bring to head idempotently, report row counts unchanged in `src/paper_sorts/cli/migrate.py`
 - [ ] T027 [P] [US4] Migration tests (real DB): build a legacy-`bibtext_id` schema with rows → migrate → assert canonical + identical paper/author/authorship/bib counts; build canonical → migrate is no-op; rerun idempotent in `tests/test_migrate.py`
 
 ## Phase 6: User Story 5 — Bulk import preserved (P3)
@@ -70,8 +70,8 @@ row counts identical; rerun is a no-op.
 **Goal**: import all entries from a `.tex`+`.bib` pair, per-paper commit.
 **Independent test**: import a fixture pair with N entries → N papers/authors/bib.
 
-- [ ] T028 [US5] Implement `services/import_service.extract_papers_from_tex_bib(tex, bib) -> Iterator[PaperCreate]` (pybtex + pylatexenc; skip+log keys with no `.bib` match) in `src/paper_sorts/services/import_service.py`
-- [ ] T029 [US5] Implement `cli/importer.py` (`pdbsearch import --tex --bib`, per-paper commit, dupes skipped via BibTeX-key uniqueness) in `src/paper_sorts/cli/importer.py`
+- [X] T028 [US5] Implement `services/import_service.extract_papers_from_tex_bib(tex, bib) -> Iterator[PaperCreate]` (pybtex + pylatexenc; skip+log keys with no `.bib` match) in `src/paper_sorts/services/import_service.py`
+- [X] T029 [US5] Implement `cli/importer.py` (`pdbsearch import --tex --bib`, per-paper commit, dupes skipped via BibTeX-key uniqueness) in `src/paper_sorts/cli/importer.py`
 - [ ] T030 [P] [US5] Import-service tests + a `.tex`/`.bib` fixture pair: N entries imported, unmatched key skipped, partial-failure preserves earlier papers in `tests/test_import_service.py` (+ fixtures under `tests/fixtures/`)
 
 ## Phase 7: User Story 1 — Reverse-engineered architecture doc (P1)

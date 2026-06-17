@@ -50,9 +50,7 @@ def _decrypt_ini(config_path: Path, key_path: Path, section: str = "postgresql")
         key = key_path.read_bytes()
         decrypted = Fernet(key).decrypt(config_path.read_bytes()).decode("utf-8")
     except (InvalidToken, ValueError) as exc:
-        raise ConfigError(
-            "Could not decrypt config file — check that the key matches."
-        ) from exc
+        raise ConfigError("Could not decrypt config file — check that the key matches.") from exc
     parser = ConfigParser()
     parser.read_string(decrypted)
     if not parser.has_section(section):

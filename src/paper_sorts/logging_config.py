@@ -39,9 +39,7 @@ def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
             "version": 1,
             "disable_existing_loggers": False,
             "formatters": {
-                "plain": {
-                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-                }
+                "plain": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
             },
             "handlers": handlers,
             "root": {"level": level, "handlers": handler_names},

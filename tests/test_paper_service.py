@@ -65,9 +65,7 @@ def test_update_field_title(seeded_engine: Engine) -> None:
     paper_id = paper_service.search_by_title(
         seeded_engine, "Direct speech-to-speech translation with discrete units"
     )[0].paper_id
-    paper_service.update_field(
-        seeded_engine, "papers", "title", "Service renamed", str(paper_id)
-    )
+    paper_service.update_field(seeded_engine, "papers", "title", "Service renamed", str(paper_id))
     assert paper_service.search_by_title(seeded_engine, "Service renamed")
 
 
@@ -93,9 +91,7 @@ def test_update_field_author(seeded_engine: Engine) -> None:
         author_id = session.execute(
             select(Author.id).where(Author.author == "Gu, Jiatao")
         ).scalar_one()
-    paper_service.update_field(
-        seeded_engine, "authors_id", "author", "Gu, J.", str(author_id)
-    )
+    paper_service.update_field(seeded_engine, "authors_id", "author", "Gu, J.", str(author_id))
     assert paper_service.search_by_author(seeded_engine, "Gu, J.")
 
 
