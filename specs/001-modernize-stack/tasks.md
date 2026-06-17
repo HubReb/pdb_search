@@ -22,9 +22,9 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Purpose**: uv/PEP 621 packaging, tooling config, src-layout skeleton.
 
-- [ ] T001 Create `pyproject.toml` (PEP 621, hatchling backend, Python ≥ 3.11): runtime deps (sqlalchemy>=2, alembic, typer, rich, pydantic, pydantic-settings, psycopg[binary], cryptography, pybtex, pylatexenc) and a dev extra (pytest, pytest-postgresql, pytest-cov, ruff, mypy); console script `pdbsearch = "paper_sorts.cli.app:app"`; ruff + mypy(strict on src) + pytest config tables.
-- [ ] T002 Create the src-layout package skeleton: `src/paper_sorts/__init__.py`, `src/paper_sorts/{cli,services,db}/__init__.py`, and `tests/__init__.py`, `tests/fixtures/__init__.py`, `tests/benchmarks/__init__.py`.
-- [ ] T003 Generate `uv.lock` via `uv sync --all-extras` and confirm the env resolves on Python ≥ 3.11.
+- [x] T001 Create `pyproject.toml` (PEP 621, hatchling backend, Python ≥ 3.11): runtime deps (sqlalchemy>=2, alembic, typer, rich, pydantic, pydantic-settings, psycopg[binary], cryptography, pybtex, pylatexenc) and a dev extra (pytest, pytest-postgresql, pytest-cov, ruff, mypy); console script `pdbsearch = "paper_sorts.cli.app:app"`; ruff + mypy(strict on src) + pytest config tables.
+- [x] T002 Create the src-layout package skeleton: `src/paper_sorts/__init__.py`, `src/paper_sorts/{cli,services,db}/__init__.py`, and `tests/__init__.py`, `tests/fixtures/__init__.py`, `tests/benchmarks/__init__.py`.
+- [x] T003 Generate `uv.lock` via `uv sync --all-extras` and confirm the env resolves on Python ≥ 3.11.
 
 **Checkpoint**: `uv run python -c "import paper_sorts"` works; `uv run ruff --version`, `uv run mypy --version`, `uv run pytest --version` resolve.
 
@@ -34,16 +34,16 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 
 **Purpose**: persistence models, session, config, logging, Alembic baseline, and the test harness every story depends on. No user-visible feature yet.
 
-- [ ] T004 [P] Define the four SQLAlchemy 2.x ORM models in `src/paper_sorts/db/models.py` (`Paper`, `Bib`, `AuthorId`, `AuthorPaper`) with typed `mapped_column`s, preserving the exact schema (no extra NOT NULL/FK/index; `bib.bibtex` UNIQUE; `papers.bibtex_id` FK → `bib.bibtex_id`; `authors_papers` no FKs).
-- [ ] T005 [P] Implement `with_session(...)` in `src/paper_sorts/db/session.py` — context-managed Session (commit on success, rollback on exception, deterministic close); engine factory from a `database_url`.
-- [ ] T006 [P] Implement `src/paper_sorts/config.py` — pydantic-settings `Settings` with four-source priority (CLI > env `PDBSEARCH_*` > `.env` > Fernet-encrypted INI custom source); decrypt INI with key file → `database_url`; clear error when the key file is missing.
-- [ ] T007 [P] Implement `src/paper_sorts/logging_config.py` — single `dictConfig` (RichHandler to stdout, optional FileHandler); `configure_logging(level, log_file)` callable once at startup.
-- [ ] T008 Scaffold Alembic: `alembic.ini`, `migrations/env.py` (reads the configured `database_url`, targets `models.metadata`), `migrations/script.py.mako`.
-- [ ] T009 Author revision `migrations/versions/0001_baseline_schema.py` — verbatim DDL port creating the four canonical tables.
-- [ ] T010 Author revision `migrations/versions/0002_converge_legacy_bibtext.py` — idempotent, schema-inspecting rename of legacy `bibtext_id`/`bibtext` → `bibtex_id`/`bibtex` in `bib` and `papers`; no-op on canonical/fresh DBs.
-- [ ] T011 [P] Create the canonical seed dataset `tests/fixtures/seed_papers.py` (`SEED_PAPERS`) — co-locate the rows the suite asserts on (incl. `Pino, J.` / `Wang2021LargeScaleSA` and the multi-author speech-translation paper); include a LaTeX-accent edge-case entry.
-- [ ] T012 Implement `tests/conftest.py` — `postgresql_proc` + `ephemeral_db_url` (session-scoped, from host `pg_ctl`) and a `seeded_db` fixture that runs Alembic to head and loads `SEED_PAPERS`.
-- [ ] T013 [P] Add `tests/test_migrations.py` — apply 0001 to a fresh DB; build a legacy `bibtext_id` DB and assert 0002 converges it with row-count parity (papers/authors/authorships/bib) and is idempotent on rerun (US4 / FR-011).
+- [x] T004 [P] Define the four SQLAlchemy 2.x ORM models in `src/paper_sorts/db/models.py` (`Paper`, `Bib`, `AuthorId`, `AuthorPaper`) with typed `mapped_column`s, preserving the exact schema (no extra NOT NULL/FK/index; `bib.bibtex` UNIQUE; `papers.bibtex_id` FK → `bib.bibtex_id`; `authors_papers` no FKs).
+- [x] T005 [P] Implement `with_session(...)` in `src/paper_sorts/db/session.py` — context-managed Session (commit on success, rollback on exception, deterministic close); engine factory from a `database_url`.
+- [x] T006 [P] Implement `src/paper_sorts/config.py` — pydantic-settings `Settings` with four-source priority (CLI > env `PDBSEARCH_*` > `.env` > Fernet-encrypted INI custom source); decrypt INI with key file → `database_url`; clear error when the key file is missing.
+- [x] T007 [P] Implement `src/paper_sorts/logging_config.py` — single `dictConfig` (RichHandler to stdout, optional FileHandler); `configure_logging(level, log_file)` callable once at startup.
+- [x] T008 Scaffold Alembic: `alembic.ini`, `migrations/env.py` (reads the configured `database_url`, targets `models.metadata`), `migrations/script.py.mako`.
+- [x] T009 Author revision `migrations/versions/0001_baseline_schema.py` — verbatim DDL port creating the four canonical tables.
+- [x] T010 Author revision `migrations/versions/0002_converge_legacy_bibtext.py` — idempotent, schema-inspecting rename of legacy `bibtext_id`/`bibtext` → `bibtex_id`/`bibtex` in `bib` and `papers`; no-op on canonical/fresh DBs.
+- [x] T011 [P] Create the canonical seed dataset `tests/fixtures/seed_papers.py` (`SEED_PAPERS`) — co-locate the rows the suite asserts on (incl. `Pino, J.` / `Wang2021LargeScaleSA` and the multi-author speech-translation paper); include a LaTeX-accent edge-case entry.
+- [x] T012 Implement `tests/conftest.py` — `postgresql_proc` + `ephemeral_db_url` (session-scoped, from host `pg_ctl`) and a `seeded_db` fixture that runs Alembic to head and loads `SEED_PAPERS`.
+- [x] T013 [P] Add `tests/test_migrations.py` — apply 0001 to a fresh DB; build a legacy `bibtext_id` DB and assert 0002 converges it with row-count parity (papers/authors/authorships/bib) and is idempotent on rerun (US4 / FR-011).
 
 **Checkpoint**: ephemeral DB provisions; migrations apply; migration tests pass. Foundation ready for all stories.
 
@@ -119,7 +119,7 @@ Single-project src-layout: package at `src/paper_sorts/`, tests flat under `test
 **Purpose**: US1 architecture doc, legacy removal (FR-012), constitution amendment (FR-016/SC-007), doc-currency gate (G3), baseline benchmark (G2), final gates.
 
 - [ ] T035 [US1] Write `docs/architecture.md` — reverse-engineered description of the legacy (pre-modernization) stack: purpose, user journeys, four-table data model + relationships, control flow (CLI → domain → DB), config approach, install/run, rollback semantics, known limitations/quirks (FR-001 / SC-001).
-- [ ] T036 Remove the legacy flat layout (`paper_sorts/add.py`, `search.py`, `get_data.py`, `database_connector.py`, `user_interaction.py`, `psycopg_db.py`, `config_reader.py`, `helpers.py`, `run.py`, `paper_sorts/__init__.py`) and the legacy `tests/test_database_connector.py` / `tests/test_user_interaction.py` once US2 coverage subsumes them (FR-012).
+- [x] T036 Remove the legacy flat layout (`paper_sorts/add.py`, `search.py`, `get_data.py`, `database_connector.py`, `user_interaction.py`, `psycopg_db.py`, `config_reader.py`, `helpers.py`, `run.py`, `paper_sorts/__init__.py`) and the legacy `tests/test_database_connector.py` / `tests/test_user_interaction.py` once US2 coverage subsumes them (FR-012).
 - [ ] T037 Update `README.md` and `CLAUDE.md` to the modern stack — remove every forbidden legacy token (`Poetry`, `psycopg2`, `UserInteraction`, `PsycopgDB`); add `tests/test_doc_currency.py` asserting a case-sensitive search finds none of them in those two files (G3, merge-blocking).
 - [ ] T038 Amend the constitution via `/speckit-constitution` — reconcile the stale *Development Workflow & Quality Gates* lines (`pylint paper_sorts`, `unittest`, `create_tables()`) to ruff/mypy/pytest + Alembic; record rationale in the sync-impact header (FR-016 / SC-007).
 - [ ] T039 Implement `tests/benchmarks/bench_baseline.py` — an executing (not permanently skipped) baseline harness timing the five interactive ops (search by title/author, add, update, delete) on `seeded_db`, recording a baseline; document the bench command (G2, merge-blocking).
