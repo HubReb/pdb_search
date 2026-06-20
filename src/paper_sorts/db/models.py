@@ -10,7 +10,7 @@ single ``bib.bibtex`` UNIQUE constraint.
 from __future__ import annotations
 
 from sqlalchemy import ForeignKey, Integer, Text, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
@@ -60,12 +60,3 @@ class AuthorPaper(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     author_id: Mapped[int | None] = mapped_column(Integer)
     paper_id: Mapped[int | None] = mapped_column(Integer)
-
-
-# Expose the ORM-level relationship without adding a DDL constraint.
-Paper.author_links: Mapped[list[AuthorPaper]] = relationship(  # type: ignore[assignment]
-    AuthorPaper,
-    primaryjoin="foreign(AuthorPaper.paper_id) == Paper.id",
-    viewonly=True,
-    uselist=True,
-)

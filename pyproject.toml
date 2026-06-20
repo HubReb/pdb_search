@@ -46,6 +46,7 @@ select = ["E", "F", "I", "UP", "B", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "migrations/*" = ["E501"]
+"src/paper_sorts/cli/*" = ["B008"]  # typer.Option in defaults is idiomatic Typer
 
 [tool.mypy]
 python_version = "3.11"
