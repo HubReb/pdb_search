@@ -1,0 +1,17 @@
+% Sample LaTeX literature overview for import tests
+% Format: \item * Title \cite{key}: description
+\documentclass{article}
+\begin{document}
+
+\begin{itemize}
+  \item * A Test Paper About Things \cite{TestPaper2024}:
+  A one-sentence summary of the test paper.
+
+  \item * A Paper With No Bib Entry \cite{MissingBib2024}:
+  This paper has no matching bib record and should be skipped.
+
+  \item * Paper With Accented Author \cite{AccentPaper2023}:
+  Tests that LaTeX accents in author names round-trip correctly.
+\end{itemize}
+
+\end{document}
