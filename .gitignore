@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# uv
+.uv/
+# uv.lock is intentionally committed for reproducibility
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+coverage.xml
+
+# Logs
+*.log
+*.log.*
+
+# Database credentials (never commit these)
+database.crypt
+key
+*.crypt
+
+# Alembic
+migrations/__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files (credentials)
+.env
+.env.local
+.env.*.local
