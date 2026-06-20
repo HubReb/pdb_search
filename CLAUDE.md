@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- SPECKIT START -->
+**Active feature**: `specs/001-modernize-stack/` — Modernize the Stack. See [plan.md](specs/001-modernize-stack/plan.md) for the implementation plan.
+<!-- SPECKIT END -->
+
 ## Project
 
 Off-line paper-database searcher: a CLI that stores publication metadata (title, authors, summary, BibTeX) in a local PostgreSQL database and lets the user search/add/update entries. Personal-use tool — not a library or service.
