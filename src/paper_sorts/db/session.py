@@ -13,6 +13,11 @@ from contextlib import contextmanager
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
+# Re-exported so the service layer can type-annotate against the engine/session
+# without importing ``sqlalchemy`` directly (constitution Principle I: only
+# ``db/`` imports the ORM/driver).
+__all__ = ["Engine", "Session", "make_engine", "with_session"]
+
 
 def make_engine(database_url: str) -> Engine:
     """Create a SQLAlchemy engine for the given database URL.

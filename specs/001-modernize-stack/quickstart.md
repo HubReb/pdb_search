@@ -51,7 +51,12 @@ uv run ruff check .            # lint
 uv run ruff format --check .   # format
 uv run mypy src                # types (strict on src/)
 uv run pytest                  # ephemeral PG via pytest-postgresql; no personal DB needed
-uv run pytest --cov=src/paper_sorts --cov-report=term-missing   # per-layer coverage (≥80% each layer)
+uv run pytest --cov=src/paper_sorts --cov-report=term-missing   # whole-package coverage
+# per-layer (gate G1 — each layer independently ≥80%):
+uv run pytest --cov=src/paper_sorts/db --cov-report=term
+uv run pytest --cov=src/paper_sorts/services --cov-report=term
+uv run pytest --cov=src/paper_sorts/cli --cov-report=term
+uv run pytest --cov=src/paper_sorts/config.py --cov-report=term
 ```
 
 The suite spins up an ephemeral PostgreSQL from the host's `pg_ctl`; no `database.crypt`/`key` and no

@@ -8,9 +8,6 @@ from __future__ import annotations
 
 from typing import Literal, assert_never
 
-from sqlalchemy import Engine
-from sqlalchemy.orm import Session
-
 from paper_sorts.db.repositories import (
     AuthorRepository,
     BibRepository,
@@ -18,7 +15,7 @@ from paper_sorts.db.repositories import (
     PaperRepository,
     PaperSummary,
 )
-from paper_sorts.db.session import with_session
+from paper_sorts.db.session import Engine, Session, with_session
 
 UpdatableTable = Literal["papers", "bib", "authors_id"]
 
