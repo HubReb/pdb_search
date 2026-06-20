@@ -97,9 +97,7 @@ class PaperService:
                 case _:
                     assert_never(table)
 
-    def _update_papers(
-        self, session: Session, column: str, paper_id: int, value: str
-    ) -> None:
+    def _update_papers(self, session: Session, column: str, paper_id: int, value: str) -> None:
         match column:
             case "title":
                 self._papers.update_title(session, paper_id, value)

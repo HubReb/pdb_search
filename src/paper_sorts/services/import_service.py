@@ -26,18 +26,20 @@ def _parse_tex(tex: str) -> dict[str, tuple[str, str]]:
     :param tex: contents of the LaTeX literature overview.
     :returns: ``{citation_key: (title, summary)}`` for every parsed entry.
     """
-    rendered = [
-        line for line in LatexNodes2Text().latex_to_text(tex).split("\n") if line != ""
-    ]
+    rendered = [line for line in LatexNodes2Text().latex_to_text(tex).split("\n") if line != ""]
     result: dict[str, tuple[str, str]] = {}
     title: str | None = None
     bibtex_key: str | None = None
     for line in rendered:
-        if "*" in line and "<cit.>" in line:
-            title = line.split("<cit.>")[1].rstrip(":")
-            if title == ":":
-                title = line.split("<cit.>")[0].split("*")[1]
-            title = title.strip()
+        if "<cit.>" in line:
+            # The title is whatever precedes the citation marker; the legacy
+            # overleaf export rendered it after a "*" bullet, but the marker
+            # itself is the reliable signal.
+            before, _, after = line.partition("<cit.>")
+            candidate = before.strip().lstrip("*").strip()
+            if not candidate:
+                candidate = after.strip().lstrip(":").strip()
+            title = candidate.strip()
             bibtex_key = _find_key_for_title(tex, title)
         elif title is not None and bibtex_key:
             result[bibtex_key] = (title, line.strip())
@@ -46,12 +48,14 @@ def _parse_tex(tex: str) -> dict[str, tuple[str, str]]:
 
 
 def _find_key_for_title(tex: str, title: str) -> str | None:
-    """Return the ``\\cite{...}`` key on the raw LaTeX line bearing ``title``."""
+    """Return the ``\\cite{...}`` key on the raw LaTeX line bearing ``title``.
+
+    The key is always the token immediately after ``\\cite{`` on the line that
+    contains the title.
+    """
     for raw in tex.split("\n"):
         if title in raw and r"\cite{" in raw:
-            after = raw.split(r"\cite{")
-            chunk = after[1] if "\\item" in after[0] else after[0]
-            return chunk.split("}")[0]
+            return raw.split(r"\cite{", 1)[1].split("}")[0]
     return None
 
 

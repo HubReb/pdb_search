@@ -18,9 +18,7 @@ def run_add(service: PaperService) -> bool:
     :param service: the bound paper service.
     :returns: ``True`` on success, ``False`` on a handled failure.
     """
-    author_csv = prompts.ask_text(
-        "Author(s), please provide a comma-separated list: "
-    )
+    author_csv = prompts.ask_text("Author(s), please provide a comma-separated list: ")
     title = prompts.ask_text("Paper title: ")
     bibtex_key = prompts.ask_text("bibtex key: ")
     via_file = prompts.ask_choice(
